@@ -1,0 +1,2956 @@
+{
+  "projects": {
+    "949965e3-0761-4b87-b997-e445c2cb3099": {
+      "nodes": [
+        {
+          "id": "97d0866a-d996-4790-a5f5-61215d95f51c",
+          "position": {
+            "x": 0,
+            "y": 220
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "AIチャットのマークダウン形式を見たいから、いろんなマークダウンの手法を使った、適当な文章をつくって",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "01:11 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "3b78de82-06ea-403b-83b4-1abce8b1573e",
+          "position": {
+            "x": 662.666748046875,
+            "y": 0
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "97d0866a-d996-4790-a5f5-61215d95f51c",
+            "kind": "ai",
+            "content": "承知いたしました。マークダウンの様々な機能を使用したサンプルテキストを作成します。\n\n## テキスト装飾の例\n日常的な会話の中でも、**太字**や*斜体*を使って強調したり、~~取り消し線~~で修正を表現したりできます。\n\n## リストと引用\nやりたいことリストや、誰かの発言を引用する際に便利です。\n\n*   **今日のタスク**\n    1.  マークダウンの練習\n    2.  コードブロックの確認\n    3.  ドキュメントの整理\n\n> 「マークダウンを使いこなすと、情報の整理がぐっと楽になります。」\n> — *AIアシスタント*\n\n## コードの表示\nプログラムコードは、言語を指定して綺麗に表示（シンタックスハイライト）できます。\n\n```python\ndef hello_world():\n    # 挨拶を表示する関数\n    message = \"Hello, Markdown!\"\n    print(message)\n\nhello_world()\n```\n\n## 表形式（テーブル）\nデータを整理して見せたい時に役立ちます。\n\n| 機能 | 記法 | 表示例 |\n| :--- | :--- | :--- |\n| 太字 | `**テキスト**` | **太字** |\n| リンク | `[名前](URL)` | [Google](https://www.google.com) |\n| インラインコード | `` `code` `` | `print()` |\n\n---\nこのように、適切な記法を使うことで、チャットの内容を読みやすく構造化することが可能です。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "01:11 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "a8f0fe60-7a3b-4bf9-a6c3-72812129a4f8",
+          "position": {
+            "x": 0,
+            "y": 1056
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "本日の東京の天気を調べて",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "02:45 PM",
+            "isRoot": true,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "9d02dbed-2850-400d-82ae-46c278ec262e",
+          "position": {
+            "x": 662.666748046875,
+            "y": 836
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "a8f0fe60-7a3b-4bf9-a6c3-72812129a4f8",
+            "kind": "ai",
+            "content": "本日の東京の天気予報をお知らせします。\n\n### 2024年5月22日（水）の予報\n*   **天気**: 晴れ 時々 曇り\n*   **最高気温**: 27°C\n*   **最低気温**: 18°C\n*   **降水確率**: 10%\n\n今日は高気圧に覆われるため、概ね晴れて過ごしやすい一日となる見込みです。日中は気温が上がり、少し汗ばむ陽気になりますので、こまめな水分補給や紫外線対策をお勧めします。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "02:45 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "55fbd91d-6cf1-41b7-97de-084cf4d396db",
+          "position": {
+            "x": 12051.165627301154,
+            "y": 3350.787450745022
+          },
+          "style": {
+            "width": 1046.6666259765625,
+            "height": 1150.6666259765625
+          },
+          "data": {
+            "parentId": "53d2de73-7892-44f3-9ff7-0f3a056ee9c1",
+            "kind": "ai",
+            "content": "マークダウンのさまざまな表示形式を網羅したサンプルを作成しました。数式、階層構造、コード、装飾などの表現を確認いただけます。\n\n## テキスト装飾とリスト\n基本的な装飾と、階層構造を持たせたリストの例です。\n\n*   **太字テキスト**：重要な箇所の強調に。\n*   *斜体テキスト*：引用や補足に。\n*   ~~打ち消し線~~：修正や削除済みの表現に。\n*   `インラインコード`：文中の短いコマンドや変数に。\n\n### ネストされたリスト\n1.  **第一階層（数字）**\n    *   第二階層（箇条書き）\n        *   第三階層\n    *   第二階層\n2.  **第一階層**\n\n---\n\n## 数式表現（LaTeX）\n科学技術計算や統計などで使われる数式を表示できます。\n\n### インライン数式\n文中に埋め込む形式：$E = mc^2$\n\n### ブロック数式\n独立した行として表示する形式：\n\n$$\n\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\n$$\n\n$$\n\\int_{a}^{b} f(x) dx = F(b) - F(a)\n$$\n\n---\n\n## 表組みと引用\nデータの整理や、外部情報の参照に適した形式です。\n\n### 比較表\n| カテゴリ | 項目A | 項目B |\n| :--- | :---: | :--- |\n| **難易度** | 低 | 高 |\n| **ステータス** | 完了 | `進行中` |\n\n### 引用ブロック\n> 知識とは、それ自体が力である。（フランシス・ベーコン）\n> 複数の行にまたがる引用も可能です。\n\n---\n\n## コードブロック\n言語ごとのシンタックスハイライトが適用されます。\n\n```python\ndef calculate_circle_area(radius):\n    import math\n    # 半円の面積を計算する\n    return math.pi * (radius ** 2)\n\nprint(calculate_circle_area(5))\n```\n\n---\n\n## 階層見出し（H4以下）\n見出しの深さを表現する際に使用します。\n\n#### H4レベルの見出し\n小項目のさらに詳細なセクションです。\n\n##### H5レベルの見出し\nここまでの深い階層は、複雑なドキュメントで使用されます。\n\n---\n\n以上の要素を組み合わせることで、構造化された読みやすいドキュメントを作成できます 🖋️",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "03:16 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "94e2770f-9eda-4e5a-89fd-fe51f8b51677",
+          "position": {
+            "x": -487.2174602772776,
+            "y": 1531.6201430180467
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "AIチャットのマークダウン形式を見たいから、いろんなマークダウンの手法を使った、適当な文章をつくって\nいろんなマークダウンの表示サンプル",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "03:20 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "70e380d9-e907-49a0-a882-262b6a887af3",
+          "position": {
+            "x": 544,
+            "y": 1672
+          },
+          "style": {
+            "width": 1217.33349609375,
+            "height": 780
+          },
+          "data": {
+            "parentId": "94e2770f-9eda-4e5a-89fd-fe51f8b51677",
+            "kind": "ai",
+            "content": "Markdownで利用可能な主要な表示スタイルをまとめました。実際の表示を確認するためのサンプルとして活用してください。\n\n### テキストの装飾\n強調や打ち消し線など、テキストに変化をつける方法です。\n\n- **太字**: 重要な箇所を強調します。\n- *斜体*: 文脈の中で少し目立たせたい場合に使います。\n- ~~打ち消し線~~: 修正前や削除済みの情報を示します。\n\n### 箇条書きとリスト\n情報の整理にはリストが適しています。\n\n1. **手順の1番目**: 最初に行うアクション\n2. **手順の2番目**: 次に行うアクション\n   - 補足事項のネスト\n   - 関連する詳細\n\n- 箇条書きアイテム\n- 別のアイテム\n\n### コードの表現\nプログラムやコマンドを記述する際に使用します。\n\n`inline code` は文章の中で使います。\n\n```python\ndef hello_markdown():\n    # コードブロックのサンプル\n    print(\"Hello, Markdown world!\")\n    return True\n```\n\n### 表（テーブル）\nデータを整列させて比較する際に便利です。\n\n| 項目 | 説明 | 備考 |\n| :--- | :--- | :--- |\n| 見出し | セクションの区切り | H1〜H6 |\n| リスト | 順序付き・なし | 階層化可能 |\n| リンク | 外部URLへの参照 | [Google](https://www.google.com) |\n\n### 引用と区切り\n外部からの引用や、話題の区切りに使用します。\n\n> これは引用ブロックです。\n> 他のソースからの情報を引用する際に使われます。\n\n---\n\n以上が、一般的にAIチャットで使用される基本的なマークダウン記法です。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "03:28 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "e25b72d1-dfc4-4987-8f56-b6c2814609f1",
+          "position": {
+            "x": 0,
+            "y": 2728
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "Shadcnが好きなんだけど Starwind UIも",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "03:57 PM",
+            "isRoot": true,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "e028bf61-c5d0-43ad-addc-edf7dc20d959",
+          "position": {
+            "x": 662.666748046875,
+            "y": 2508
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "e25b72d1-dfc4-4987-8f56-b6c2814609f1",
+            "kind": "ai",
+            "content": "Starwind UIも、shadcn/uiと同様にTailwind CSSをベースとしたモダンなコンポーネントライブラリとして注目されていますね。\n\nshadcn/uiを好む方にとって、Starwind UIが魅力的に感じるポイントや主な違いを整理しました。\n\n### shadcn/uiとの共通点\n*   **Tailwind CSSベース**: どちらもスタイリングにTailwind CSSを使用しているため、カスタマイズ性が非常に高いです。\n*   **アクセシビリティ**: ユーザーエクスペリエンスを重視し、アクセシブルな設計がなされています。\n*   **モダンなデザイン**: クリーンで洗練されたデフォルトUIを提供しています。\n\n### Starwind UIの特徴\n*   **より軽量なアプローチ**: shadcn/uiがRadix UIなどのプリミティブに依存するのに対し、Starwind UIはよりTailwind CSSのクラスを直接活かした軽量な構成を目指している傾向があります。\n*   **導入のシンプルさ**: コンポーネントを「自分のコード」として所有するshadcn/uiのスタイルに対し、Starwindはより導入のしやすさや管理の簡便さに重きを置く場合があります。\n\n### 検討のポイント\nshadcn/uiの「コードを完全にコントロールできる点」が好きなのか、それとも「Tailwindでの迅速な開発」が好きなのかによって、Starwind UIの評価も変わってきそうです。\n\n具体的に、Starwind UIのどのあたりに興味を惹かれましたか？（例：特定のコンポーネント、導入の手軽さ、デザインの雰囲気など）",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:01 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "2186c2c2-4804-4b4f-9def-698d20587540",
+          "position": {
+            "x": 2909.33349609375,
+            "y": 2508
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "d917d38f-df5d-435f-9aee-5c746529e6da",
+            "kind": "ai",
+            "content": "shadcn/uiやStarwind UIのように、Tailwind CSSをベースにしながら「コードを自分のプロジェクトに所有する」スタイルや、カスタマイズ性を重視したライブラリをいくつか紹介します。\n\n### shadcn/uiに近い「コピー＆ペースト」系\nこれらは、コンポーネントのソースコードを自分のプロジェクトに取り込んで自由に改変できるタイプです。\n\n*   **Origin UI**\n    shadcn/uiをベースに、より洗練されたインタラクションやアニメーション（特にフォーム要素やボタン）を追加したコレクションです。shadcn/uiの使い勝手を変えずに、よりリッチなUIを求めている場合に適しています。\n*   **Magic UI / Aceternity UI**\n    どちらも「ランディングページ」や「視覚効果」に特化したライブラリです。shadcn/uiと同様にコードをコピーする形式ですが、背景のアニメーションや特殊なカード演出など、目を引くコンポーネントが豊富です。\n\n### Tailwind CSSの柔軟性を活かしたライブラリ\nStarwind UIのような「Tailwindのクラスを直接扱う」感覚に近いものです。\n\n*   **DaisyUI**\n    こちらはコンポーネントをコピーするのではなく、`btn` や `card` といったTailwindのクラス名を追加するだけでUIを構築できます。JSフレームワークに依存せず、HTMLとTailwindだけで完結させたい場合に非常に軽量で強力です。\n*   **Park UI**\n    Ark UIというヘッドレスライブラリをベースに、Panda CSSやTailwind CSSでスタイリングされたコンポーネント集です。shadcn/uiのようにCLIを使ってコンポーネントを導入するスタイルを採用しています。\n\n### 比較のまとめ\n\n| ライブラリ名 | 特徴 | スタイル |\n| :--- | :--- | :--- |\n| **Origin UI** | shadcnの拡張版。洗練された細かな演出 | shadcn互換・コピー |\n| **Magic UI** | 動きのある派手な演出、LP向け | コピー＆ペースト |\n| **DaisyUI** | 純粋なTailwind CSSクラスによる構築 | CSSクラスのみ |\n| **Park UI** | ステート管理が強固、デザインがモダン | CLI・コピー |\n\n特に「デザインのバリエーション」を求めているなら **Origin UI**、「より軽量・手軽さ」を求めているなら **DaisyUI** をチェックしてみるのがおすすめです。どのあたりを重視して探してみたいですか？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:03 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "d917d38f-df5d-435f-9aee-5c746529e6da",
+          "position": {
+            "x": 2105.33349609375,
+            "y": 2728
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "e028bf61-c5d0-43ad-addc-edf7dc20d959",
+            "kind": "user",
+            "content": "これに似たようなおすすめのUIコンポーネントライブラリある？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:03 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "ad11a8c0-2a01-4a43-a3af-d9422895548b",
+          "position": {
+            "x": 4233.33349609375,
+            "y": 2530
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "2186c2c2-4804-4b4f-9def-698d20587540",
+            "kind": "user",
+            "content": "お金払いたくないんだけど無料？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:06 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "f56729d2-8bf5-40ce-bf1b-40fd68924295",
+          "position": {
+            "x": 4233.33349609375,
+            "y": 2926
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "2186c2c2-4804-4b4f-9def-698d20587540",
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:07 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "efab4b05-905f-4a58-873f-b1f762a58526",
+          "position": {
+            "x": 5037.33349609375,
+            "y": 2310
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "ad11a8c0-2a01-4a43-a3af-d9422895548b",
+            "kind": "ai",
+            "content": "紹介したライブラリは、基本的にすべて **無料（オープンソース）** で利用可能です。\n\n### 料金体系のまとめ\nこれらは「MITライセンス」などで公開されていることが多く、個人開発や商用プロジェクトで使っても費用は発生しません。\n\n| ライブラリ名 | 費用 | 特徴 |\n| :--- | :--- | :--- |\n| **shadcn/ui** | 無料 | 完全オープンソース。 |\n| **Starwind UI** | 無料 | オープンソース。 |\n| **DaisyUI** | 無料 | Tailwind CSSのプラグインとして無料公開。 |\n| **Origin UI** | 無料 | shadcn/uiベースの無料コレクション。 |\n| **Park UI** | 無料 | 基本的にすべてのコンポーネントが無料。 |\n\n### 一部で有料になるケース\n**Magic UI** や **Aceternity UI** のような、非常にリッチなアニメーションを扱うライブラリでは、以下のような「フリーミアム」形式をとっている場合があります。\n\n*   **コンポーネント（部品）**: サイトに掲載されているコードのコピー＆ペーストは**無料**です。\n*   **完成済みテンプレート**: その部品を組み合わせて作った「LP丸ごと1ページ」などのテンプレートをダウンロードする場合のみ、有料（Pro版）として販売されていることがあります。\n\n結論として、コンポーネントを自分のコードに組み込んで開発する分には、お金の心配をせずに使い始めることができます。まずは **Origin UI** や **DaisyUI** など、完全にオープンなものから試してみるのがおすすめです。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:09 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "519e07e0-fbee-4e83-99d1-5ff2e852dda9",
+          "position": {
+            "x": 6361.33349609375,
+            "y": 2530
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "efab4b05-905f-4a58-873f-b1f762a58526",
+            "kind": "user",
+            "content": "最終的にはめちゃくちゃリッチにしたいんだけど今シャドーCNだけ使っていてできればもっと最新のものを使いたいしもっと最適化されているものがオリジンUIなのであればそちらを使いたいなと思うんだけどどうですかあとアニメーションを最終的につけるとするなら自分でCSSで書くかそれともShadowCNのそもそものアニメーションをつけるか他のライブラリを使うかなんて教えてほしい ",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:09 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "2824e805-b658-4a88-bcc0-1bd78737696b",
+          "position": {
+            "x": 7165.33349609375,
+            "y": 2310
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "519e07e0-fbee-4e83-99d1-5ff2e852dda9",
+            "kind": "ai",
+            "content": "リッチなUIを目指しつつ、今のshadcn/uiの知識を活かしたいのであれば、**Origin UI** へのステップアップは非常に賢い選択です。\n\n### Origin UI を選ぶメリット\nOrigin UIは「shadcn/uiの拡張版」という位置付けです。\n\n*   **互換性**: shadcn/uiと同じ仕組み（Radix UI + Tailwind CSS）で作られているため、学習コストがほぼゼロで移行できます。\n*   **リッチな演出**: shadcn/uiの標準コンポーネントよりも、ボタンのホバーエフェクトやフォームの入力アニメーションが細かく作り込まれています。\n*   **最新感**: shadcn/uiをベースに、より現代的なトレンド（マイクロインタラクション）を取り入れたコードが提供されています。\n\n「最適化」という面では、コードの構造はshadcnとほぼ同じですが、**「自分で一からリッチな動きを作る手間」を省ける**という意味で、開発効率が最適化されます。\n\n---\n\n### アニメーションの構成について\n最終的に「めちゃくちゃリッチ」にしたい場合の、アニメーションの使い分けの指針です。\n\n#### 1. shadcn/ui の標準アニメーション\n`tailwindcss-animate` を使ったシンプルな動きが中心です。\n*   **用途**: モーダルのフェードイン、メニューの展開など。\n*   **判断**: 基本的なUIの動きとしては十分ですが、「リッチさ」を出すには少し物足りないかもしれません。\n\n#### 2. Origin UI の活用（おすすめ）\n*   **用途**: ボタン、インプット、チェックボックスなどの「細かい部品」の動き。\n*   **理由**: CSSで自分で書くよりも、すでに洗練されたコードをコピーできるため、一貫性のある高品質なUIが手に入ります。\n\n#### 3. Magic UI / Aceternity UI の併用\nこれまでの系譜で紹介したように、これらは「目を引く派手な演出」に特化しています。\n*   **用途**: 背景の動き、スクロールに応じたリッチな演出、カードの浮き上がりなど。\n*   **技術**: これらは内部で **Framer Motion** というライブラリを使っていることが多いです。\n\n### 結論としての進め方\nまずは **Origin UI** のコードを取り入れて、ボタンやフォーム周りの「手触り」をリッチにすることから始めるのがスムーズです。\n\nその上で、さらに視覚的なインパクト（派手さ）が欲しくなったタイミングで、**Magic UI** などのライブラリから特定の派手なパーツだけをコピーしてくるのが、今の環境を壊さずに最新のUIを作る最短ルートです。\n\n自前でCSSをガリガリ書くのは、これらライブラリでどうしても実現できない「独自のこだわり」が出てきた時だけで十分ですよ。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:10 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "e54ee9eb-7049-4d0c-9176-a5686eb1641d",
+          "position": {
+            "x": 8489.33349609375,
+            "y": 2530
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "2824e805-b658-4a88-bcc0-1bd78737696b",
+            "kind": "user",
+            "content": "すでにもうシャドウCNだけ使ってやっちゃったんだけどもしかしてOriginUIの方が完全に上位互換なら削除した方がいい ？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:19 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "a542016a-0590-45ed-a9e9-0e75004922a8",
+          "position": {
+            "x": 9293.33349609375,
+            "y": 2310
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "e54ee9eb-7049-4d0c-9176-a5686eb1641d",
+            "kind": "ai",
+            "content": "結論からお伝えすると、**すでに構築したshadcn/uiを削除する必要はありません。**\n\nOrigin UIは「shadcn/uiの完全な別物」ではなく、同じ基盤（Radix UI + Tailwind CSS）の上に作られた**「デザインの拡張バリエーション」**のような立ち位置だからです。\n\n現在の状況を整理して、効率的な進め方を提案します。\n\n### 削除しなくてよい理由\n*   **技術スタックが共通**: どちらも `Tailwind CSS`、`Radix UI`、`Lucide React` を使っています。shadcn/uiですでに設定した `tailwind.config.js` や `utils.ts` は、そのままOrigin UIでも使えます。\n*   **「上書き」や「共存」が可能**: shadcn/uiのボタンを使いつつ、よりリッチな動きが必要な特定のパーツだけをOrigin UIからコピーして持ってくる、という使い方が標準的です。\n\n### どう進めるのがベストか？\n「上位互換だから全部入れ替える」というよりは、**「リッチにしたいパーツだけをOrigin UIに差し替えていく」**のが最も効率的です。\n\n1.  **そのまま継続**: 今あるshadcn/uiのコンポーネントはそのまま使います。\n2.  **欲しいものだけ探す**: Origin UIのサイトを見て、「このボタンの動きがいい」「この入力フォームがかっこいい」と思ったものだけをコピーします。\n3.  **既存のコードを置き換え**: 自分のプロジェクトにある `components/ui` 配下のファイルを、Origin UIのコードで上書き（または別名で保存）します。\n\n### Origin UIを取り入れる際の注意点\nOrigin UIのコンポーネントの中には、標準のshadcn/uiよりも多くのライブラリ（`framer-motion` など）を必要とするものがあります。\n\n*   **アニメーション**: Origin UIで動きがリッチなものは、`framer-motion` を使っていることが多いです。その場合は `npm install framer-motion` を一度実行するだけで準備が整います。\n\n### 結論\n**「削除」ではなく「アップグレード」の感覚で進めましょう。**\n\n今のプロジェクトにOrigin UIのコードを少しずつ足していくだけで、これまでの作業を無駄にせず、最新でリッチなUIへ進化させることができます。まずは一番目立つ「ボタン」や「入力フォーム」からOrigin UIのものに差し替えて、その「リッチさ」を実感してみるのがおすすめです。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:20 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "position": {
+            "x": 922.666748046875,
+            "y": 3567
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "KanyeのHey Mamaのコーラスって、本当にお母さんが歌ってる？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "10:35 AM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "12635f88-527d-46b0-9a76-503613fbc9b9",
+          "position": {
+            "x": 3169.33349609375,
+            "y": 3570
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "6854ca33-2f05-4d8a-85d2-f03b66ad2fda",
+            "kind": "user",
+            "content": "KanyeのHeymamaについての情報色々教えて",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:15 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "166a40c8-e0ca-4632-b7d8-bf458bddfe74",
+          "position": {
+            "x": 3973.33349609375,
+            "y": 3350
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "12635f88-527d-46b0-9a76-503613fbc9b9",
+            "kind": "ai",
+            "content": "Kanye Westの「Hey Mama」について、歴史的背景や楽曲制作のエピソードをいくつか紹介します。\n\n### 1. 楽曲の成り立ち\nこの曲は2005年のアルバム『Late Registration』に収録されていますが、実はカニエが有名になるずっと前、**2000年頃にはすでに制作されていました**。\n彼は生前のお母さん（ドンダ・ウェスト）にこの曲を何度も聴かせており、彼女もこの曲をとても気に入っていたと言われています。\n\n### 2. 2008年グラミー賞での伝説的パフォーマンス\nこの曲を語る上で欠かせないのが、2008年のグラミー賞でのパフォーマンスです。\n前年にドンダさんが亡くなった直後のステージで、カニエは歌詞の一部を**「Last night I saw you in my dreams / Now I can't wait to go to sleep（昨日の夜、夢でお母さんに会った。今は眠りにつくのが待ちきれないよ）」**と書き換えて歌いました。\n悲しみに打ちひしがれながらも歌い切った姿は、音楽史に残る感動的なシーンの一つとされています。\n\n### 3. 制作背景とスタイル\n*   **共同プロデューサー:** 映画音楽などで知られる**ジョン・ブライオン**が参加しています。彼の影響により、当時のヒップホップとしては珍しい、生楽器の響きを活かした温かみのあるサウンドに仕上がっています。\n*   **歌詞の内容:** 自分がわがままだった時期の反省や、苦労して自分を育ててくれた母親への感謝がストレートに綴られています。「7歳の時にママに誓ったんだ、いつか大金持ちになってその分を返すよ」といった具体的な思い出が語られています。\n\n### 4. ドンダ・ウェストへの影響\nドンダさんは生前、インタビューなどで「カニエが私のために書いてくれたこの曲が大好き」と公言していました。彼女の葬儀でもこの曲が流れ、カニエにとって、そしてファンにとっても「親子の絆」を象徴する特別な1曲となっています。\n\n他にも特定の時期のエピソードや、歌詞の具体的な意味などで気になる部分はありますか？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:15 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "6854ca33-2f05-4d8a-85d2-f03b66ad2fda",
+          "position": {
+            "x": 1845.33349609375,
+            "y": 3350
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+            "kind": "ai",
+            "content": "いいえ、実際にはKanyeのお母さん（ドンダ・ウェスト）が歌っているわけではありません。\n\nあの印象的なコーラス部分は、**Donny Hathaway（ダニー・ハサウェイ）**の「Today Is the Day」という楽曲をサンプリングしたものです。\n\n### サンプリングの詳細\n*   **曲名:** Today Is the Day\n*   **アーティスト:** Donny Hathaway\n*   **役割:** 曲のバックグラウンドで流れる高い声のボーカルはこのサンプリング音源です。\n\n曲全体は母親への深い愛情を歌ったトリビュート・ソングですが、レコーディングされた音源にドンダさん自身の歌声は含まれていません。\n\nKanye自身がメインのボーカルを執り、サンプリングを重ねることであの独特の温かい雰囲気を作り出しています。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:15 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "130dda02-d278-4d33-8c17-4b25931f4cb6",
+          "position": {
+            "x": 5297.33349609375,
+            "y": 3570
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "166a40c8-e0ca-4632-b7d8-bf458bddfe74",
+            "kind": "user",
+            "content": "もっといろんな豆知識教えて",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:17 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "2387881f-fcfc-4b0b-9ada-c7fc877db1ac",
+          "position": {
+            "x": 6101.33349609375,
+            "y": 3350
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "130dda02-d278-4d33-8c17-4b25931f4cb6",
+            "kind": "ai",
+            "content": "Kanye Westの「Hey Mama」について、さらに深掘りした豆知識をいくつか紹介します。\n\n### 「キッチンでの合唱」映像\nドキュメンタリー『jeen-yuhs: カニエ・ウェスト三部作』でも公開された有名な映像があります。まだ有名になる前のカニエが、自宅のキッチンでお母さんのドンダさんと一緒に「Hey Mama」をラップして楽しそうに笑い合う姿が記録されており、二人の極めて親密な関係性が象徴されています。\n\n### 「Hey Mama Day」のムーブメント\n2017年、ドンダさんの没後10年を迎えた際、ファンの間で「Hey Mama Day」という企画が立ち上がりました。これは、当時チャートを賑わせていた他のアーティストに対抗し、カニエへの連帯を示すために「Hey Mama」を24時間ひたすらストリーミング再生し続けようというファン主導のキャンペーンでした。\n\n### 楽曲の構成と「チップマンク・ソウル」\nこの曲は、初期カニエの代名詞である**「チップマンク・ソウル」**（ソウル・ミュージックのサンプリング音源のピッチを上げ、シマリスの声のように高くする手法）の完成形の一つと言われています。\n*   **サンプリングの工夫:** 前述のダニー・ハサウェイの声を高く加工してバックで鳴らすことで、ノスタルジックで温かい、子供時代の記憶を呼び起こすようなサウンドを作り出しています。\n\n### ライブでの「封印」に近い状態\n2007年にドンダさんが急逝して以降、カニエにとってこの曲を歌うことは精神的に非常に大きな負担となりました。2008年のグラミー賞以降、ライブのセットリストに入ることはあっても、感極まって最後まで歌えなくなったり、パフォーマンス中に涙を流したりすることが何度もありました。\n\n### 歌詞に登場する「3つの仕事」\n歌詞の中で「3つの仕事を掛け持ちして自分を育ててくれた」という一節がありますが、これはドンダさんがシングルマザーとして、シカゴ州立大学の教授を務めながらも、カニエの教育や生活のために懸命に働いていた実話に基づいています。\n\n他にも特定のフレーズや、当時のカニエのファッションとの関わりなど、さらに詳しく知りたい部分はありますか？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:17 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "5d8e95a2-3126-4f0e-abde-5082fb003300",
+          "position": {
+            "x": 7425.33349609375,
+            "y": 3570
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "2387881f-fcfc-4b0b-9ada-c7fc877db1ac",
+            "kind": "user",
+            "content": "I promise you im goin back to schoolって言ってるけど、大学のこと？でも本当に戻るわけじゃないよね？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:26 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e",
+          "position": {
+            "x": 8229.33349609375,
+            "y": 3350
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "5d8e95a2-3126-4f0e-abde-5082fb003300",
+            "kind": "ai",
+            "content": "その歌詞は、おっしゃる通り**大学（シカゴ州立大学）**のことを指しています。\n\nカニエは音楽の道に専念するために大学を中退しましたが、その決断は教育者（教授）であった母ドンダさんを当初ひどく落胆させました。このラインには、当時の彼なりの複雑な背景があります。\n\n### 歌詞の背景と「嘘」のニュアンス\n\n*   **母親への安心材料:**\n    ドンダさんは教育を非常に重視していたため、カニエが中退したことに大きなショックを受けていました。歌詞にある「学校に戻るよ」という約束は、彼女を安心させたい、あるいは喜ばせたいという**カニエの優しい「嘘」や「願い」**に近いニュアンスが含まれています。\n*   **アルバムタイトルとの対比:**\n    この曲が収録されている時期の彼のキャリアは、まさに**『The College Dropout（大学中退）』**というアルバムから始まっています。結局、彼は学校に戻るのではなく、音楽で大成功することで「学位以上の価値があるもの」を母親に証明する道を選びました。\n\n### 実際の結果\n実際に彼が「普通の学生」として大学に戻ることはありませんでした。しかし、ドンダさんの没後、2015年に**シカゴ美術館附属美術大学（SAIC）から名誉博士号**を授与されています。\n\n### 歌詞に込められた皮肉と愛\nこの曲全体を通して言えるのは、カニエは「教育」という形ではなく、**「成功してママに恩返しをする」**という別の形で7歳の時の約束を果たそうとしていたことです。\n\n「学校に戻る」という言葉は、彼にとっての「親孝行」の象徴的なフレーズとして使われていますが、ファンやドンダさんの間では、彼が音楽で世界を変えたことこそが、彼女にとっての誇りであったと理解されています。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:27 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "c6c99f85-8281-46e4-952c-77525aa6b7da",
+          "position": {
+            "x": 9553.33349609375,
+            "y": 3570
+          },
+          "style": {
+            "width": 460,
+            "height": 340
+          },
+          "data": {
+            "parentId": "e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e",
+            "kind": "user",
+            "content": "AIチャットのマークダウン形式を見たいから、いろんなマークダウンの手法を使った、適当な文章をつくって",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:44 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "53d2de73-7892-44f3-9ff7-0f3a056ee9c1",
+          "position": {
+            "x": 11406.37193193833,
+            "y": 3556.6133373346247
+          },
+          "style": {
+            "width": 540,
+            "height": 340
+          },
+          "data": {
+            "parentId": "b136c496-4896-4db4-9fd7-44717a6943db",
+            "kind": "user",
+            "content": "数式とかそういうのも頂戴。カニエ関係なくていいよ。\n全部のヘッドラインとかみたい",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:45 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "b136c496-4896-4db4-9fd7-44717a6943db",
+          "position": {
+            "x": 10357.33349609375,
+            "y": 3350
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "c6c99f85-8281-46e4-952c-77525aa6b7da",
+            "kind": "ai",
+            "content": "「Hey Mama」に関するこれまでのエピソードを、さまざまなマークダウン形式で整理してまとめました。\n\n### 楽曲基本データ\n以下の表は、楽曲の主な構成要素をまとめたものです。\n\n| 項目 | 内容 |\n| :--- | :--- |\n| **収録アルバム** | Late Registration (2005) |\n| **サンプリング音源** | Today Is the Day / Donny Hathaway |\n| **プロデューサー** | Kanye West, Jon Brion |\n| **主な制作時期** | 2000年頃 |\n\n### 重要なエピソード\n*   **制作のルーツ**\n    *   大学中退後の葛藤。\n    *   母ドンダ・ウェストへの感謝。\n*   **パフォーマンスの変化**\n    *   2008年のグラミー賞で歌詞を一部変更。\n    *   ~~大学に戻る約束~~ → **名誉博士号の授与**。\n\n### 2008年グラミー賞での一節\n悲しみを乗り越えて歌われた歌詞の変更部分は、ファンの心に深く刻まれています。\n\n> \"Last night I saw you in my dreams  \n> Now I can't wait to go to sleep\"\n\n### 制作スタイルの特徴\nカニエが確立した手法の一つに、`Chipmunk Soul`（チップマンク・ソウル）があります。これはサンプリングしたボーカルのピッチを上げ、高音にする手法です。\n\n```json\n{\n  \"style\": \"Chipmunk Soul\",\n  \"technique\": \"High-pitched vocal sampling\",\n  \"mood\": \"Nostalgic and Warm\"\n}\n```\n\n### 覚えておきたいポイント\n1.  **キッチンでの映像**: ドキュメンタリー『jeen-yuhs』に収録。\n2.  **教育への想い**: 大学中退はドンダさんを落胆させたが、最終的に音楽で成功。\n3.  **ライブでの封印**: 彼女の急逝後、カニエにとって歌うことが非常に困難な曲となった。\n\n---\nさらに詳しく知りたい特定の項目があれば、[こちらの公式サイト](https://www.kanyewest.com)（※リンク例）のように情報を探すこともできますが、何か気になる点はありますか？",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "12:45 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "124dccec-3c66-4eaa-9ae9-b29f3a2b1394",
+          "position": {
+            "x": -1060.6245528386412,
+            "y": 996.8708840738624
+          },
+          "style": {
+            "width": 440,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:30 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "abbed7d2-dd63-4f1c-a80c-492852f3342a",
+          "position": {
+            "x": 6171.859211126576,
+            "y": 4445.445019501587
+          },
+          "style": {
+            "width": 1156.0000610351562,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "画像生成をして\n\n全体の雰囲気\n\nクリーンで明るく、プロフェッショナルな印象。\n背景は純白（#FFFFFF）または非常に明るいオフホワイト（#FAFAFA〜#F8F9FA）で、軽やかで開放感がある。\n長時間使っても目が疲れにくく、昼間や明るい部屋で使う人に優しい「爽やかでクリア」な感じになります。\n\nメインの色使い（Tailwindベースで再現しやすいパレット）\n\n背景：白 / 非常に薄いグレー\nメインテキスト：ほぼ黒に近い濃いグレー（#111827 または #1F2937）\nアクセントカラー：Grokらしい鮮やかな青紫系（#6366F1 や #8B5CF6）を軽く使用。ノードの選択時や接続線、ボタンのホバーに使うと未来的で洗練される。\nサブテキスト / 薄い要素：中間グレー（#6B7280）\nカード / パネル背景：純白に薄い影（soft shadow）で立体感を出す\n\nMindMapアプリとしてGrok風にするとこうなるイメージ\n\nキャンバスエリア\n中央の大きなMindMap描画エリアは真っ白な背景。\nノードは白いカード風（または軽いベージュ寄りの白）で、細い影がついて少し浮き上がる。\n接続線は細めで、青紫のグラデーションや柔らかい色を使い、選択時は少し太く光るアニメーションを入れるとGrokらしい滑らかさが出る。\nサイドバー（左側）\nGrokの会話履歴のように、明るい白背景に薄い区切り線。\nマインドマップのリストやテンプレート、レイヤー一覧がスッキリ並ぶ。\nホバー時は背景がごく薄いグレー（#F3F4F6）に変わる程度の控えめなフィードバック。\nノードのデザイン\n通常ノード：白背景 + 濃いグレー文字 + 角が少し丸い（border-radius 8〜12px）\n選択中ノード：青紫の細いボーダー + 軽い内側グロー + 影が少し強くなる\n子ノードは親より少し小さめ・色を薄くして階層を視覚的に表現\n\nトップバー / ツールバー\n非常にシンプル。白背景に、アイコンとテキストが控えめ。\n保存ボタンやエクスポート、AIアシストボタンなどは青紫アクセントで目立たせる。\nGrokのように余計な装飾を削ぎ落としたミニマリストデザイン。\nアニメーションの感じ\nGrokのLight Modeは派手すぎないので、以下の動きを控えめかつ滑らかに：\nノード追加時のフェードイン＋軽いスケールアップ\n接続線が描かれるときのストロークアニメーション\nズームやパン時のスムーズな動き\nボタンホバーで軽く色が変わる程度\n\n\n全体の印象まとめ（言葉で言うと）\n「明るいオフィスで使う、洗練されたプロダクトデザインツール」のような雰囲気。\n余白をたっぷり取り、文字は読みやすく、色数は少なく、アクセントにだけ青紫を使って未来的だけど落ち着いた印象。\nNotionのLight Modeをもう少しモダンに、Figmaのクリーンさを少し足した感じに近いです。\nMindMapアプリとしてGrokのLight Modeを参考にすると、\n「集中して思考を整理したくなる、明るくてクリアな作業空間」",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3.1-flash-image-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:47 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "5ce44f90-ac51-4f00-907e-f226d52d3300",
+          "position": {
+            "x": 7383.859272161732,
+            "y": 4445.445019501587
+          },
+          "style": {
+            "width": 1054.333251953125,
+            "height": 946.6666259765625
+          },
+          "data": {
+            "parentId": "abbed7d2-dd63-4f1c-a80c-492852f3342a",
+            "kind": "image",
+            "content": "画像生成をして\n\n全体の雰囲気\n\nクリーンで明るく、プロフェッショナルな印象。\n背景は純白（#FFFFFF）または非常に明るいオフホワイト（#FAFAFA〜#F8F9FA）で、軽やかで開放感がある。\n長時間使っても目が疲れにくく、昼間や明るい部屋で使う人に優しい「爽やかでクリア」な感じになります。\n\nメインの色使い（Tailwindベースで再現しやすいパレット）\n\n背景：白 / 非常に薄いグレー\nメインテキスト：ほぼ黒に近い濃いグレー（#111827 または #1F2937）\nアクセントカラー：Grokらしい鮮やかな青紫系（#6366F1 や #8B5CF6）を軽く使用。ノードの選択時や接続線、ボタンのホバーに使うと未来的で洗練される。\nサブテキスト / 薄い要素：中間グレー（#6B7280）\nカード / パネル背景：純白に薄い影（soft shadow）で立体感を出す\n\nMindMapアプリとしてGrok風にするとこうなるイメージ\n\nキャンバスエリア\n中央の大きなMindMap描画エリアは真っ白な背景。\nノードは白いカード風（または軽いベージュ寄りの白）で、細い影がついて少し浮き上がる。\n接続線は細めで、青紫のグラデーションや柔らかい色を使い、選択時は少し太く光るアニメーションを入れるとGrokらしい滑らかさが出る。\nサイドバー（左側）\nGrokの会話履歴のように、明るい白背景に薄い区切り線。\nマインドマップのリストやテンプレート、レイヤー一覧がスッキリ並ぶ。\nホバー時は背景がごく薄いグレー（#F3F4F6）に変わる程度の控えめなフィードバック。\nノードのデザイン\n通常ノード：白背景 + 濃いグレー文字 + 角が少し丸い（border-radius 8〜12px）\n選択中ノード：青紫の細いボーダー + 軽い内側グロー + 影が少し強くなる\n子ノードは親より少し小さめ・色を薄くして階層を視覚的に表現\n\nトップバー / ツールバー\n非常にシンプル。白背景に、アイコンとテキストが控えめ。\n保存ボタンやエクスポート、AIアシストボタンなどは青紫アクセントで目立たせる。\nGrokのように余計な装飾を削ぎ落としたミニマリストデザイン。\nアニメーションの感じ\nGrokのLight Modeは派手すぎないので、以下の動きを控えめかつ滑らかに：\nノード追加時のフェードイン＋軽いスケールアップ\n接続線が描かれるときのストロークアニメーション\nズームやパン時のスムーズな動き\nボタンホバーで軽く色が変わる程度\n\n\n全体の印象まとめ（言葉で言うと）\n「明るいオフィスで使う、洗練されたプロダクトデザインツール」のような雰囲気。\n余白をたっぷり取り、文字は読みやすく、色数は少なく、アクセントにだけ青紫を使って未来的だけど落ち着いた印象。\nNotionのLight Modeをもう少しモダンに、Figmaのクリーンさを少し足した感じに近いです。\nMindMapアプリとしてGrokのLight Modeを参考にすると、\n「集中して思考を整理したくなる、明るくてクリアな作業空間」",
+            "attachments": [
+              {
+                "id": "87d64f6d-0f08-4f44-92e0-e333dadd5690",
+                "kind": "image",
+                "name": "generated-1775206213933-1.jpg",
+                "mimeType": "image/jpeg",
+                "sizeBytes": 2314966,
+                "url": "/api/attachments/object?path=87d64f6d-0f08-4f44-92e0-e333dadd5690%2Fgenerated-1775206213933-1.jpg",
+                "storagePath": "87d64f6d-0f08-4f44-92e0-e333dadd5690/generated-1775206213933-1.jpg",
+                "createdAt": "2026-04-03T08:50:16.014Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "04:49 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 2957
+          }
+        },
+        {
+          "id": "8fdf50d1-c7ac-4821-8db4-24091d9ed028",
+          "position": {
+            "x": 13169.832253277717,
+            "y": 3476.4581990351085
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "55fbd91d-6cf1-41b7-97de-084cf4d396db",
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "05:49 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "6bc8f2f2-25b0-4e74-af0a-cdf2c21d491e",
+          "position": {
+            "x": 897.0862619038289,
+            "y": 4272.222225261311
+          },
+          "style": {
+            "width": 540,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "05:52 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "ed0511f5-bf89-43af-836d-33d3ee2dbea2",
+          "position": {
+            "x": 9434.28718705608,
+            "y": 4852.137881048363
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "こんにちは\n",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "08:42 PM",
+            "isRoot": true,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "820d92a8-c586-4761-b3e7-8d7c9427cdc6",
+          "position": {
+            "x": 10066.28718705608,
+            "y": 4852.137881048363
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "ed0511f5-bf89-43af-836d-33d3ee2dbea2",
+            "kind": "ai",
+            "content": "生成に失敗しました。\n\nUnexpected non-whitespace character after JSON at position 395 (line 2 column 1)",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "error",
+            "createdAt": "08:42 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "b4fb43d5-512c-4e7f-8ebe-ad06f4097ecf",
+          "position": {
+            "x": -3454.527616382915,
+            "y": 1852.947198920821
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "面白い話教えて",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "08:52 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "d4d8350a-c816-4f50-8e0a-2617ad75dbd9",
+          "position": {
+            "x": -2841.2264844788237,
+            "y": 1867.2668949188082
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "b4fb43d5-512c-4e7f-8ebe-ad06f4097ecf",
+            "kind": "ai",
+            "content": "ご提示いただいた会話文脈の中には、具体的なエピソードや「面白い話」の素材となる情報が含まれていません。\n\nどのようなジャンルの話（日常の失敗談、雑学、特定のトピックなど）をご希望か、あるいは参照すべき具体的な情報があれば教えていただけますか。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "08:52 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 1321
+          }
+        },
+        {
+          "id": "7cce8f6d-bc6a-4999-8069-541e97be19f7",
+          "position": {
+            "x": -1762.9731307689187,
+            "y": 1873.0097632568181
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "d4d8350a-c816-4f50-8e0a-2617ad75dbd9",
+            "kind": "user",
+            "content": "海外の面白い話。長いやつ",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "08:52 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "c0d01ba0-02f4-4672-8d38-015f40be9552",
+          "position": {
+            "x": -1113.7739413181366,
+            "y": 1886.9178569859494
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "7cce8f6d-bc6a-4999-8069-541e97be19f7",
+            "kind": "ai",
+            "content": "ご指定いただいた「海外の面白い話（長編）」についてですが、提供された会話文脈（ノード1から3まで）の中には、具体的なエピソードの内容や素材となる情報が一切含まれていません。\n\n「提示された会話文脈のみを使用して回答する」という制約に基づくと、文脈内に存在しない物語を推測や外部知識で作成することはできません。\n\n### 不足している情報\n*   **話の具体的な内容**: どのようなエピソードを指しているのか、その詳細。\n*   **参照元**: 参考にすべきニュース、体験談、文献などのテキスト。\n\nもし参照すべき具体的なエピソードや資料が他にある場合は、そちらを文脈に含めて提示していただければ、それに基づいた回答が可能です。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "status": "idle",
+            "createdAt": "08:52 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 2022
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "d211e769-1dda-4fc7-8372-e850bead7eb2->ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "source": "d211e769-1dda-4fc7-8372-e850bead7eb2",
+          "target": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "2824e805-b658-4a88-bcc0-1bd78737696b->e54ee9eb-7049-4d0c-9176-a5686eb1641d",
+          "source": "2824e805-b658-4a88-bcc0-1bd78737696b",
+          "target": "e54ee9eb-7049-4d0c-9176-a5686eb1641d",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "2186c2c2-4804-4b4f-9def-698d20587540->f56729d2-8bf5-40ce-bf1b-40fd68924295",
+          "source": "2186c2c2-4804-4b4f-9def-698d20587540",
+          "target": "f56729d2-8bf5-40ce-bf1b-40fd68924295",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "efab4b05-905f-4a58-873f-b1f762a58526->519e07e0-fbee-4e83-99d1-5ff2e852dda9",
+          "source": "efab4b05-905f-4a58-873f-b1f762a58526",
+          "target": "519e07e0-fbee-4e83-99d1-5ff2e852dda9",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31->68c5bc72-c8e6-4fe6-8252-29d6f6bee14c",
+          "source": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "target": "68c5bc72-c8e6-4fe6-8252-29d6f6bee14c",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "12635f88-527d-46b0-9a76-503613fbc9b9->166a40c8-e0ca-4632-b7d8-bf458bddfe74",
+          "source": "12635f88-527d-46b0-9a76-503613fbc9b9",
+          "target": "166a40c8-e0ca-4632-b7d8-bf458bddfe74",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "130dda02-d278-4d33-8c17-4b25931f4cb6->2387881f-fcfc-4b0b-9ada-c7fc877db1ac",
+          "source": "130dda02-d278-4d33-8c17-4b25931f4cb6",
+          "target": "2387881f-fcfc-4b0b-9ada-c7fc877db1ac",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "53d2de73-7892-44f3-9ff7-0f3a056ee9c1->55fbd91d-6cf1-41b7-97de-084cf4d396db",
+          "source": "53d2de73-7892-44f3-9ff7-0f3a056ee9c1",
+          "target": "55fbd91d-6cf1-41b7-97de-084cf4d396db",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "c6c99f85-8281-46e4-952c-77525aa6b7da->b136c496-4896-4db4-9fd7-44717a6943db",
+          "source": "c6c99f85-8281-46e4-952c-77525aa6b7da",
+          "target": "b136c496-4896-4db4-9fd7-44717a6943db",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "f0f1b11a-42ba-4421-a7cb-994a3df367c9->ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "source": "f0f1b11a-42ba-4421-a7cb-994a3df367c9",
+          "target": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "e25b72d1-dfc4-4987-8f56-b6c2814609f1->e028bf61-c5d0-43ad-addc-edf7dc20d959",
+          "source": "e25b72d1-dfc4-4987-8f56-b6c2814609f1",
+          "target": "e028bf61-c5d0-43ad-addc-edf7dc20d959",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "e028bf61-c5d0-43ad-addc-edf7dc20d959->d917d38f-df5d-435f-9aee-5c746529e6da",
+          "source": "e028bf61-c5d0-43ad-addc-edf7dc20d959",
+          "target": "d917d38f-df5d-435f-9aee-5c746529e6da",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "d917d38f-df5d-435f-9aee-5c746529e6da->2186c2c2-4804-4b4f-9def-698d20587540",
+          "source": "d917d38f-df5d-435f-9aee-5c746529e6da",
+          "target": "2186c2c2-4804-4b4f-9def-698d20587540",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "2186c2c2-4804-4b4f-9def-698d20587540->ad11a8c0-2a01-4a43-a3af-d9422895548b",
+          "source": "2186c2c2-4804-4b4f-9def-698d20587540",
+          "target": "ad11a8c0-2a01-4a43-a3af-d9422895548b",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ad11a8c0-2a01-4a43-a3af-d9422895548b->efab4b05-905f-4a58-873f-b1f762a58526",
+          "source": "ad11a8c0-2a01-4a43-a3af-d9422895548b",
+          "target": "efab4b05-905f-4a58-873f-b1f762a58526",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "519e07e0-fbee-4e83-99d1-5ff2e852dda9->2824e805-b658-4a88-bcc0-1bd78737696b",
+          "source": "519e07e0-fbee-4e83-99d1-5ff2e852dda9",
+          "target": "2824e805-b658-4a88-bcc0-1bd78737696b",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "2387881f-fcfc-4b0b-9ada-c7fc877db1ac->5d8e95a2-3126-4f0e-abde-5082fb003300",
+          "source": "2387881f-fcfc-4b0b-9ada-c7fc877db1ac",
+          "target": "5d8e95a2-3126-4f0e-abde-5082fb003300",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "94e2770f-9eda-4e5a-89fd-fe51f8b51677->70e380d9-e907-49a0-a882-262b6a887af3",
+          "source": "94e2770f-9eda-4e5a-89fd-fe51f8b51677",
+          "target": "70e380d9-e907-49a0-a882-262b6a887af3",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e->c6c99f85-8281-46e4-952c-77525aa6b7da",
+          "source": "e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e",
+          "target": "c6c99f85-8281-46e4-952c-77525aa6b7da",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "a8f0fe60-7a3b-4bf9-a6c3-72812129a4f8->9d02dbed-2850-400d-82ae-46c278ec262e",
+          "source": "a8f0fe60-7a3b-4bf9-a6c3-72812129a4f8",
+          "target": "9d02dbed-2850-400d-82ae-46c278ec262e",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "71585c45-48da-4fc1-98b8-52ca41c765ec->ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "source": "71585c45-48da-4fc1-98b8-52ca41c765ec",
+          "target": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31->6854ca33-2f05-4d8a-85d2-f03b66ad2fda",
+          "source": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "target": "6854ca33-2f05-4d8a-85d2-f03b66ad2fda",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "b136c496-4896-4db4-9fd7-44717a6943db->53d2de73-7892-44f3-9ff7-0f3a056ee9c1",
+          "source": "b136c496-4896-4db4-9fd7-44717a6943db",
+          "target": "53d2de73-7892-44f3-9ff7-0f3a056ee9c1",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "6854ca33-2f05-4d8a-85d2-f03b66ad2fda->12635f88-527d-46b0-9a76-503613fbc9b9",
+          "source": "6854ca33-2f05-4d8a-85d2-f03b66ad2fda",
+          "target": "12635f88-527d-46b0-9a76-503613fbc9b9",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "166a40c8-e0ca-4632-b7d8-bf458bddfe74->130dda02-d278-4d33-8c17-4b25931f4cb6",
+          "source": "166a40c8-e0ca-4632-b7d8-bf458bddfe74",
+          "target": "130dda02-d278-4d33-8c17-4b25931f4cb6",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31->13d31a6c-32c2-4998-8011-3990c593b4d1",
+          "source": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "target": "13d31a6c-32c2-4998-8011-3990c593b4d1",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "97d0866a-d996-4790-a5f5-61215d95f51c->3b78de82-06ea-403b-83b4-1abce8b1573e",
+          "source": "97d0866a-d996-4790-a5f5-61215d95f51c",
+          "target": "3b78de82-06ea-403b-83b4-1abce8b1573e",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "5d8e95a2-3126-4f0e-abde-5082fb003300->e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e",
+          "source": "5d8e95a2-3126-4f0e-abde-5082fb003300",
+          "target": "e287b48d-a1d5-4fe4-b49b-71ea7fa4a74e",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "696d9811-ba3c-43da-b51f-4002f63aa927->ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "source": "696d9811-ba3c-43da-b51f-4002f63aa927",
+          "target": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "e54ee9eb-7049-4d0c-9176-a5686eb1641d->a542016a-0590-45ed-a9e9-0e75004922a8",
+          "source": "e54ee9eb-7049-4d0c-9176-a5686eb1641d",
+          "target": "a542016a-0590-45ed-a9e9-0e75004922a8",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "24b91ae4-270a-4a70-baea-ded04cf6da57->ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "source": "24b91ae4-270a-4a70-baea-ded04cf6da57",
+          "target": "ddd53b1c-f1f1-4187-9908-c3b0e99b1e31",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "abbed7d2-dd63-4f1c-a80c-492852f3342a->5ce44f90-ac51-4f00-907e-f226d52d3300",
+          "source": "abbed7d2-dd63-4f1c-a80c-492852f3342a",
+          "target": "5ce44f90-ac51-4f00-907e-f226d52d3300",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "55fbd91d-6cf1-41b7-97de-084cf4d396db->8fdf50d1-c7ac-4821-8db4-24091d9ed028",
+          "source": "55fbd91d-6cf1-41b7-97de-084cf4d396db",
+          "target": "8fdf50d1-c7ac-4821-8db4-24091d9ed028",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ed0511f5-bf89-43af-836d-33d3ee2dbea2->820d92a8-c586-4761-b3e7-8d7c9427cdc6",
+          "source": "ed0511f5-bf89-43af-836d-33d3ee2dbea2",
+          "target": "820d92a8-c586-4761-b3e7-8d7c9427cdc6",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "b4fb43d5-512c-4e7f-8ebe-ad06f4097ecf->d4d8350a-c816-4f50-8e0a-2617ad75dbd9",
+          "source": "b4fb43d5-512c-4e7f-8ebe-ad06f4097ecf",
+          "target": "d4d8350a-c816-4f50-8e0a-2617ad75dbd9",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "d4d8350a-c816-4f50-8e0a-2617ad75dbd9->7cce8f6d-bc6a-4999-8069-541e97be19f7",
+          "source": "d4d8350a-c816-4f50-8e0a-2617ad75dbd9",
+          "target": "7cce8f6d-bc6a-4999-8069-541e97be19f7",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "7cce8f6d-bc6a-4999-8069-541e97be19f7->c0d01ba0-02f4-4672-8d38-015f40be9552",
+          "source": "7cce8f6d-bc6a-4999-8069-541e97be19f7",
+          "target": "c0d01ba0-02f4-4672-8d38-015f40be9552",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        }
+      ],
+      "updatedAt": "2026-04-04T04:18:39.250Z"
+    },
+    "730ad4aa-2c1a-4fa0-be74-33904a849b7f": {
+      "nodes": [
+        {
+          "id": "736b2c7d-be4c-43fd-a431-9561a8e4fe16",
+          "position": {
+            "x": 1218.8192421335286,
+            "y": 726.5129715709477
+          },
+          "style": {
+            "width": 1089.4949325812163,
+            "height": 367.25322095152524
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "03:18 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "fa1668a2-b809-4d75-b548-acc67e5ee4a9",
+          "position": {
+            "x": 177.65476644318693,
+            "y": -147.54624892331879
+          },
+          "style": {
+            "width": 400,
+            "height": 220
+          },
+          "data": {
+            "parentId": null,
+            "kind": "file",
+            "content": "",
+            "attachments": [
+              {
+                "id": "81d1083b-6560-434c-a10c-10aab6ead98b",
+                "kind": "pdf",
+                "name": "[CAFPROJ] Paper (1).pdf",
+                "mimeType": "application/pdf",
+                "sizeBytes": 321001,
+                "url": "/api/attachments/object?path=81d1083b-6560-434c-a10c-10aab6ead98b%2FCAFPROJ-Paper-1.pdf",
+                "storagePath": "81d1083b-6560-434c-a10c-10aab6ead98b/CAFPROJ-Paper-1.pdf",
+                "createdAt": "2026-04-04T07:36:30.799Z"
+              }
+            ],
+            "status": "idle",
+            "createdAt": "03:36 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "29770530-5586-4afc-8a2f-ed27c2fd5615",
+          "position": {
+            "x": 609.6801364061632,
+            "y": -150.07229674812172
+          },
+          "style": {
+            "width": 860.4210500575718,
+            "height": 340
+          },
+          "data": {
+            "parentId": "fa1668a2-b809-4d75-b548-acc67e5ee4a9",
+            "kind": "user",
+            "content": "内容を把握して",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:36 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "792b16b9-6ec7-466f-a79c-389fa32150aa",
+          "position": {
+            "x": 1500.9810790536874,
+            "y": -149.02870421216141
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "29770530-5586-4afc-8a2f-ed27c2fd5615",
+            "kind": "ai",
+            "content": "ご提示いただいた資料は、**「ビジネスプロセス分析とIT導入による改善提案」**に関するレポートの草案（テンプレート）です。\n\n内容を整理すると、大きく分けて「現状（As-Is）の把握」と「改善案（To-Be）の作成指示」の2つのフェーズで構成されています。\n\n### 1. 現状の業務プロセス（As-Is）\n資料内では、現在の「品質管理（QC）」と「出荷（Dispatch）」のプロセスが説明されています。\n\n*   **品質チェック工程 (7.1.5 & 7.1.6):**\n    *   加工チームから届いた製品の寸法、溶接品質、仕上げを検査官が確認しています。\n    *   **課題点:** 検査結果は「手書きのフォーム」や「スプレッドシート（Excel等）」に記入されており、アナログな管理が行われています。\n*   **出荷工程 (7.1.6):**\n    *   QC承認後、梱包や数量確認を行い、配送準備をします。\n    *   **課題点:** 配送書類も「手書き」または「スプレッドシート」で作成されており、最終確認も監督者が目視で行っています。\n\n### 2. 今後の改善提案に向けた指示（GUIDE BOX）\n黄色の枠内（GUIDE BOX）には、これから作成すべき内容の指示が書かれています。\n\n*   **改善案の概要:** ITを活用して、現在の問題（アナログ管理や非効率性）をどう解決するかを記述する。\n*   **KPI（重要業績評価指標）の設定:** 成功を測るための基準（例：処理時間の短縮、ミス率の低下など）を設ける。\n*   **将来のプロセス（To-Be）:** 改善後のフローをBPMNやUMLなどの図で示す。\n*   **インプット・アウトプット表:** 各工程で何が入力され、誰が担当し、何が出力されるかを明確にする。\n*   **ネットワーク構成図:** システム導入に伴うネットワーク構成をCiscoのアイコン等を用いて図示する。\n\n### まとめ\nこの資料は、**「現在は手書きやExcelで管理していて非効率な『品質管理』と『出荷』のプロセスを、ITシステムを導入することでどう効率化するか」**という提案書を完成させるための土台となっています。\n\nもし、このテンプレートに沿って具体的な改善案（To-Beプロセス）のアイデア出しや、図の作成のアドバイスが必要であれば、お手伝いできます。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:36 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 3497
+          }
+        },
+        {
+          "id": "188402d9-aec6-4f46-8e3f-aca68b69138c",
+          "position": {
+            "x": 2610.699751815179,
+            "y": -133.06184415945762
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "792b16b9-6ec7-466f-a79c-389fa32150aa",
+            "kind": "user",
+            "content": "このプロジェクトをやるにあたって、Prodioを使って、実際にデータを入れていくから、ダミーでありそうなデータを考えてちょうだい。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:40 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "13d5f4e0-35c1-4798-b665-bc15704b5424",
+          "position": {
+            "x": 3238.7843518126792,
+            "y": -140.85422017648548
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "188402d9-aec6-4f46-8e3f-aca68b69138c",
+            "kind": "ai",
+            "content": "Prodioは、生産管理・工程管理をデジタル化するツールですので、手書きやExcelで管理していた「品質チェック」や「出荷」の項目を、システム上の**「チェックリスト」や「工程ステータス」**に落とし込む必要があります。\n\n金属加工・溶接・塗装を想定した、リアリティのあるダミーデータ案を作成しました。これをProdioの設定やデモ入力に使ってみてください。\n\n---\n\n### 1. 製品マスター（加工アイテム）例\nまずは、どのような製品を扱っているかの設定です。\n\n| 製品ID | 製品名 | 主要工程 |\n| :--- | :--- | :--- |\n| **P-101** | 産業用スチールフレーム (大型) | 切断 → 溶接 → **QC検査** → **出荷** |\n| **P-205** | アルミニウム取付ブラケット | プレス → **QC検査** → **出荷** |\n| **P-309** | カスタム支柱（粉体塗装済） | 溶接 → 塗装 → **QC検査** → **出荷** |\n\n---\n\n### 2. 品質チェック (QC) 用のダミーデータ\nProdio内のチェックリスト機能（または備考欄・品質記録）に入力するためのデータです。\n\n#### 検査項目（チェックリスト案）\n*   [ ] 寸法確認（公差 ±0.5mm以内か）\n*   [ ] 溶接箇所のビード形状・ひび割れなし\n*   [ ] 表面のバリ取り・傷の有無\n*   [ ] 塗装ムラ・剥がれなし（P-309のみ）\n\n#### 入力記録の例\n| 注文番号 | 製品ID | 検査員 | 判定 | 具体的な数値・コメント |\n| :--- | :--- | :--- | :--- | :--- |\n| **ORD-2024-001** | P-101 | 佐藤（QC担当） | **合格** | 全寸法規定通り。溶接も良好。 |\n| **ORD-2024-002** | P-101 | 佐藤（QC担当） | **不合格 (要修正)** | 接合部Bに2mmの隙間あり。溶接チームへ戻し。 |\n| **ORD-2024-003** | P-205 | 鈴木（QC担当） | **合格** | 外観検査クリア。50個全数OK。 |\n\n---\n\n### 3. 出荷 (Dispatch) 用のダミーデータ\n手書き伝票の代わりに、Prodioの「出荷完了」ステータスを更新する際に使うデータです。\n\n| 注文番号 | 配送先 | 梱包内容 | 配送方法 | ステータス |\n| :--- | :--- | :--- | :--- | :--- |\n| **ORD-2024-001** | ○○建設(株) | 木枠梱包 1箱 | 自社トラック（田中） | **出荷完了** |\n| **ORD-2024-003** | (有)△△プレス | ダンボール 2箱 | 佐川急便 (追跡No: 1234...) | **準備中** |\n\n---\n\n### 4. 改善効果（KPI）を出すための比較ポイント\nProdio導入後の「To-Be」プロセスをレポートに書く際、以下のダミー数値を「改善前の課題」として使うと説得力が増します。\n\n*   **現状（アナログ）の課題データ（例）:**\n    *   手書き伝票の誤字による誤配送：月間 3件\n    *   QC結果がスプレッドシートに反映されるまでのタイムラグ：平均 4時間\n    *   「今どこに製品があるか」の確認のための電話：1日 15回\n*   **改善後（Prodio導入）の目標値:**\n    *   データ入力のリアルタイム化：**0分**（現場でスマホ入力）\n    *   進捗確認の電話：**0回**（画面を見ればわかる）\n    *   ペーパーレス化：月間 200枚の伝票削減\n\n### Prodioでの設定アドバイス\nProdioには**「品質検査（Quality Checks）」**の機能があります。\n1.  各工程の最後に「検査ステップ」を追加する。\n2.  「合格・不合格」のボタンを作っておく。\n3.  不合格の場合の理由（例：溶接不良、寸法違い、表面キズ）を選択式にしておくと、後で「どの不良が多いか」をグラフ化できて、レポートの質がグッと上がります。\n\nこのデータを使って設定を進めてみてください。さらに具体的な入力画面の項目などが必要であれば、いつでもどうぞ！",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:41 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 4367
+          }
+        },
+        {
+          "id": "505b4c9c-cbd4-4f29-a5ef-9d3569927e1e",
+          "position": {
+            "x": 4436.111037249085,
+            "y": -107.94159335326371
+          },
+          "style": {
+            "width": 764.0988300097952,
+            "height": 320
+          },
+          "data": {
+            "parentId": "13d5f4e0-35c1-4798-b665-bc15704b5424",
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:41 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "fa1668a2-b809-4d75-b548-acc67e5ee4a9->29770530-5586-4afc-8a2f-ed27c2fd5615",
+          "source": "fa1668a2-b809-4d75-b548-acc67e5ee4a9",
+          "target": "29770530-5586-4afc-8a2f-ed27c2fd5615",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "29770530-5586-4afc-8a2f-ed27c2fd5615->792b16b9-6ec7-466f-a79c-389fa32150aa",
+          "source": "29770530-5586-4afc-8a2f-ed27c2fd5615",
+          "target": "792b16b9-6ec7-466f-a79c-389fa32150aa",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "792b16b9-6ec7-466f-a79c-389fa32150aa->188402d9-aec6-4f46-8e3f-aca68b69138c",
+          "source": "792b16b9-6ec7-466f-a79c-389fa32150aa",
+          "target": "188402d9-aec6-4f46-8e3f-aca68b69138c",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "188402d9-aec6-4f46-8e3f-aca68b69138c->13d5f4e0-35c1-4798-b665-bc15704b5424",
+          "source": "188402d9-aec6-4f46-8e3f-aca68b69138c",
+          "target": "13d5f4e0-35c1-4798-b665-bc15704b5424",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "13d5f4e0-35c1-4798-b665-bc15704b5424->505b4c9c-cbd4-4f29-a5ef-9d3569927e1e",
+          "source": "13d5f4e0-35c1-4798-b665-bc15704b5424",
+          "target": "505b4c9c-cbd4-4f29-a5ef-9d3569927e1e",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        }
+      ],
+      "updatedAt": "2026-04-04T07:42:03.280Z"
+    },
+    "canvasai-mvp": {
+      "nodes": [
+        {
+          "id": "285cd655-110b-4389-8961-5d026a6390ff",
+          "position": {
+            "x": -202.3412035582242,
+            "y": 324.5217741640941
+          },
+          "style": {
+            "width": 952.0526233269833,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "PDFに基づいてコピペできる埋める適当な内容をちょうだい\n情報がなかったら、適当に入れても言い",
+            "attachments": [
+              {
+                "id": "b7d6a8c0-dd3a-4593-b927-de0d277e0b62",
+                "kind": "image",
+                "name": "image.png",
+                "mimeType": "image/png",
+                "sizeBytes": 51604,
+                "url": "/api/attachments/object?path=b7d6a8c0-dd3a-4593-b927-de0d277e0b62%2Fimage.png",
+                "storagePath": "b7d6a8c0-dd3a-4593-b927-de0d277e0b62/image.png",
+                "createdAt": "2026-04-04T08:02:40.394Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "03:45 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "8a144f03-5bf7-453b-9c73-5cf9a1e62c88",
+          "position": {
+            "x": -703.0967162941988,
+            "y": 323.65225339680836
+          },
+          "style": {
+            "width": 420,
+            "height": 236
+          },
+          "data": {
+            "parentId": null,
+            "kind": "file",
+            "content": "",
+            "attachments": [
+              {
+                "id": "b9e70566-26fe-49e2-a79d-7b0ea8eef968",
+                "kind": "pdf",
+                "name": "[CAFPROJ] Paper (4).pdf",
+                "mimeType": "application/pdf",
+                "sizeBytes": 7487236,
+                "url": "/api/attachments/object?path=b9e70566-26fe-49e2-a79d-7b0ea8eef968%2FCAFPROJ-Paper-4.pdf",
+                "storagePath": "b9e70566-26fe-49e2-a79d-7b0ea8eef968/CAFPROJ-Paper-4.pdf",
+                "createdAt": "2026-04-04T07:52:08.381Z"
+              }
+            ],
+            "status": "idle",
+            "createdAt": "03:52 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+          "position": {
+            "x": 819.8273271667787,
+            "y": 317.50303153534446
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "285cd655-110b-4389-8961-5d026a6390ff",
+            "kind": "ai",
+            "content": "PDFの内容（Filipinas Asia Shutter Door Corporation / FILSHUTTERの資料）に基づき、画像（Prodioの製品登録画面）に入力するのに適した内容を作成しました。\n\nそのままコピペして利用いただけます。\n\n---\n\n### 製品登録用データ\n\n**1. Product name（製品名）**\n*   **内容:** `Standard Steel Roll-Up Door (Fire-Rated)`\n*   *根拠: 32ページに主力製品として記載。*\n\n**2. Product group（製品グループ）**\n*   **内容:** `Roll-Up Doors and Shutter Doors`\n*   *根拠: 32ページの製品カテゴリ。*\n\n**3. Client（クライアント）**\n*   **内容:** `SM Inc.` または `Filinvest Land Inc.`\n*   *根拠: 34ページの主要顧客リスト。*\n\n**4. EAN（JAN/EANコード）**\n*   **内容:** `4800000000018`\n*   *適当な値です（フィリピンの国番号480を使用）。*\n\n**5. Additional names（追加名称/型番）**\n*   **内容:** `RUD-GEN2-GALVALUM`\n*   *根拠: 32ページに記載の材料（Galvalum）に基づく。*\n\n**6. Size（サイズ）**\n*   **内容:** `2400mm x 3000mm`\n*   *一般的なシャッターのサイズです。*\n\n**7. Packaging method（梱包方法）**\n*   **内容:** `Heavy-duty plastic wrap with wooden crate edge protection`\n*   *根拠: 54ページのDispatch Process（梱包・輸送）の記述から推測。*\n\n**8. Additional notes to product (not visible for the shop floor)（社内用メモ - 現場には非表示）**\n*   **内容:** `Priority client for \"Build Better More\" government pipeline project. Maintain 35% profit margin.`\n*   *根拠: 58ページの政治的要因（Build Better More）および財務分析に基づく。*\n\n**9. Additional notes to product (visible for the shop floor)（現場用メモ - 現場に表示）**\n*   **内容:** `Ensure fire-testing standards (UL 1998/TUV SUD) are met. Check slat alignment before welding.`\n*   *根拠: 32ページの受賞歴（火災試験合格）および50ページのFabrication Process（組立・溶接）の記述に基づく。*\n\n**10. Price / Currency / VAT rate（価格設定）**\n*   **Price:** `45000`\n*   **Currency:** `PHP`（フィリピン・ペソを選択してください）\n*   **VAT rate:** `12%`（フィリピンの標準付加価値税）\n*   *根拠: 106ページ以降の財務分析（PHP表記）およびフィリピンの税制。*\n\n---\n\n### 入力時のアドバイス\n*   **Technology (Optional) タブ:** ここには、50ページにある「Cutting（切断）」「Drilling（穴あけ）」「Bending（曲げ）」「Assembly（組立）」「Welding（溶接）」といった工程を登録すると、よりPDFの内容に忠実なMES（製造実行システム）の設定になります。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:02 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 102049
+          }
+        },
+        {
+          "id": "6e5de507-3a2c-4821-a08e-314e9db71759",
+          "position": {
+            "x": 1877.7395117655856,
+            "y": 314.0841536968648
+          },
+          "style": {
+            "width": 794.4260038002385,
+            "height": 340
+          },
+          "data": {
+            "parentId": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+            "kind": "user",
+            "content": "このプロダクトのざっくりした、ShopDrawingみたいなのを生成して。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:06 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "6df1be7b-c956-4491-8136-b954a9c63050",
+          "position": {
+            "x": 1938.6382828531991,
+            "y": 1734.093154321992
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "8a144f03-5bf7-453b-9c73-5cf9a1e62c88",
+            "kind": "user",
+            "content": "ここに埋めれるTechnologyのところを考えて。\nWeldingとかそういうのね\n",
+            "attachments": [
+              {
+                "id": "293f92e4-de53-4eee-a29c-23bf4d8aa194",
+                "kind": "image",
+                "name": "image.png",
+                "mimeType": "image/png",
+                "sizeBytes": 118692,
+                "url": "/api/attachments/object?path=293f92e4-de53-4eee-a29c-23bf4d8aa194%2Fimage.png",
+                "storagePath": "293f92e4-de53-4eee-a29c-23bf4d8aa194/image.png",
+                "createdAt": "2026-04-04T08:11:03.615Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:11 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "e7b3e79c-22cd-4416-9c33-e8e943d6b9da",
+          "position": {
+            "x": 2723.5957749455147,
+            "y": 1732.689405796242
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "6df1be7b-c956-4491-8136-b954a9c63050",
+            "kind": "ai",
+            "content": "PDFの50ページ（Fabrication Process）および152ページ（Process Matrix）の記述に基づき、Prodioの「Technology（製造工程）」タブに入力すべき項目を整理しました。\n\nこれらを入力することで、現場の作業員がタブレットで「どの工程を、どの機械で、何分で行うか」を確認できるようになります。\n\n---\n\n### Technology (製造工程) 登録データ\n\n| Machine/Operation (機械/工程名) | Norm (標準能率) | Operation parameters (作業指示/パラメータ) | Tags (タグ) |\n| :--- | :--- | :--- | :--- |\n| **1. Cutting (切断)** | `2.0` units/h | Cut slats and guides according to the shop drawing measurements. | #Steel #Fabrication |\n| **2. Drilling & Bending (穴あけ・曲げ)** | `1.5` units/h | Drill holes for locks and bend slats to specifications (C-Type/S-Type). | #CNC #Bending |\n| **3. Welding (溶接)** | `1.0` units/h | Weld seams according to fire-rated standards (UL/TUV SUD). | #FireRated #Welding |\n| **4. Assembly (組立)** | `0.8` units/h | Assemble the slats, motor/manual gear, and frame. Check alignment. | #Assembly |\n| **5. Quality Inspection (品質検査)** | `4.0` units/h | Check dimensions, welding seams, and surface finish. Record as \"QC Passed\". | #QualityControl |\n| **6. Packaging & Dispatch (梱包・出荷)** | `3.0` units/h | Wrap in heavy-duty plastic and use wooden crates for edge protection. | #Dispatch |\n\n---\n\n### 入力時のポイント\n\n1.  **Norm（標準能率）について**\n    *   PDFの39ページにあるKPI目標（サイクルタイム24時間以内）を達成するための目安値です。`units/h`（1時間あたりの個数）で入力します。例えば `1.0` なら「1時間に1枚終わらせる」という意味になります。\n2.  **Operation parameters（作業パラメータ）**\n    *   ここに入力した内容は、現場の作業員がProdioのスマホ・タブレット画面で「作業開始」を押した時に表示される重要な指示です。\n3.  **End machine（最終工程）のチェック**\n    *   一番最後の工程（今回の場合は **6. Packaging & Dispatch**）の右側にある **End machine** のチェックボックスをオンにしてください。ここにチェックを入れると、その作業が終わった時に製品全体が「完成（Finished）」扱いになります。\n4.  **Add files（ファイル追加）ボタン**\n    *   もしお手元に「標準作業手順書（SOP）」や「設計図面」があれば、各工程の右端にある **Add files** からPDFをアップロードしておくと、現場で図面を即座に確認できるようになり、PDF 87ページで指摘されている「紙ベースによるミス」を防ぐことができます。\n\nこのように登録することで、FILSHUTTER社が目指している「MES-Liteによるデジタル化」がProdio上で再現されます。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:12 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 102807
+          }
+        },
+        {
+          "id": "222a58e1-7b05-460e-9167-744f924c46b0",
+          "position": {
+            "x": 2747.459499883263,
+            "y": 329.52538748011403
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "6e5de507-3a2c-4821-a08e-314e9db71759",
+            "kind": "ai",
+            "content": "シャッター（Standard Steel Roll-Up Door）の**Shop Drawing（施工図/工作図）の構成案**を作成しました。\n\nCADソフトで描画する際や、仕様書に添付する際のイメージとしてお使いください。\n\n---\n\n### [Shop Drawing] Standard Steel Roll-Up Door (Fire-Rated)\n\n#### 1. 図面の全体構成 (Layout)\n一般的なShop Drawingは、以下の3つの視点で構成されます。\n\n*   **Elevation (立面図):** 正面から見た図。サイズとスラット（羽板）の配置。\n*   **Section (断面図):** 横から見た図。巻き取り部分の直径や壁からの出幅。\n*   **Plan View (平面図):** 真上から見た図。ガイドレールの位置と有効開口幅。\n\n---\n\n#### 2. 概略図 (Schematic Diagram)\n\n```text\n【Elevation - 正面図】              【Section - 側断面図】\n <------- Opening Width ------->      \n _______________________________  ___  ____\n|_______________________________|  ^  |    | <--- Hood (巻き取りBOX)\n|                               |  |  | (O)|      Diameter: 400-500mm\n|   [ Slats: Galvalum Steel ]   |  |  |    |\n|                               |  |  |____|\n| <--- Guide Rail     Guide --->|  |  |    |\n|      (Tracks)        Rail     |  H  |    | <--- Wall Line\n|                               |  e  |    |\n|                               |  i  |    |\n|                               |  g  |    |\n|                               |  h  |    |\n|_______________________________|  t  |____| <--- Bottom Bar\n|           Floor Line          |  v  |////|      (With Weather Seal)\n -------------------------------  ---  ----\n```\n\n---\n\n#### 3. 技術仕様（図面内注釈用）\nShop Drawingの右側の「Notes」欄や「Specification」欄に記載する内容です。\n\n*   **Product:** Standard Fire-Rated Shutter (FILSHUTTER Model-A)\n*   **Material:** \n    *   **Slats:** 0.8mm to 1.2mm Thick Galvalum Steel (Anti-corrosion)\n    *   **Guide Rails:** 3.0mm Heavy Duty Steel U-Channel\n    *   **Bottom Bar:** Reinforced T-shaped steel with rubber seal\n*   **Operation:** Motorized (AC 220V) with Manual Chain Override\n*   **Finish:** Powder Coated / Zinc Primer\n*   **Fire Rating:** 2-4 Hours (Tested to UL/TUV SUD standards)\n\n---\n\n#### 4. 主要寸法（入力例）\nPDFの内容に基づいた一般的な商用サイズ例です。\n\n| 項目 | 寸法例 |\n| :--- | :--- |\n| **Opening Width (開口幅)** | 3,000 mm |\n| **Opening Height (開口高)** | 2,400 mm |\n| **Hood Box Height (BOX高)** | 450 mm |\n| **Guide Rail Width (レール幅)** | 100 mm (両サイド) |\n| **Slat Pitch (スラット幅)** | 75 mm |\n\n---\n\n### 生成された図面をどう使うか\nこの構成をもとに、AI画像生成ツールやCADオペレーターに「Galvalum製の防火シャッターの断面図と立面図を含めた、寸法入りのエンジニアリング図面（Shop Drawing）を作成して」と指示を出す際の要件定義として活用してください。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:13 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 3376
+          }
+        },
+        {
+          "id": "8f4edcd3-95e7-48cd-8433-41297e039a6c",
+          "position": {
+            "x": 3795.636304182425,
+            "y": 336.2116778400957
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "222a58e1-7b05-460e-9167-744f924c46b0",
+            "kind": "user",
+            "content": "画像生成してシャッター。文字はいらないよ。寸法だけ。全部英語で\n\n\n\n\n（Standard Steel Roll-Up Door）のShop Drawing（施工図/工作図）の構成案を作成しました。\n\nCADソフトで描画する際や、仕様書に添付する際のイメージとしてお使いください。\n\n[Shop Drawing] Standard Steel Roll-Up Door (Fire-Rated)\n1. 図面の全体構成 (Layout)\n一般的なShop Drawingは、以下の3つの視点で構成されます。\n\nElevation (立面図): 正面から見た図。サイズとスラット（羽板）の配置。\nSection (断面図): 横から見た図。巻き取り部分の直径や壁からの出幅。\nPlan View (平面図): 真上から見た図。ガイドレールの位置と有効開口幅。\n2. 概略図 (Schematic Diagram)\nTEXT\n\nコピー\n【Elevation - 正面図】              【Section - 側断面図】\n <------- Opening Width ------->      \n _______________________________  ___  ____\n|_______________________________|  ^  |    | <--- Hood (巻き取りBOX)\n|                               |  |  | (O)|      Diameter: 400-500mm\n|   [ Slats: Galvalum Steel ]   |  |  |    |\n|                               |  |  |____|\n| <--- Guide Rail     Guide --->|  |  |    |\n|      (Tracks)        Rail     |  H  |    | <--- Wall Line\n|                               |  e  |    |\n|                               |  i  |    |\n|                               |  g  |    |\n|                               |  h  |    |\n|_______________________________|  t  |____| <--- Bottom Bar\n|           Floor Line          |  v  |////|      (With Weather Seal)\n -------------------------------  ---  ----\n3. 技術仕様（図面内注釈用）\nShop Drawingの右側の「Notes」欄や「Specification」欄に記載する内容です。\n\nProduct: Standard Fire-Rated Shutter (FILSHUTTER Model-A)\nMaterial:\nSlats: 0.8mm to 1.2mm Thick Galvalum Steel (Anti-corrosion)\nGuide Rails: 3.0mm Heavy Duty Steel U-Channel\nBottom Bar: Reinforced T-shaped steel with rubber seal\nOperation: Motorized (AC 220V) with Manual Chain Override\nFinish: Powder Coated / Zinc Primer\nFire Rating: 2-4 Hours (Tested to UL/TUV SUD standards)\n",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "04:13 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "226698e8-f43f-492a-93a4-5648033ea899",
+          "position": {
+            "x": 3803.3241936854056,
+            "y": 781.360523873898
+          },
+          "style": {
+            "width": 560,
+            "height": 335.1007354245039
+          },
+          "data": {
+            "parentId": "222a58e1-7b05-460e-9167-744f924c46b0",
+            "kind": "user",
+            "content": "ここに入れるものも考えて。Raw Materialです",
+            "attachments": [
+              {
+                "id": "eea7ccf3-2427-4049-ace6-d11918ae52e5",
+                "kind": "image",
+                "name": "image.png",
+                "mimeType": "image/png",
+                "sizeBytes": 21033,
+                "url": "/api/attachments/object?path=eea7ccf3-2427-4049-ace6-d11918ae52e5%2Fimage.png",
+                "storagePath": "eea7ccf3-2427-4049-ace6-d11918ae52e5/image.png",
+                "createdAt": "2026-04-04T08:45:43.059Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:45 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "6b01c5bc-289f-4984-a3d9-fb9cb222498f",
+          "position": {
+            "x": 4216.298616502006,
+            "y": 1310.986039496481
+          },
+          "style": {
+            "width": 975.2752957297535,
+            "height": 780
+          },
+          "data": {
+            "parentId": "226698e8-f43f-492a-93a4-5648033ea899",
+            "kind": "ai",
+            "content": "シャッター（Standard Steel Roll-Up Door）を製造するために必要な**原材料（Raw Material）**の入力案を3パターン作成しました。\n\n最も主要な部品である「スラット（羽板）」、「ガイドレール」、「モーター」の3つです。\n\n---\n\n### パターン1：スラット材（主要部材）\n最も頻繁に使う材料の例です。\n\n*   **Name:** `Galvalum Steel Slat Coil - 0.8mm`\n*   **Description:** `High-tensile Galvalum steel coil for roll-up door slats. Anti-corrosive and fire-resistant coating.`（シャッター羽板用の高張力ガルバリウム鋼板。耐食・耐火コーティング済み）\n*   **Notes:** `Supplier: Philsteel. Grade: ASTM A792. To be slit to 75mm width.`（サプライヤー：Philsteel。グレード：ASTM A792。75mm幅にスリットして使用すること）\n*   **Price:** `1800` (単価の目安)\n*   **Index:** `RM-SLAT-08-GALV`\n*   **Additional name:** `AZ150 Galvalum Sheet`\n\n---\n\n### パターン2：ガイドレール（構造部材）\nシャッターの両脇のレールの例です。\n\n*   **Name:** `Heavy Duty Guide Rail (U-Channel)`\n*   **Description:** `Cold-rolled steel U-channel for side tracks. 3.0mm thickness, zinc-primed.`（サイドトラック用冷延鋼板Uチャンネル。厚さ3.0mm、ジンクライマー処理済み）\n*   **Notes:** `Verify straightness and internal width before fabrication.`（加工前に直線性とい内幅を確認すること）\n*   **Price:** `2500`\n*   **Index:** `RM-RAIL-HD-30`\n*   **Additional name:** `Side Track Profile`\n\n---\n\n### パターン3：駆動モーター（電気部品）\n電動シャッターの場合に必要なユニットの例です。\n\n*   **Name:** `Industrial Shutter Motor - 600kg Grade`\n*   **Description:** `AC 220V electric motor operator with manual chain override and limit switch.`（AC220V電動モーター。緊急用手動チェーンおよびリミットスイッチ付き）\n*   **Notes:** `Fire-rated compliance. Check TUV SUD certification label on arrival.`（防火仕様適合。入荷時にTUV SUD認証ラベルを確認のこと）\n*   **Price:** `15000`\n*   **Index:** `RM-MTR-IND-600`\n*   **Additional name:** `Electric Drive Unit`\n\n---\n\n### 入力時のポイント\n*   **Index（インデックス）**は、社内で管理しやすいように `RM(Raw Material)` - `品目` - `サイズ` などのルールで決めておくと、後で検索しやすくなります。\n*   **Price（価格）**は、PDFの財務資料に基づきフィリピン・ペソ（PHP）を想定していますが、実際の仕入れ値に合わせて調整してください。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "04:46 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 5376
+          }
+        },
+        {
+          "id": "bb8a8c58-794b-4515-8ae5-e1b2339d9c85",
+          "position": {
+            "x": 4556.222913699341,
+            "y": 342.64100831594146
+          },
+          "style": {
+            "width": 860,
+            "height": 560
+          },
+          "data": {
+            "parentId": "8f4edcd3-95e7-48cd-8433-41297e039a6c",
+            "kind": "image",
+            "content": "画像生成してシャッター。文字はいらないよ。寸法だけ。全部英語で\n\n\n\n\n（Standard Steel Roll-Up Door）のShop Drawing（施工図/工作図）の構成案を作成しました。\n\nCADソフトで描画する際や、仕様書に添付する際のイメージとしてお使いください。\n\n[Shop Drawing] Standard Steel Roll-Up Door (Fire-Rated)\n1. 図面の全体構成 (Layout)\n一般的なShop Drawingは、以下の3つの視点で構成されます。\n\nElevation (立面図): 正面から見た図。サイズとスラット（羽板）の配置。\nSection (断面図): 横から見た図。巻き取り部分の直径や壁からの出幅。\nPlan View (平面図): 真上から見た図。ガイドレールの位置と有効開口幅。\n2. 概略図 (Schematic Diagram)\nTEXT\n\nコピー\n【Elevation - 正面図】              【Section - 側断面図】\n <------- Opening Width ------->      \n _______________________________  ___  ____\n|_______________________________|  ^  |    | <--- Hood (巻き取りBOX)\n|                               |  |  | (O)|      Diameter: 400-500mm\n|   [ Slats: Galvalum Steel ]   |  |  |    |\n|                               |  |  |____|\n| <--- Guide Rail     Guide --->|  |  |    |\n|      (Tracks)        Rail     |  H  |    | <--- Wall Line\n|                               |  e  |    |\n|                               |  i  |    |\n|                               |  g  |    |\n|                               |  h  |    |\n|_______________________________|  t  |____| <--- Bottom Bar\n|           Floor Line          |  v  |////|      (With Weather Seal)\n -------------------------------  ---  ----\n3. 技術仕様（図面内注釈用）\nShop Drawingの右側の「Notes」欄や「Specification」欄に記載する内容です。\n\nProduct: Standard Fire-Rated Shutter (FILSHUTTER Model-A)\nMaterial:\nSlats: 0.8mm to 1.2mm Thick Galvalum Steel (Anti-corrosion)\nGuide Rails: 3.0mm Heavy Duty Steel U-Channel\nBottom Bar: Reinforced T-shaped steel with rubber seal\nOperation: Motorized (AC 220V) with Manual Chain Override\nFinish: Powder Coated / Zinc Primer\nFire Rating: 2-4 Hours (Tested to UL/TUV SUD standards)",
+            "attachments": [
+              {
+                "id": "6055ea4a-70a2-43f6-9670-8ff3c9a9b871",
+                "kind": "image",
+                "name": "generated-1775294158477-1.jpg",
+                "mimeType": "image/jpeg",
+                "sizeBytes": 2535025,
+                "url": "/api/attachments/object?path=6055ea4a-70a2-43f6-9670-8ff3c9a9b871%2Fgenerated-1775294158477-1.jpg",
+                "storagePath": "6055ea4a-70a2-43f6-9670-8ff3c9a9b871/generated-1775294158477-1.jpg",
+                "createdAt": "2026-04-04T09:16:00.566Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3.1-flash-image-preview"
+            },
+            "status": "idle",
+            "createdAt": "05:15 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 4955
+          }
+        },
+        {
+          "id": "74428f16-062b-4f93-8632-be7d4bbaec3e",
+          "position": {
+            "x": 5767.35360569409,
+            "y": 561.8293629323126
+          },
+          "style": {
+            "width": 540,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "適当なペルソナを考えて\nアメリカ人のワーカー",
+            "attachments": [
+              {
+                "id": "228e59ec-cb41-46fb-9eb2-700bdf5ef79f",
+                "kind": "image",
+                "name": "image.png",
+                "mimeType": "image/png",
+                "sizeBytes": 24387,
+                "url": "/api/attachments/object?path=228e59ec-cb41-46fb-9eb2-700bdf5ef79f%2Fimage.png",
+                "storagePath": "228e59ec-cb41-46fb-9eb2-700bdf5ef79f/image.png",
+                "createdAt": "2026-04-04T10:02:25.315Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "06:02 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+          "position": {
+            "x": 6380.928507117506,
+            "y": 566.2340946083544
+          },
+          "style": {
+            "width": 960,
+            "height": 780
+          },
+          "data": {
+            "parentId": "74428f16-062b-4f93-8632-be7d4bbaec3e",
+            "kind": "ai",
+            "content": "画像のフォームの項目に合わせた、アメリカ人ワーカーのペルソナ設定例です。\nテストデータやデモ用にご活用ください。\n\n### ペルソナ設定例\n\n*   **Full name（氏名）:** David J. Miller（デイヴィッド・J・ミラー）\n*   **PIN（暗証番号）:** 5820\n*   **Job position（職種）:** Maintenance Technician（メンテナンス技術者）\n*   **Work hour price（時給）:** $28.50\n*   **Phone（電話番号）:** +1 (555) 012-3456\n*   **QR / RFID（識別ID）:** RFID-8829-DM\n*   **Additional information（追記情報）:** \n    *   Specializes in HVAC and electrical repairs.\n    *   Available for overtime on weekends.\n    *   Safety certification: OSHA 10-Hour.\n    *   （HVAC（空調）と電気修理が専門。週末の残業可能。OSHA10時間安全講習修了。）\n\n---\n\n**入力のヒント:**\n*   **Full name:** アメリカではミドルネームのイニシャルを入れるとそれっぽくなります。\n*   **PIN:** 一般的に4〜6桁の数字が使われます。\n*   **Work hour price:** 職種によりますが、現地の一般的なワーカーなら$20〜$40あたりがリアリティがあります。\n*   **Phone:** アメリカの国番号「+1」から始めると形式として整います。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "06:02 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 2080
+          }
+        },
+        {
+          "id": "e73a2659-362f-4c11-8c47-45e1c63b9556",
+          "position": {
+            "x": 7504.023685725099,
+            "y": 564.1003075862184
+          },
+          "style": {
+            "width": 670.2430996391049,
+            "height": 340
+          },
+          "data": {
+            "parentId": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+            "kind": "user",
+            "content": "デイヴィッドの画像生成",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "06:03 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "86b7e782-d50d-41cd-a979-0e7ee059bad7",
+          "position": {
+            "x": 8246.266785364205,
+            "y": 564.1003075862184
+          },
+          "style": {
+            "width": 920,
+            "height": 640
+          },
+          "data": {
+            "parentId": "e73a2659-362f-4c11-8c47-45e1c63b9556",
+            "kind": "image",
+            "content": "デイヴィッドの画像生成",
+            "attachments": [
+              {
+                "id": "e5b8f54d-0f4c-46b9-aac9-57a2641cb728",
+                "kind": "image",
+                "name": "generated-1775297045703-1.jpg",
+                "mimeType": "image/jpeg",
+                "sizeBytes": 1579607,
+                "url": "/api/attachments/object?path=e5b8f54d-0f4c-46b9-aac9-57a2641cb728%2Fgenerated-1775297045703-1.jpg",
+                "storagePath": "e5b8f54d-0f4c-46b9-aac9-57a2641cb728/generated-1775297045703-1.jpg",
+                "createdAt": "2026-04-04T10:04:07.888Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3.1-flash-image-preview"
+            },
+            "status": "idle",
+            "createdAt": "06:03 PM",
+            "isRoot": false,
+            "isPositionPinned": false,
+            "tokenCount": 2826
+          }
+        },
+        {
+          "id": "29235182-3772-4c97-a379-ca4a78e685c2",
+          "position": {
+            "x": 7450.9519935179615,
+            "y": 1041.0200960201919
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+            "kind": "user",
+            "content": "３人分お願い",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "06:04 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb",
+          "position": {
+            "x": 8082.9519935179615,
+            "y": 1281.0200960201919
+          },
+          "style": {
+            "width": 980,
+            "height": 780
+          },
+          "data": {
+            "parentId": "29235182-3772-4c97-a379-ca4a78e685c2",
+            "kind": "ai",
+            "content": "さらに3人分、職種や時給帯をバラけさせたアメリカ人ワーカーのペルソナ案です。\n\n### 1. ベテランの現場監督（スーパーバイザー）\n*   **Full name:** Robert \"Bob\" Garcia\n*   **PIN:** 7741\n*   **Job position:** Shift Supervisor\n*   **Work hour price:** $42.00\n*   **Phone:** +1 (312) 555-0178\n*   **QR / RFID:** RFID-1004-RG\n*   **Additional information:**\n    *   15+ years of experience in warehouse management.\n    *   Certified in First Aid and CPR.\n    *   Bilingual (English and Spanish).\n    *   （倉庫管理15年以上の経験。応急処置・CPR認定保有。英語とスペイン語のバイリンガル。）\n\n### 2. 若手の物流スタッフ（フォークリフト担当）\n*   **Full name:** Sarah K. Williams\n*   **PIN:** 1298\n*   **Job position:** Forklift Operator\n*   **Work hour price:** $22.50\n*   **Phone:** +1 (202) 555-0143\n*   **QR / RFID:** QR-9910-SW\n*   **Additional information:**\n    *   Valid OSHA Forklift Certification.\n    *   Preferred shift: Morning (6 AM - 2 PM).\n    *   Experience with automated inventory systems.\n    *   （OSHAフォークリフト運転免許保有。早朝シフト希望。自動在庫管理システムの操作経験あり。）\n\n### 3. 在庫管理・事務アシスタント\n*   **Full name:** Michael Chen\n*   **PIN:** 3055\n*   **Job position:** Inventory Clerk\n*   **Work hour price:** $19.75\n*   **Phone:** +1 (415) 555-0199\n*   **QR / RFID:** QR-2215-MC\n*   **Additional information:**\n    *   Specializes in stock auditing and data entry.\n    *   Proficient in SAP and Microsoft Excel.\n    *   Part-time: Available Monday through Thursday.\n    *   （在庫監査とデータ入力が専門。SAPとExcelに精通。月〜木のパートタイム勤務。）\n\n---\n**ポイント:**\n*   **名前:** Garcia（ヒスパニック系）やChen（アジア系）など、多様なルーツの名前を混ぜるとよりアメリカの現場らしいリアリティが出ます。\n*   **追加情報:** アメリカの現場では「Bilingual（2ヶ国語話者）」や「OSHA（安全衛生局）の認証」の有無が重要視されることが多いです。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "06:04 PM",
+            "isRoot": false,
+            "isPositionPinned": false,
+            "tokenCount": 2780
+          }
+        },
+        {
+          "id": "6b14c4df-1135-44bb-879f-6618df657a4c",
+          "position": {
+            "x": 9232.443866201715,
+            "y": 1278.7452056543052
+          },
+          "style": {
+            "width": 560,
+            "height": 340
+          },
+          "data": {
+            "parentId": "ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb",
+            "kind": "user",
+            "content": "それぞれの人間の顔画像を作って。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "06:05 PM",
+            "isRoot": false,
+            "isPositionPinned": false
+          }
+        },
+        {
+          "id": "4b5df541-6283-4436-a2de-6f072ef3231d",
+          "position": {
+            "x": 9864.443866201715,
+            "y": 1284.131383875148
+          },
+          "style": {
+            "width": 920,
+            "height": 634.6138217791572
+          },
+          "data": {
+            "parentId": "6b14c4df-1135-44bb-879f-6618df657a4c",
+            "kind": "image",
+            "content": "それぞれの人間の顔画像を作って。",
+            "attachments": [
+              {
+                "id": "da1e61bd-3124-432a-8426-e56bb159e713",
+                "kind": "image",
+                "name": "generated-1775297216110-1.jpg",
+                "mimeType": "image/jpeg",
+                "sizeBytes": 2420351,
+                "url": "/api/attachments/object?path=da1e61bd-3124-432a-8426-e56bb159e713%2Fgenerated-1775297216110-1.jpg",
+                "storagePath": "da1e61bd-3124-432a-8426-e56bb159e713/generated-1775297216110-1.jpg",
+                "createdAt": "2026-04-04T10:06:58.329Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3.1-flash-image-preview"
+            },
+            "status": "idle",
+            "createdAt": "06:06 PM",
+            "isRoot": false,
+            "isPositionPinned": true,
+            "tokenCount": 3418
+          }
+        },
+        {
+          "id": "991756a0-7dbd-467b-b649-2f315578ed7e",
+          "position": {
+            "x": 5450.110227752258,
+            "y": 2050.130758096482
+          },
+          "style": {
+            "width": 1042,
+            "height": 462.04996636814894
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "このようなノードがあるんだけど、デザインがダサいから、ノーションみたいなシンプルでモダンなデザインに変えて。",
+            "attachments": [
+              {
+                "id": "3858e6a9-8403-41d6-8841-b01ca36243a0",
+                "kind": "image",
+                "name": "image.png",
+                "mimeType": "image/png",
+                "sizeBytes": 41590,
+                "url": "/api/attachments/object?path=3858e6a9-8403-41d6-8841-b01ca36243a0%2Fimage.png",
+                "storagePath": "3858e6a9-8403-41d6-8841-b01ca36243a0/image.png",
+                "createdAt": "2026-04-05T03:52:48.811Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-2.5-flash-image"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "11:49 AM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "b2b9f519-e21f-425d-8b96-b198aa178f12",
+          "position": {
+            "x": 7143.815217898097,
+            "y": 2177.9610201722567
+          },
+          "style": {
+            "width": 920,
+            "height": 640
+          },
+          "data": {
+            "parentId": "991756a0-7dbd-467b-b649-2f315578ed7e",
+            "kind": "image",
+            "content": "このようなノードがあるんだけど、デザインがダサいから、ノーションみたいなシンプルでモダンなデザインに変えて。\n\n画像生成に失敗しました。\nImagen 4 はこのアプリでは参照画像つき生成にまだ対応していません。",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "imagen-4.0-generate-001"
+            },
+            "status": "error",
+            "createdAt": "11:53 AM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "33210341-f428-4ac9-a82b-af14f6717d08",
+          "position": {
+            "x": 6396.819110649431,
+            "y": 2700.711640647257
+          },
+          "style": {
+            "width": 728.5912452743578,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3-flash-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "11:56 AM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "f9ae7511-3572-45bb-84f3-1a4ff94a81b9",
+          "position": {
+            "x": 6634.826555226975,
+            "y": 1453.3888618076141
+          },
+          "style": {
+            "width": 886.9482227273393,
+            "height": 638.0558144541828
+          },
+          "data": {
+            "parentId": "991756a0-7dbd-467b-b649-2f315578ed7e",
+            "kind": "image",
+            "content": "このようなノードがあるんだけど、デザインがダサいから、ノーションみたいなシンプルでモダンなデザインに変えて。",
+            "attachments": [
+              {
+                "id": "09a884d6-4e97-4fa3-b815-293d9b51f7b3",
+                "kind": "image",
+                "name": "generated-1775362197653-1.png",
+                "mimeType": "image/png",
+                "sizeBytes": 592067,
+                "url": "/api/attachments/object?path=09a884d6-4e97-4fa3-b815-293d9b51f7b3%2Fgenerated-1775362197653-1.png",
+                "storagePath": "09a884d6-4e97-4fa3-b815-293d9b51f7b3/generated-1775362197653-1.png",
+                "createdAt": "2026-04-05T04:09:59.429Z"
+              }
+            ],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "imagen-4.0-generate-001"
+            },
+            "status": "idle",
+            "createdAt": "12:09 PM",
+            "isRoot": false,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "71cca7fd-5055-4fd9-b003-5f6f30bf59b9",
+          "position": {
+            "x": 4196.106780928121,
+            "y": 2248.2387400002485
+          },
+          "style": {
+            "width": 721.2565100683642,
+            "height": 348.4871977528219
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-2.5-flash-image"
+            },
+            "promptMode": "image-create",
+            "status": "idle",
+            "createdAt": "12:22 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "cbbfcaed-1ccc-4a1b-9da5-e33e35535685",
+          "position": {
+            "x": 5872.036824593325,
+            "y": 1570.4470307815557
+          },
+          "style": {
+            "width": 420,
+            "height": 236
+          },
+          "data": {
+            "parentId": null,
+            "kind": "file",
+            "content": "",
+            "attachments": [
+              {
+                "id": "a636b662-3446-4666-9746-0f2782abf27b",
+                "kind": "image",
+                "name": "object.png",
+                "mimeType": "image/png",
+                "sizeBytes": 592067,
+                "url": "/api/attachments/object?path=a636b662-3446-4666-9746-0f2782abf27b%2Fobject.png",
+                "storagePath": "a636b662-3446-4666-9746-0f2782abf27b/object.png",
+                "createdAt": "2026-04-05T04:38:34.183Z"
+              }
+            ],
+            "status": "idle",
+            "createdAt": "12:38 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "4b0a4550-a736-4fb0-ad27-cb774d64bf41",
+          "position": {
+            "x": 9411.423152287158,
+            "y": 565.8130187674815
+          },
+          "style": {
+            "width": 663.943498342911,
+            "height": 340
+          },
+          "data": {
+            "parentId": null,
+            "kind": "user",
+            "content": "",
+            "attachments": [],
+            "modelConfig": {
+              "provider": "gemini",
+              "name": "gemini-3.1-pro-preview"
+            },
+            "promptMode": "auto",
+            "status": "idle",
+            "createdAt": "12:43 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        },
+        {
+          "id": "a50f88a8-a060-4936-a19f-cdfbc9c7b21a",
+          "position": {
+            "x": 9416.196785060125,
+            "y": -29.781600046407057
+          },
+          "style": {
+            "width": 846.6236129059162,
+            "height": 544.4157694046177
+          },
+          "data": {
+            "parentId": null,
+            "kind": "note",
+            "content": "aaa",
+            "attachments": [],
+            "status": "idle",
+            "createdAt": "12:45 PM",
+            "isRoot": true,
+            "isPositionPinned": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "8a144f03-5bf7-453b-9c73-5cf9a1e62c88->285cd655-110b-4389-8961-5d026a6390ff",
+          "source": "8a144f03-5bf7-453b-9c73-5cf9a1e62c88",
+          "target": "285cd655-110b-4389-8961-5d026a6390ff",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "285cd655-110b-4389-8961-5d026a6390ff->a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+          "source": "285cd655-110b-4389-8961-5d026a6390ff",
+          "target": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c->6e5de507-3a2c-4821-a08e-314e9db71759",
+          "source": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+          "target": "6e5de507-3a2c-4821-a08e-314e9db71759",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c->6df1be7b-c956-4491-8136-b954a9c63050",
+          "source": "a11927a1-9db4-49f0-b5ce-ddd377a8de3c",
+          "target": "6df1be7b-c956-4491-8136-b954a9c63050",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "6df1be7b-c956-4491-8136-b954a9c63050->e7b3e79c-22cd-4416-9c33-e8e943d6b9da",
+          "source": "6df1be7b-c956-4491-8136-b954a9c63050",
+          "target": "e7b3e79c-22cd-4416-9c33-e8e943d6b9da",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "6e5de507-3a2c-4821-a08e-314e9db71759->222a58e1-7b05-460e-9167-744f924c46b0",
+          "source": "6e5de507-3a2c-4821-a08e-314e9db71759",
+          "target": "222a58e1-7b05-460e-9167-744f924c46b0",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "222a58e1-7b05-460e-9167-744f924c46b0->8f4edcd3-95e7-48cd-8433-41297e039a6c",
+          "source": "222a58e1-7b05-460e-9167-744f924c46b0",
+          "target": "8f4edcd3-95e7-48cd-8433-41297e039a6c",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "222a58e1-7b05-460e-9167-744f924c46b0->226698e8-f43f-492a-93a4-5648033ea899",
+          "source": "222a58e1-7b05-460e-9167-744f924c46b0",
+          "target": "226698e8-f43f-492a-93a4-5648033ea899",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "226698e8-f43f-492a-93a4-5648033ea899->6b01c5bc-289f-4984-a3d9-fb9cb222498f",
+          "source": "226698e8-f43f-492a-93a4-5648033ea899",
+          "target": "6b01c5bc-289f-4984-a3d9-fb9cb222498f",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "8f4edcd3-95e7-48cd-8433-41297e039a6c->bb8a8c58-794b-4515-8ae5-e1b2339d9c85",
+          "source": "8f4edcd3-95e7-48cd-8433-41297e039a6c",
+          "target": "bb8a8c58-794b-4515-8ae5-e1b2339d9c85",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "74428f16-062b-4f93-8632-be7d4bbaec3e->9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+          "source": "74428f16-062b-4f93-8632-be7d4bbaec3e",
+          "target": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff->e73a2659-362f-4c11-8c47-45e1c63b9556",
+          "source": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+          "target": "e73a2659-362f-4c11-8c47-45e1c63b9556",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "e73a2659-362f-4c11-8c47-45e1c63b9556->86b7e782-d50d-41cd-a979-0e7ee059bad7",
+          "source": "e73a2659-362f-4c11-8c47-45e1c63b9556",
+          "target": "86b7e782-d50d-41cd-a979-0e7ee059bad7",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff->29235182-3772-4c97-a379-ca4a78e685c2",
+          "source": "9560d6eb-2558-475f-8ceb-e5470c4dd2ff",
+          "target": "29235182-3772-4c97-a379-ca4a78e685c2",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "29235182-3772-4c97-a379-ca4a78e685c2->ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb",
+          "source": "29235182-3772-4c97-a379-ca4a78e685c2",
+          "target": "ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb->6b14c4df-1135-44bb-879f-6618df657a4c",
+          "source": "ce6ade1e-5a4b-48b4-b21d-35ba78e33fbb",
+          "target": "6b14c4df-1135-44bb-879f-6618df657a4c",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "6b14c4df-1135-44bb-879f-6618df657a4c->4b5df541-6283-4436-a2de-6f072ef3231d",
+          "source": "6b14c4df-1135-44bb-879f-6618df657a4c",
+          "target": "4b5df541-6283-4436-a2de-6f072ef3231d",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "991756a0-7dbd-467b-b649-2f315578ed7e->b2b9f519-e21f-425d-8b96-b198aa178f12",
+          "source": "991756a0-7dbd-467b-b649-2f315578ed7e",
+          "target": "b2b9f519-e21f-425d-8b96-b198aa178f12",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "991756a0-7dbd-467b-b649-2f315578ed7e->f9ae7511-3572-45bb-84f3-1a4ff94a81b9",
+          "source": "991756a0-7dbd-467b-b649-2f315578ed7e",
+          "target": "f9ae7511-3572-45bb-84f3-1a4ff94a81b9",
+          "type": "simplebezier",
+          "selectable": true,
+          "focusable": true,
+          "reconnectable": false,
+          "animated": false,
+          "style": {
+            "stroke": "#9d9d9d",
+            "strokeWidth": 3.2,
+            "opacity": 1
+          }
+        }
+      ],
+      "updatedAt": "2026-04-05T04:55:37.027Z"
+    }
+  }
+}
