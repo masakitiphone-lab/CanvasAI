@@ -28,8 +28,16 @@ export async function writeAuditLog(event: AuditEvent) {
     metadata: event.metadata ?? {},
   };
 
-  await mkdir(DATA_DIR, { recursive: true });
-  await appendFile(AUDIT_LOG_FILE, `${JSON.stringify(record)}\n`, "utf8");
+  // Skip file logging in Vercel or production environments where the FS is read-only
+  const isVercel = !!process.env.VERCEL;
+  if (!isVercel) {
+    try {
+      await mkdir(DATA_DIR, { recursive: true });
+      await appendFile(AUDIT_LOG_FILE, `${JSON.stringify(record)}\n`, "utf8");
+    } catch (err) {
+      console.warn("Local audit log write failed (may be expected in production):", err);
+    }
+  }
 
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
