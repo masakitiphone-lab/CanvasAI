@@ -21,23 +21,33 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
+        cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
+        });
+        cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
       },
     },
   });
 
+  // important: getUser() will refresh the session if needed
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  // Protect (workspace) routes and API routes that require auth
   const isLoginPage = pathname === "/login";
   const isAuthRoute = pathname.startsWith("/auth");
+  const isPublicApi = pathname.startsWith("/api/attachments/url"); // example of public if any
+  const isApi = pathname.startsWith("/api");
 
-  if (!user && !isLoginPage && !isAuthRoute) {
+  if (!user && !isLoginPage && !isAuthRoute && !isPublicApi) {
+    if (isApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);

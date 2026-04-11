@@ -1624,8 +1624,10 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   }, [editingNodeId, focusedNodeId, getNodeHandlers, navigateFocusedNode, nodes]);
 
   const hasDraggingNode = useMemo(() => nodes.some((node) => Boolean(node.dragging)), [nodes]);
+
   const hasGeneratingNode = useMemo(() => nodes.some((node) => node.data.status === "generating"), [nodes]);
-  const shouldDeferCanvasRender = hasGeneratingNode || hasDraggingNode;
+  // Never defer canvas rendering during dragging, as React Flow needs synchronous frame updates for smooth movement.
+  const shouldDeferCanvasRender = hasGeneratingNode;
   const deferredVisibleNodes = useDeferredValue(visibleNodes);
   const deferredEdges = useDeferredValue(edges);
   const flowNodes = shouldDeferCanvasRender ? deferredVisibleNodes : visibleNodes;

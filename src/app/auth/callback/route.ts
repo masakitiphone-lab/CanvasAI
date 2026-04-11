@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { writeAuditLog } from "@/lib/audit-log";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -10,6 +11,11 @@ export async function GET(request: NextRequest) {
   const redirectTo = new URL("/", origin);
 
   if (upstreamError) {
+    await writeAuditLog({
+      action: "auth.callback.error",
+      status: "error",
+      metadata: { error: upstreamError, description: upstreamErrorDescription, step: "upstream" },
+    });
     const failedLoginUrl = new URL("/login", origin);
     failedLoginUrl.searchParams.set("authError", upstreamError);
     if (upstreamErrorDescription) {
@@ -19,6 +25,11 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code) {
+    await writeAuditLog({
+      action: "auth.callback.error",
+      status: "error",
+      metadata: { step: "missing_code" },
+    });
     redirectTo.pathname = "/login";
     redirectTo.searchParams.set("authError", "missing_code");
     return NextResponse.redirect(redirectTo);
@@ -28,6 +39,11 @@ export async function GET(request: NextRequest) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !anonKey) {
+    await writeAuditLog({
+      action: "auth.callback.error",
+      status: "error",
+      metadata: { step: "missing_config" },
+    });
     redirectTo.pathname = "/login";
     redirectTo.searchParams.set("authError", "missing_config");
     return NextResponse.redirect(redirectTo);
@@ -47,14 +63,28 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    await writeAuditLog({
+      action: "auth.callback.error",
+      status: "error",
+      metadata: { error: error.message, code: error.code, step: "exchange" },
+    });
     const failedRedirect = NextResponse.redirect(new URL("/login?authError=callback_failed", origin));
     response.cookies.getAll().forEach((cookie) => {
       failedRedirect.cookies.set(cookie);
     });
     return failedRedirect;
+  }
+
+  if (data.user) {
+    await writeAuditLog({
+      action: "auth.callback.success",
+      userId: data.user.id,
+      status: "ok",
+      metadata: { email: data.user.email },
+    });
   }
 
   return response;
