@@ -1,7 +1,7 @@
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
-// Cache for project listings to speed up sidebar
 const projectsCache = new Map<string, ProjectSummary[]>();
+const isProduction = () => process.env.NODE_ENV === "production";
 
 type ProjectRow = {
   id: string;
@@ -95,26 +95,48 @@ export async function createProjectForUser(params: {
   if (!supabase) return null;
 
   try {
-    const result = await supabase
-      .from("projects")
-      .upsert({
-        id: projectId,
-        owner_user_id: params.userId,
-        name: params.title,
-        plan_key: planKey,
-        updated_at: now,
-      })
+    const query = params.projectId 
+      ? supabase.from("projects").upsert({
+          id: projectId,
+          owner_user_id: params.userId,
+          name: params.title,
+          plan_key: planKey,
+          updated_at: now,
+        })
+      : supabase.from("projects").insert({
+          id: projectId,
+          owner_user_id: params.userId,
+          name: params.title,
+          plan_key: planKey,
+          created_at: now,
+          updated_at: now,
+        });
+
+    const { data, error } = await query
       .select("id, owner_user_id, name, plan_key, created_at, updated_at")
       .single();
 
-    if (result.error) throw result.error;
+    if (error) {
+      console.error("[ProjectStore] Create/Upsert failed:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        userId: params.userId,
+        projectId
+      });
+      throw error;
+    }
 
     // Invalidate list cache
     projectsCache.delete(params.userId);
 
-    return toProjectSummary(result.data as ProjectRow);
+    return toProjectSummary(data as ProjectRow);
   } catch (err) {
-    console.error("Failed to create project", err);
+    if (isProduction()) {
+      // In production, log fully to server console
+      console.error("[ProjectStore] Critical error creating project:", err);
+    }
     return null;
   }
 }

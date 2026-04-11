@@ -14,12 +14,14 @@ import {
   PlusSquare,
   Search,
   Settings,
+  Settings2,
   Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 type CanvasSummary = {
   id: string;
@@ -114,11 +116,11 @@ async function fetchProjects() {
   return payload.projects;
 }
 
-async function createProject(title: string) {
-  const response = await fetch("/api/projects", {
+async function createProject(title: string, id?: string) {
+  const response = await fetch("/api/canvas", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, id }),
   });
   const payload = (await response.json()) as
     | { ok: true; project: CanvasSummary }
@@ -285,7 +287,13 @@ export function AppShell({
     writeProjectCache(userId, canvases);
   }, [canvases, userId]);
 
+  const [showSettings, setShowSettings] = useState(false);
+
   useEffect(() => {
+    if (!userId) {
+      setCanvases([]);
+      return;
+    }
     if (activeCanvasId) {
       writeActiveCanvas(userId, activeCanvasId);
     }
@@ -314,19 +322,31 @@ export function AppShell({
   };
 
   const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
-  const handleCreateCanvas = async () => {
-    if (isCreatingCanvas) return;
-    setIsCreatingCanvas(true);
-    try {
-      const nextIndex = canvases.length + 1;
-      const nextCanvas = await createProject(`Canvas ${nextIndex}`);
-      setCanvases((current) => [nextCanvas, ...current]);
-      setActiveCanvasId(nextCanvas.id);
-    } catch (err) {
-      console.error("Failed to create canvas project:", err);
-    } finally {
-      setIsCreatingCanvas(false);
+  const handleCreateCanvas = () => {
+    // Generate an ID and metadata optimistically to avoid waiting for Supabase
+    const newId = crypto.randomUUID();
+    const nextIndex = canvases.length + 1;
+    const newCanvas: CanvasSummary = {
+      id: newId,
+      title: `Canvas ${nextIndex}`,
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      planKey: "free",
+    };
+
+    // Update UI immediately
+    setCanvases((current) => [newCanvas, ...current]);
+    setActiveCanvasId(newId);
+
+    // If we're not on the home page, go there
+    if (pathname !== "/") {
+      router.push("/");
     }
+
+    // Fire and forget the DB creation in the background
+    void createProject(newCanvas.title, newId).catch((err) => {
+      console.warn("Background project creation failed, but auto-save may recover:", err);
+    });
   };
 
   const handleDeleteCanvas = async (canvasId: string) => {
@@ -423,6 +443,13 @@ export function AppShell({
             <Link href="/plans">
               <CreditCard className="size-4" />
               Plans
+            </Link>
+          </Button>
+
+          <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/settings" && "sidebar__nav-item--active")}>
+            <Link href="/settings">
+              <Settings2 className="size-4" />
+              Settings
             </Link>
           </Button>
 

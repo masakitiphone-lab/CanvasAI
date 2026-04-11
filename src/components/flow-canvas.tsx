@@ -40,6 +40,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { ConversationNode } from "@/components/conversation-node";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import { Button } from "@/components/ui/button";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
 import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
@@ -103,8 +104,9 @@ const nodeTypes: NodeTypes = { conversation: ConversationNode };
 const MIN_HORIZONTAL_GAP = 72;
 const MIN_VERTICAL_GAP = 80;
 const OVERLAP_GAP = 40;
-const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3.1-pro-preview";
-const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3-pro-image-preview";
+const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3.1-pro";
+const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3-pro-image";
+const DEFAULT_STATUS: NodeStatus = "idle";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
 const FILE_NODE_UPLOAD_ERROR = "ファイルの読み込みに失敗しました。";
@@ -155,12 +157,12 @@ const isSupportedImageModelName = (value: string | undefined): value is Conversa
 
 const getActiveImageModel = (name: string | undefined): ConversationImageModelName => {
   if (isSupportedImageModelName(name)) return name;
-  return GEMINI_IMAGE_MODEL_NAME;
+  return DEFAULT_IMAGE_MODEL_NAME;
 };
 
 const getActiveTextModel = (name: string | undefined): ConversationTextModelName => {
   if (isSupportedTextModelName(name)) return name;
-  return GEMINI_TEXT_MODEL_NAME;
+  return DEFAULT_TEXT_MODEL_NAME;
 };
 
 async function requestGeminiText(requestPayload: {
@@ -414,6 +416,7 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isRangeSelectionPressed, setIsRangeSelectionPressed] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState(DEFAULT_PROJECT_ID);
+  const { settings } = useUserSettings(userId ?? null);
   const reactFlow = useReactFlow<Node<ConversationNodeData>, Edge>();
   const viewport = useViewport();
   const screenToFlowPosition = reactFlow.screenToFlowPosition;
@@ -945,14 +948,14 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
               promptMode,
               modelConfig: {
                 provider: "gemini",
-                name: getDefaultModelForPromptMode(promptMode),
+                name: getDefaultModelForPromptMode(promptMode, settings),
               },
             },
           }
           : node,
       ),
     );
-  }, []);
+  }, [settings]);
 
   const navigateFocusedNode = useCallback(
     (direction: "parent" | "child") => {
