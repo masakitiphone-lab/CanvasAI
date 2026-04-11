@@ -4,16 +4,12 @@ import type {
   ConversationTextModelName,
 } from "@/lib/canvas-types";
 
-export const TEXT_MODEL_OPTIONS: Array<{
-  value: ConversationTextModelName;
-  label: string;
-  description: string;
-}> = [
-  { value: "gemini-3.1-pro", label: "Gemini 3.1 Pro", description: "Advanced intelligence & complex reasoning" },
-  { value: "gemini-3.1-flash", label: "Gemini 3.1 Flash", description: "High-speed multimodal performance" },
-  { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", description: "Minimal latency for high-volume tasks" },
-  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "High-fidelity coding & deep reasoning" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Stable & efficient general purpose model" },
+export const TEXT_MODEL_OPTIONS: Array<{ value: ConversationTextModelName; label: string; description: string }> = [
+  { value: "gemini-3.1-pro", label: "Gemini 3.1 Pro", description: "Flagship intelligence for complex reasoning" },
+  { value: "gemini-3.1-flash", label: "Gemini 3.1 Flash", description: "High-speed versatility for general tasks" },
+  { value: "gemini-3.1-flash-lite", label: "3.1 Flash-Lite", description: "Ultra-low latency for quick replies" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Balanced stable reasoning for long context" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Cost-effective stable production model" },
 ];
 
 export const IMAGE_MODEL_OPTIONS: Array<{
@@ -21,9 +17,9 @@ export const IMAGE_MODEL_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "gemini-3.1-flash-image", label: "Nano Banana 2", description: "Hyper-fast latest generation generation" },
-  { value: "gemini-3-pro-image", label: "Nano Banana Pro", description: "Professional reasoning-based high fidelity" },
-  { value: "gemini-2.5-flash-image", label: "Nano Banana", description: "Fast and reliable standard generation" },
+  { value: "gemini-3.1-flash-image", label: "Nano Banana 2", description: "Next-gen character consistency engine" },
+  { value: "gemini-3-pro-image", label: "Nano Banana Pro", description: "Advanced conversational image editing" },
+  { value: "gemini-2.5-flash-image", label: "Nano Banana", description: "Fast high-fidelity generation base" },
   { value: "imagen-4.0-generate-001", label: "Imagen 4.0", description: "Professional photorealistic engine" },
 ];
 

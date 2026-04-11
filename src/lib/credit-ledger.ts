@@ -127,21 +127,19 @@ async function writeLocalCreditState(state: LocalCreditState) {
 
 function modelCost(modelName: ConversationModelName) {
   switch (modelName) {
-    case "gemini-3.1-flash-lite-preview":
-    case "gemini-2.5-flash-lite":
+    case "gemini-3.1-flash-lite":
       return 1;
-    case "gemini-3-flash-preview":
     case "gemini-3.1-flash":
     case "gemini-2.5-flash":
       return 2;
-    case "gemini-3.1-pro-preview":
     case "gemini-3.1-pro":
     case "gemini-2.5-pro":
       return 6;
-    case "gemini-3-pro-image-preview":
-      return 12;
+    case "gemini-3.1-flash-image":
     case "gemini-2.5-flash-image":
       return 10;
+    case "gemini-3-pro-image":
+      return 12;
     case "imagen-4.0-generate-001":
       return 14;
     default:

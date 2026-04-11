@@ -6,7 +6,7 @@ import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-
 import { consumeRateLimit } from "@/lib/rate-limit";
 import type { ConversationPromptMode, ConversationTextModelName } from "@/lib/canvas-types";
 
-const GEMINI_MODEL: ConversationTextModelName = "gemini-3-flash-preview";
+const GEMINI_MODEL: ConversationTextModelName = "gemini-3.1-flash";
 const MARKDOWN_SYSTEM_INSTRUCTION = [
   "Respond as a normal helpful AI assistant.",
   "Match the user's language unless they ask for a different language.",
