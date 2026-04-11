@@ -8,6 +8,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  const { pathname } = request.nextUrl;
+
+  // Bypass session check entirely for the auth callback.
+  // Running getUser() here will prematurely consume or delete the PKCE code verifier cookie
+  // before the actual callback API route can exchange it.
+  if (pathname.startsWith("/auth/callback")) {
+    return response;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
@@ -36,8 +45,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
   // Protect (workspace) routes and API routes that require auth
   const isLoginPage = pathname === "/login";
   const isAuthRoute = pathname.startsWith("/auth");
@@ -63,5 +70,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
