@@ -102,9 +102,9 @@ type NodeActionRefs = {
 };
 
 const nodeTypes: NodeTypes = { conversation: ConversationNode };
-const MIN_HORIZONTAL_GAP = 72;
-const MIN_VERTICAL_GAP = 80;
-const OVERLAP_GAP = 40;
+const MIN_HORIZONTAL_GAP = 56;
+const MIN_VERTICAL_GAP = 48;
+const OVERLAP_GAP = 24;
 const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3.1-pro";
 const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3-pro-image";
 const DEFAULT_STATUS: NodeStatus = "idle";
@@ -866,7 +866,7 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
         edges: currentEdges,
         newNode: nextNode,
         newEdge: buildEdge(parentNode.id, nextNode.id),
-        options: { nodeWidth: nextWidth, nodeHeight: nextHeight, rankSep: 108, nodeSep: 72 },
+        options: { nodeWidth: nextWidth, nodeHeight: nextHeight, rankSep: 48, nodeSep: 32 },
       });
       const parentWidth = Number(parentNode.style?.width ?? getNodeSize(parentNode.data.kind).width);
       const minimumX = parentNode.position.x + parentWidth + MIN_HORIZONTAL_GAP;
@@ -980,7 +980,7 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
       layoutNodesForMindMap({
         nodes: current.map((node) => normalizeNode(node)),
         edges,
-        options: { nodeWidth: getNodeDefaultSize("ai").width, nodeHeight: getNodeDefaultSize("ai").height, rankSep: 60, nodeSep: 40 },
+        options: { nodeWidth: getNodeDefaultSize("ai").width, nodeHeight: getNodeDefaultSize("ai").height, rankSep: 40, nodeSep: 25 },
       }).map((node) => ({ ...node, selected: false })),
     );
     requestAnimationFrame(() => {

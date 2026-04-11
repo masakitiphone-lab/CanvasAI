@@ -55,9 +55,14 @@ export async function getSupabaseServerClient() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Vercel / Next.js Server Components cannot set cookies during render.
+          // This must be handled by the middleware.
+        }
       },
     },
   });
