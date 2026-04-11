@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       {/* Left: Hero visual panel */}
       <section className="login-visual-panel" aria-hidden="true">
         <img
-          src="/login-hero.png"
+          src="/login-hero.jpg"
           alt=""
           className="login-visual-panel__image"
           draggable={false}
@@ -56,7 +56,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Visual AI Workspace
           </div>
           <h1 className="login-visual-panel__headline">
-            Think visually.<br />Build with AI.
+            Chat is a line.<br />Thinking is a graph.
           </h1>
           <p className="login-visual-panel__subtext">
             A node-based canvas where prompts, images, files, and research converge into one connected workspace.

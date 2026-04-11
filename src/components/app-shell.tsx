@@ -236,8 +236,22 @@ export function AppShell({
         return;
       }
 
-      setCanvases((current) =>
-        current.map((canvas) =>
+      setCanvases((current) => {
+        const index = current.findIndex((canvas) => canvas.id === projectId);
+        if (index === -1) {
+          // New project appearing (e.g. from auto-save)
+          return [
+            {
+              id: projectId,
+              title,
+              updatedAt: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              planKey: "free",
+            },
+            ...current,
+          ];
+        }
+        return current.map((canvas) =>
           canvas.id === projectId
             ? {
                 ...canvas,
@@ -245,8 +259,8 @@ export function AppShell({
                 updatedAt: new Date().toISOString(),
               }
             : canvas,
-        ),
-      );
+        );
+      });
     };
 
     window.addEventListener("canvas:project-updated", handleProjectUpdated as EventListener);
@@ -309,9 +323,7 @@ export function AppShell({
       setCanvases((current) => [nextCanvas, ...current]);
       setActiveCanvasId(nextCanvas.id);
     } catch (err) {
-      console.error("Failed to create canvas:", err);
-      // Fallback: alert the user if creation fails
-      alert("キャンバスの作成に失敗しました。再試行してください。");
+      console.error("Failed to create canvas project:", err);
     } finally {
       setIsCreatingCanvas(false);
     }

@@ -2003,12 +2003,12 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
         if (prev !== canvasId) {
           hasHydratedCanvasRef.current = false;
           setIsHydratingCanvas(true);
-          // If switching to no project, clear the canvas
+          // If switching to no project, clear and prepare a fresh ID for auto-save
           if (!canvasId) {
             setNodes([]);
             setEdges([]);
           }
-          return canvasId ?? DEFAULT_PROJECT_ID;
+          return canvasId ?? crypto.randomUUID();
         }
         return prev;
       });
