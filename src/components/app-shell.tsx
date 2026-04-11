@@ -8,11 +8,14 @@ import {
   CreditCard,
   Edit2,
   LayoutGrid,
+  Loader2,
   LogOut,
   MoreHorizontal,
   PlusSquare,
   Search,
+  Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,14 +183,14 @@ export function AppShell({
     const cached = readProjectCache(userId);
     const cachedActiveCanvas = readActiveCanvas(userId);
 
-    if (cached.length > 0) {
+    startTransition(() => {
       setCanvases(cached);
       setActiveCanvasId(
         cachedActiveCanvas && cached.some((canvas) => canvas.id === cachedActiveCanvas)
           ? cachedActiveCanvas
           : cached[0]?.id ?? null,
       );
-    }
+    });
 
     let cancelled = false;
 
@@ -296,11 +299,22 @@ export function AppShell({
     }
   };
 
+  const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
   const handleCreateCanvas = async () => {
-    const nextIndex = canvases.length + 1;
-    const nextCanvas = await createProject(`Canvas ${nextIndex}`);
-    setCanvases((current) => [nextCanvas, ...current]);
-    setActiveCanvasId(nextCanvas.id);
+    if (isCreatingCanvas) return;
+    setIsCreatingCanvas(true);
+    try {
+      const nextIndex = canvases.length + 1;
+      const nextCanvas = await createProject(`Canvas ${nextIndex}`);
+      setCanvases((current) => [nextCanvas, ...current]);
+      setActiveCanvasId(nextCanvas.id);
+    } catch (err) {
+      console.error("Failed to create canvas:", err);
+      // Fallback: alert the user if creation fails
+      alert("キャンバスの作成に失敗しました。再試行してください。");
+    } finally {
+      setIsCreatingCanvas(false);
+    }
   };
 
   const handleDeleteCanvas = async (canvasId: string) => {
@@ -371,9 +385,19 @@ export function AppShell({
         </div>
 
         <div className="sidebar__nav">
-          <Button type="button" variant="ghost" className="sidebar__nav-item justify-start" onClick={() => void handleCreateCanvas()}>
-            <PlusSquare className="size-4" />
-            New canvas
+          <Button 
+            type="button" 
+            variant="ghost" 
+            className="sidebar__nav-item justify-start" 
+            onClick={() => void handleCreateCanvas()}
+            disabled={isCreatingCanvas}
+          >
+            {isCreatingCanvas ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <PlusSquare className="size-4" />
+            )}
+            {isCreatingCanvas ? "Creating..." : "New canvas"}
           </Button>
 
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/credits" && "sidebar__nav-item--active")}>

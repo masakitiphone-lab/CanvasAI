@@ -403,7 +403,7 @@ const toWrapperPosition = (clientX: number, clientY: number, wrapper: HTMLDivEle
   return { x: clientX - rect.left, y: clientY - rect.top };
 };
 
-function FlowCanvasInner() {
+function FlowCanvasInner({ userId }: { userId?: string }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const paneFileInputRef = useRef<HTMLInputElement | null>(null);
   const [nodes, setNodes] = useState<Array<Node<ConversationNodeRecord>>>([]);
@@ -1762,9 +1762,16 @@ function FlowCanvasInner() {
       setFocusedNodeId(null);
       setEditingNodeId(null);
 
-      const cacheKey = `${PERSIST_CACHE_PREFIX}${currentProjectId}`;
+      const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
       const localCached = localStorage.getItem(cacheKey);
       let initialNodesSet = false;
+
+      // If we switched users or projects, we might want to clear previous state
+      // especially if we are loading a different project/user context.
+      if (!localCached && !hasHydratedCanvasRef.current) {
+        setNodes([]);
+        setEdges([]);
+      }
 
       if (localCached) {
         try {
@@ -1830,7 +1837,7 @@ function FlowCanvasInner() {
       cancelled = true; 
       clearTimeout(safetyTimer);
     };
-  }, [currentProjectId, setEdges]);
+  }, [currentProjectId, setEdges, userId]);
 
   const handleWrapperPaste = useCallback(
     async (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1957,7 +1964,7 @@ function FlowCanvasInner() {
     if (!hasHydratedCanvasRef.current || isHydratingCanvas || hasDraggingNode || hasGeneratingNode) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-    const cacheKey = `${PERSIST_CACHE_PREFIX}${currentProjectId}`;
+    const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
     localStorage.setItem(cacheKey, JSON.stringify({ nodes: sanitizeNodesForPersistence(nodes), edges, updatedAt: Date.now() }));
 
     saveTimerRef.current = setTimeout(() => {
@@ -1986,21 +1993,25 @@ function FlowCanvasInner() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isHydratingCanvas, nodes]);
+  }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isHydratingCanvas, nodes, userId]);
   useEffect(() => {
     const handleSwitchCanvas = (event: Event) => {
-      const customEvent = event as CustomEvent<{ canvasId?: string }>;
+      const customEvent = event as CustomEvent<{ canvasId?: string | null }>;
       const canvasId = customEvent.detail?.canvasId;
-      if (canvasId) {
-        setCurrentProjectId((prev) => {
-          if (prev !== canvasId) {
-            hasHydratedCanvasRef.current = false;
-            setIsHydratingCanvas(true);
-            return canvasId;
+      
+      setCurrentProjectId((prev) => {
+        if (prev !== canvasId) {
+          hasHydratedCanvasRef.current = false;
+          setIsHydratingCanvas(true);
+          // If switching to no project, clear the canvas
+          if (!canvasId) {
+            setNodes([]);
+            setEdges([]);
           }
-          return prev;
-        });
-      }
+          return canvasId ?? DEFAULT_PROJECT_ID;
+        }
+        return prev;
+      });
     };
 
     const handleCreateRoot = () => createRootNodeFromViewport();
@@ -2301,10 +2312,10 @@ function FlowCanvasInner() {
   );
 }
 
-export function FlowCanvas() {
+export function FlowCanvas({ userId }: { userId?: string }) {
   return (
     <ReactFlowProvider>
-      <FlowCanvasInner />
+      <FlowCanvasInner userId={userId} />
     </ReactFlowProvider>
   );
 }
