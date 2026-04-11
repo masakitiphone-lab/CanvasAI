@@ -52,6 +52,7 @@ import type {
   ConversationPromptMode,
   ConversationNodeRecord,
   ConversationTextModelName,
+  NodeStatus,
 } from "@/lib/canvas-types";
 import { getDefaultModelForPromptMode } from "@/lib/model-options";
 import { getNodeDefaultSize } from "@/lib/node-layout";
@@ -141,28 +142,28 @@ const sanitizeNodesForPersistence = (nodes: Array<Node<ConversationNodeRecord>>)
   }));
 
 const isSupportedTextModelName = (value: string | undefined): value is ConversationTextModelName =>
-  value === "gemini-3.1-pro-preview" ||
   value === "gemini-3.1-pro" ||
   value === "gemini-3.1-flash" ||
-  value === "gemini-3-flash-preview" ||
-  value === "gemini-3.1-flash-lite-preview" ||
+  value === "gemini-3.1-flash-lite" ||
+  value === "gemini-3-flash" ||
+  value === "gemini-2.5-pro" ||
   value === "gemini-2.5-flash" ||
-  value === "gemini-2.5-flash-lite" ||
-  value === "gemini-2.5-pro";
+  value === "gemini-2.5-flash-lite";
 
 const isSupportedImageModelName = (value: string | undefined): value is ConversationImageModelName =>
-  value === "gemini-3-pro-image-preview" ||
+  value === "gemini-3.1-flash-image" ||
+  value === "gemini-3-pro-image" ||
   value === "gemini-2.5-flash-image" ||
   value === "imagen-4.0-generate-001";
 
 const getActiveImageModel = (name: string | undefined): ConversationImageModelName => {
   if (isSupportedImageModelName(name)) return name;
-  return DEFAULT_IMAGE_MODEL_NAME;
+  return GEMINI_IMAGE_MODEL_NAME;
 };
 
 const getActiveTextModel = (name: string | undefined): ConversationTextModelName => {
   if (isSupportedTextModelName(name)) return name;
-  return DEFAULT_TEXT_MODEL_NAME;
+  return GEMINI_TEXT_MODEL_NAME;
 };
 
 async function requestGeminiText(requestPayload: {
