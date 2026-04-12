@@ -1,15 +1,38 @@
 "use client";
 
 import { useEffect } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function AuthCompletePage() {
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      window.location.replace("/");
-    }, 150);
+    let cancelled = false;
+
+    async function finalizeSignIn() {
+      const supabase = getSupabaseBrowserClient();
+      const startedAt = Date.now();
+
+      while (!cancelled && Date.now() - startedAt < 5000) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          window.location.replace("/");
+          return;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 200));
+      }
+
+      if (!cancelled) {
+        window.location.replace("/login?authError=session_not_ready");
+      }
+    }
+
+    void finalizeSignIn();
 
     return () => {
-      window.clearTimeout(timer);
+      cancelled = true;
     };
   }, []);
 
