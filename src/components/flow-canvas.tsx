@@ -109,6 +109,7 @@ const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3.1-pro";
 const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3-pro-image";
 const DEFAULT_STATUS: NodeStatus = "idle";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
+const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
 const FILE_NODE_UPLOAD_ERROR = "ファイルの読み込みに失敗しました。";
 const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
@@ -438,6 +439,21 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isMultiDragging, setIsMultiDragging] = useState(false);
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
+
+  useEffect(() => {
+    if (!userId || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedProjectId = window.localStorage.getItem(`${ACTIVE_CANVAS_KEY_PREFIX}.${userId}`)?.trim();
+      if (storedProjectId) {
+        setCurrentProjectId(storedProjectId);
+      }
+    } catch (error) {
+      console.warn("Failed to read active canvas id", error);
+    }
+  }, [userId]);
 
   useEffect(() => {
     nodesRef.current = nodes;

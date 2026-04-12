@@ -7,6 +7,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 
 type CreateProjectRequest = {
   title?: string;
+  projectId?: string;
 };
 
 export async function GET() {
@@ -35,7 +36,11 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as CreateProjectRequest;
   const title = body.title?.trim() || "Untitled canvas";
-  const project = await createProjectForUser({ userId: auth.user.id, title });
+  const project = await createProjectForUser({
+    userId: auth.user.id,
+    title,
+    projectId: body.projectId?.trim() || undefined,
+  });
 
   if (!project) {
     return NextResponse.json(

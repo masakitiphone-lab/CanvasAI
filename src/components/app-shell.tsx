@@ -117,10 +117,10 @@ async function fetchProjects() {
 }
 
 async function createProject(title: string, id?: string) {
-  const response = await fetch("/api/canvas", {
+  const response = await fetch("/api/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, id }),
+    body: JSON.stringify({ title, projectId: id }),
   });
   const payload = (await response.json()) as
     | { ok: true; project: CanvasSummary }
