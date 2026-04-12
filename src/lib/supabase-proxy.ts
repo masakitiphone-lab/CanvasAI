@@ -48,14 +48,9 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname === "/login";
   const isAuthRoute = pathname.startsWith("/auth");
-  const isPublicApi = pathname.startsWith("/api/attachments/url");
   const isApi = pathname.startsWith("/api");
 
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
-
-  if (!user && isApi && !isPublicApi) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   if (user && isLoginPage) {
     const appUrl = request.nextUrl.clone();
@@ -65,6 +60,10 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthRoute) {
     response.headers.set("Cache-Control", "no-store");
+  }
+
+  if (isApi) {
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
   }
 
   return response;
