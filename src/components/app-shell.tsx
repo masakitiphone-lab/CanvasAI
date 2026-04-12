@@ -157,6 +157,28 @@ async function fetchCredits() {
   return payload.summary;
 }
 
+async function refreshProjectsAndSelection(params: {
+  userId: string;
+  preferredCanvasId?: string | null;
+  setCanvases: React.Dispatch<React.SetStateAction<CanvasSummary[]>>;
+  setActiveCanvasId: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
+  const projects = await fetchProjects();
+  writeProjectCache(params.userId, projects);
+
+  const nextActiveCanvasId =
+    (params.preferredCanvasId && projects.some((canvas) => canvas.id === params.preferredCanvasId)
+      ? params.preferredCanvasId
+      : null) ??
+    projects[0]?.id ??
+    null;
+
+  startTransition(() => {
+    params.setCanvases(projects);
+    params.setActiveCanvasId(nextActiveCanvasId);
+  });
+}
+
 export function AppShell({
   children,
   userId,
@@ -353,6 +375,8 @@ export function AppShell({
   };
 
   const handleDeleteCanvas = async (canvasId: string) => {
+    const previousCanvases = canvases;
+    const previousActiveCanvasId = activeCanvasId;
     const remainingCanvases = canvases.filter((canvas) => canvas.id !== canvasId);
     const nextActiveCanvasId = activeCanvasId === canvasId ? remainingCanvases[0]?.id ?? null : activeCanvasId;
 
@@ -369,12 +393,29 @@ export function AppShell({
       }
     }
 
-    await deleteProject(canvasId).catch(() => null);
+    try {
+      await deleteProject(canvasId);
+      writeProjectCache(userId, remainingCanvases);
+    } catch (error) {
+      console.warn("Failed to delete canvas", error);
+      startTransition(() => {
+        setCanvases(previousCanvases);
+        setActiveCanvasId(previousActiveCanvasId);
+      });
+      await refreshProjectsAndSelection({
+        userId,
+        preferredCanvasId: previousActiveCanvasId,
+        setCanvases,
+        setActiveCanvasId,
+      }).catch(() => null);
+      return;
+    }
 
     if (remainingCanvases.length === 0) {
       const fallback = await createProject("Canvas 1");
       setCanvases([fallback]);
       setActiveCanvasId(fallback.id);
+      writeProjectCache(userId, [fallback]);
       const target = `/?canvas=${encodeURIComponent(fallback.id)}`;
       if (pathname === "/") {
         router.replace(target, { scroll: false });

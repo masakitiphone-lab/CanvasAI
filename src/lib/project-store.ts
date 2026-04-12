@@ -1,6 +1,4 @@
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-
-const projectsCache = new Map<string, ProjectSummary[]>();
 const isProduction = () => process.env.NODE_ENV === "production";
 
 type ProjectRow = {
@@ -30,15 +28,7 @@ function toProjectSummary(row: ProjectRow): ProjectSummary {
   };
 }
 
-/**
- * Lists projects for a specific user, using cache if available.
- */
 export async function listProjectsForUser(userId: string): Promise<ProjectSummary[]> {
-  // Return cache if exists for instant UI
-  if (projectsCache.has(userId)) {
-    return projectsCache.get(userId)!;
-  }
-
   const supabase = await getSupabaseServerClient();
   if (!supabase) return [];
 
@@ -51,9 +41,7 @@ export async function listProjectsForUser(userId: string): Promise<ProjectSummar
 
     if (result.error) throw result.error;
 
-    const projects = (result.data as ProjectRow[]).map(toProjectSummary);
-    projectsCache.set(userId, projects);
-    return projects;
+    return (result.data as ProjectRow[]).map(toProjectSummary);
   } catch (err) {
     console.error("Failed to list projects", err);
     return [];
@@ -128,9 +116,6 @@ export async function createProjectForUser(params: {
       throw error;
     }
 
-    // Invalidate list cache
-    projectsCache.delete(params.userId);
-
     return toProjectSummary(data as ProjectRow);
   } catch (err) {
     if (isProduction()) {
@@ -143,7 +128,9 @@ export async function createProjectForUser(params: {
 
 export async function deleteProjectForUser(userId: string, projectId: string) {
   const supabase = await getSupabaseServerClient();
-  if (!supabase) return;
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
 
   try {
     const { error } = await supabase
@@ -153,11 +140,9 @@ export async function deleteProjectForUser(userId: string, projectId: string) {
       .eq("owner_user_id", userId);
     
     if (error) throw error;
-    
-    // Invalidate list cache
-    projectsCache.delete(userId);
   } catch (err) {
     console.error("Failed to delete project", err);
+    throw err;
   }
 }
 

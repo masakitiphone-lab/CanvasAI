@@ -9,8 +9,6 @@ import type {
 } from "@/lib/canvas-types";
 import { normalizeModelName } from "@/lib/model-options";
 
-const canvasCache = new Map<string, PersistedCanvasState>();
-
 type CanvasNodeRow = {
   id: string;
   project_id: string;
@@ -58,10 +56,6 @@ export type PersistedCanvasState = {
 
 function isProduction() {
   return process.env.NODE_ENV === "production";
-}
-
-function getCanvasCacheKey(userId: string, projectId: string) {
-  return `${userId}:${projectId}`;
 }
 
 function requireSupabaseClient<T>(client: T | null): T {
@@ -132,12 +126,6 @@ function buildEdge(source: string, target: string, id: string): Edge {
 }
 
 export async function loadCanvasStateForUser(projectId: string, userId: string): Promise<PersistedCanvasState | null> {
-  const cacheKey = getCanvasCacheKey(userId, projectId);
-  const cached = canvasCache.get(cacheKey);
-  if (cached) {
-    return { ...cached, source: "cache" };
-  }
-
   const supabase = requireSupabaseClient(await getSupabaseServerClient());
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -194,7 +182,6 @@ export async function loadCanvasStateForUser(projectId: string, userId: string):
     source: "supabase",
   };
 
-  canvasCache.set(cacheKey, state);
   return state;
 }
 
@@ -209,13 +196,6 @@ export async function saveCanvasState(
     title?: string;
   },
 ) {
-  const cacheKey = getCanvasCacheKey(userId, projectId);
-  canvasCache.set(cacheKey, {
-    nodes: snapshot.nodes,
-    edges: snapshot.edges,
-    source: "supabase",
-  });
-
   const supabase = requireSupabaseClient(await getSupabaseServerClient());
 
   await touchProjectForUser({
@@ -299,8 +279,6 @@ export async function saveCanvasState(
 }
 
 export async function deleteCanvasState(projectId: string, userId: string) {
-  canvasCache.delete(getCanvasCacheKey(userId, projectId));
-
   const supabase = requireSupabaseClient(await getSupabaseServerClient());
   const { error } = await supabase.from("projects").delete().eq("id", projectId).eq("owner_user_id", userId);
 
