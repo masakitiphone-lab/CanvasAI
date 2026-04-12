@@ -41,9 +41,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { claims },
-  } = await supabase.auth.getClaims();
+  const claimsResult = await supabase.auth.getClaims();
+  const claims = claimsResult.data?.claims ?? null;
 
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname === "/login";
