@@ -10,7 +10,7 @@ type CreateUrlAttachmentRequest = {
 };
 
 export async function POST(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     return auth.response;
   }

@@ -54,7 +54,7 @@ async function resolveAttachmentOwner(params: { attachmentId?: string | null; ob
 }
 
 export async function GET(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     return auth.response;
   }

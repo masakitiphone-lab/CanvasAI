@@ -14,7 +14,7 @@ type SaveCanvasRequest = {
 };
 
 export async function GET(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "canvas.read.denied",
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "canvas.save.denied",
@@ -161,7 +161,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "canvas.delete.denied",

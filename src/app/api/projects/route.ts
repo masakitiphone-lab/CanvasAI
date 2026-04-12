@@ -26,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "project.create.denied",
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "project.delete.denied",
@@ -147,7 +147,7 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "project.rename.denied",

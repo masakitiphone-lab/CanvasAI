@@ -422,7 +422,7 @@ export async function POST(request: Request) {
   let uploadedFiles: UploadedGeminiFile[] = [];
 
   try {
-    const auth = await requireSessionUser();
+    const auth = await requireSessionUser(request);
     if (auth.response || !auth.user) {
       await writeAuditLog({
         action: "generation.text.rejected",

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
 import { SettingsDialog } from "@/components/settings-dialog";
 
@@ -104,7 +105,7 @@ function getUserInitials(userName: string) {
 }
 
 async function fetchProjects() {
-  const response = await fetch("/api/projects", { cache: "no-store" });
+  const response = await authFetch("/api/projects", { cache: "no-store" });
   const payload = (await response.json()) as
     | { ok: true; projects: CanvasSummary[] }
     | { ok: false; error?: { message?: string } };
@@ -117,7 +118,7 @@ async function fetchProjects() {
 }
 
 async function createProject(title: string, id?: string) {
-  const response = await fetch("/api/projects", {
+  const response = await authFetch("/api/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, projectId: id }),
@@ -134,7 +135,7 @@ async function createProject(title: string, id?: string) {
 }
 
 async function deleteProject(projectId: string) {
-  const response = await fetch(`/api/projects?projectId=${encodeURIComponent(projectId)}`, { method: "DELETE" });
+  const response = await authFetch(`/api/projects?projectId=${encodeURIComponent(projectId)}`, { method: "DELETE" });
   const payload = (await response.json().catch(() => ({ ok: response.ok }))) as
     | { ok: true }
     | { ok: false; error?: { message?: string } };
@@ -145,7 +146,7 @@ async function deleteProject(projectId: string) {
 }
 
 async function fetchCredits() {
-  const response = await fetch("/api/credits", { cache: "no-store" });
+  const response = await authFetch("/api/credits", { cache: "no-store" });
   const payload = (await response.json()) as
     | { ok: true; summary: CreditSummary; ledger: CreditLedgerEntry[] }
     | { ok: false; error?: { message?: string } };
@@ -439,7 +440,7 @@ export function AppShell({
     setEditingCanvasId(null);
 
     try {
-      const response = await fetch("/api/projects", {
+      const response = await authFetch("/api/projects", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: canvasId, title }),

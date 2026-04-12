@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { requireSessionUser } from "@/lib/api-auth";
 import { getCreditSummary, listCreditLedger } from "@/lib/credit-ledger";
 
-export async function GET() {
-  const auth = await requireSessionUser();
+export async function GET(request: Request) {
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     return auth.response;
   }

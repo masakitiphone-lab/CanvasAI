@@ -5,7 +5,7 @@ import { writeAuditLog } from "@/lib/audit-log";
 import { consumeRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const auth = await requireSessionUser();
+  const auth = await requireSessionUser(request);
   if (auth.response || !auth.user) {
     await writeAuditLog({
       action: "attachment.upload.denied",

@@ -43,6 +43,7 @@ import { ConversationNode } from "@/components/conversation-node";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Button } from "@/components/ui/button";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
+import { authFetch } from "@/lib/auth-fetch";
 import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
 import type {
   ConversationAttachment,
@@ -182,7 +183,7 @@ async function requestGeminiText(requestPayload: {
   };
 
   try {
-    const response = await fetch("/api/gemini/generate", {
+    const response = await authFetch("/api/gemini/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -284,7 +285,7 @@ async function requestGeminiImage(requestPayload: {
   projectId?: string;
 }): Promise<{ ok: true; model: string; attachments: ConversationAttachment[]; tokenCount?: number | null }> {
   try {
-    const response = await fetch("/api/gemini/generate-image", {
+    const response = await authFetch("/api/gemini/generate-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestPayload),
@@ -311,7 +312,7 @@ async function uploadFiles(files: File[], projectId?: string) {
     if (projectId) {
       formData.append("projectId", projectId);
     }
-    const response = await fetch("/api/attachments/file", { method: "POST", body: formData });
+    const response = await authFetch("/api/attachments/file", { method: "POST", body: formData });
     const payload = (await response.json()) as
       | { ok: true; attachment: ConversationNodeRecord["attachments"][number] }
       | { ok: false; error?: { message?: string } };
@@ -1803,7 +1804,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       setEdges([]);
 
       try {
-        const response = await fetch(`/api/canvas?projectId=${encodeURIComponent(currentProjectId)}`, {
+        const response = await authFetch(`/api/canvas?projectId=${encodeURIComponent(currentProjectId)}`, {
           cache: "no-store",
         });
         const payload = (await response.json()) as { ok: boolean; snapshot?: { nodes: Array<Node<ConversationNodeRecord>>; edges: Edge[] } | null };
@@ -1993,7 +1994,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         nodes.find((node) => node.data.kind === "user")?.data.content.trim() ||
         "Untitled canvas";
 
-      void fetch("/api/canvas", {
+      void authFetch("/api/canvas", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: currentProjectId, nodes, edges }),
