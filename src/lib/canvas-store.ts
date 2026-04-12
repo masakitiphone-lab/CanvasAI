@@ -1,7 +1,13 @@
 import type { Edge, Node } from "@xyflow/react";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { touchProjectForUser } from "@/lib/project-store";
-import type { ConversationAttachment, ConversationModelName, ConversationNodeRecord } from "@/lib/canvas-types";
+import type {
+  ConversationAttachment,
+  ConversationModelName,
+  ConversationNodeRecord,
+  ConversationPromptMode,
+} from "@/lib/canvas-types";
+import { normalizeModelName } from "@/lib/model-options";
 
 const canvasCache = new Map<string, PersistedCanvasState>();
 
@@ -18,6 +24,8 @@ type CanvasNodeRow = {
   is_position_pinned: boolean;
   model_provider: string | null;
   model_name: string | null;
+  prompt_mode: ConversationPromptMode | null;
+  token_count: number | null;
   created_at: string;
 };
 
@@ -69,6 +77,12 @@ function requireSupabaseClient<T>(client: T | null): T {
 }
 
 function buildNodeFromRow(row: CanvasNodeRow, attachments: ConversationAttachment[]): Node<ConversationNodeRecord> {
+  const promptMode = row.kind === "user" ? row.prompt_mode ?? "auto" : undefined;
+  const normalizedModelName =
+    row.model_provider === "gemini" && row.model_name
+      ? normalizeModelName(row.model_name, promptMode ?? "auto")
+      : undefined;
+
   return {
     id: row.id,
     type: "conversation",
@@ -82,12 +96,14 @@ function buildNodeFromRow(row: CanvasNodeRow, attachments: ConversationAttachmen
       content: row.content,
       attachments,
       modelConfig:
-        row.model_provider === "gemini" && row.model_name
+        row.model_provider === "gemini" && normalizedModelName
           ? {
               provider: "gemini",
-              name: row.model_name as ConversationModelName,
+              name: normalizedModelName as ConversationModelName,
             }
           : undefined,
+      promptMode,
+      tokenCount: row.token_count ?? undefined,
       status: row.status,
       createdAt: row.created_at,
       isRoot: row.is_root,
@@ -221,6 +237,8 @@ export async function saveCanvasState(
     is_position_pinned: node.data.isPositionPinned,
     model_provider: node.data.modelConfig?.provider ?? null,
     model_name: node.data.modelConfig?.name ?? null,
+    prompt_mode: node.data.kind === "user" ? node.data.promptMode ?? "auto" : null,
+    token_count: node.data.tokenCount ?? null,
     created_at: node.data.createdAt,
   }));
 

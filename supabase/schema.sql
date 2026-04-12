@@ -25,11 +25,19 @@ create table if not exists canvas_nodes (
   is_position_pinned boolean not null default false,
   model_provider text null,
   model_name text null,
+  prompt_mode text null check (prompt_mode in ('auto', 'image-create', 'deep-research')),
+  token_count integer null,
   created_at text not null
 );
 
 create index if not exists canvas_nodes_project_id_idx on canvas_nodes(project_id);
 create index if not exists canvas_nodes_parent_id_idx on canvas_nodes(parent_id);
+
+alter table if exists canvas_nodes
+  add column if not exists prompt_mode text null check (prompt_mode in ('auto', 'image-create', 'deep-research'));
+
+alter table if exists canvas_nodes
+  add column if not exists token_count integer null;
 
 create table if not exists canvas_edges (
   id text primary key,

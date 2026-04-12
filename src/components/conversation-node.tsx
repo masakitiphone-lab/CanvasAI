@@ -54,7 +54,12 @@ import type {
   ConversationModelName,
   NodeStatus,
 } from "@/lib/canvas-types";
-import { getDefaultModelForPromptMode, IMAGE_MODEL_OPTIONS, TEXT_MODEL_OPTIONS } from "@/lib/model-options";
+import {
+  getDefaultModelForPromptMode,
+  IMAGE_MODEL_OPTIONS,
+  normalizeModelName,
+  TEXT_MODEL_OPTIONS,
+} from "@/lib/model-options";
 import { getNodeDefaultSize, getNodeMinSize } from "@/lib/node-layout";
 import { cn } from "@/lib/utils";
 
@@ -279,13 +284,11 @@ function ConversationNodeComponent({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const footerControlsRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<"mode" | "model" | null>(null);
-  const [displayPromptMode, setDisplayPromptMode] = useState<ConversationPromptMode>(data.promptMode ?? "auto");
-  const [displayModelName, setDisplayModelName] = useState<string>(data.modelConfig?.name ?? getDefaultModelForPromptMode(data.promptMode ?? "auto"));
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
   const otherAttachments = data.attachments.filter((attachment) => attachment.kind !== "image");
-  const activePromptMode = displayPromptMode;
+  const activePromptMode = data.promptMode ?? "auto";
   const modelOptions = activePromptMode === "image-create" ? IMAGE_MODEL_OPTIONS : TEXT_MODEL_OPTIONS;
-  const activeModel = displayModelName;
+  const activeModel = normalizeModelName(data.modelConfig?.name, activePromptMode);
   const activeModelOption = modelOptions.find((option) => option.value === activeModel) ?? modelOptions[0];
   const activePromptModeMeta = promptModeMeta[activePromptMode];
   const ActivePromptModeIcon = activePromptModeMeta.icon;
@@ -648,7 +651,6 @@ function ConversationNodeComponent({
                                   key={mode}
                                   className={cn("mindmap-pill-menu__item", mode === activePromptMode && "mindmap-pill-menu__item--active")}
                                   onClick={() => {
-                                    setDisplayPromptMode(mode);
                                     data.onChangePromptMode?.(mode);
                                     setOpenPanel(null);
                                   }}
@@ -682,7 +684,6 @@ function ConversationNodeComponent({
                                 key={opt.value}
                                 className={cn("mindmap-pill-menu__item", opt.value === activeModel && "mindmap-pill-menu__item--active")}
                                 onClick={() => {
-                                  setDisplayModelName(opt.value);
                                   data.onChangeModel?.(opt.value);
                                   setOpenPanel(null);
                                 }}

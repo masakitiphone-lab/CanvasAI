@@ -1,4 +1,5 @@
 import type {
+  ConversationModelName,
   ConversationImageModelName,
   ConversationPromptMode,
   ConversationTextModelName,
@@ -22,6 +23,33 @@ export const IMAGE_MODEL_OPTIONS: Array<{
   { value: "gemini-2.5-flash-image", label: "Nano Banana", description: "Fast high-fidelity generation base" },
   { value: "imagen-4.0-generate-001", label: "Imagen 4.0", description: "Professional photorealistic engine" },
 ];
+
+export function isSupportedTextModelName(value: string | undefined): value is ConversationTextModelName {
+  return TEXT_MODEL_OPTIONS.some((option) => option.value === value);
+}
+
+export function isSupportedImageModelName(value: string | undefined): value is ConversationImageModelName {
+  return IMAGE_MODEL_OPTIONS.some((option) => option.value === value);
+}
+
+export function normalizeModelName(
+  value: string | undefined,
+  promptMode: ConversationPromptMode,
+  settings?: { defaultTextModel?: string; defaultImageModel?: string },
+): ConversationModelName {
+  if (promptMode === "image-create") {
+    if (isSupportedImageModelName(value)) {
+      return value;
+    }
+    return getDefaultModelForPromptMode(promptMode, settings);
+  }
+
+  if (isSupportedTextModelName(value)) {
+    return value;
+  }
+
+  return getDefaultModelForPromptMode(promptMode, settings);
+}
 
 export function getDefaultModelForPromptMode(
   promptMode: ConversationPromptMode,
