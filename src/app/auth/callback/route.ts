@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { writeAuditLog } from "@/lib/audit-log";
 
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const upstreamError = requestUrl.searchParams.get("error");
   const upstreamErrorDescription = requestUrl.searchParams.get("error_description");
   const origin = requestUrl.origin;
-  const redirectTo = new URL("/", origin);
+  const redirectTo = new URL("/auth/complete", origin);
 
   if (upstreamError) {
     await writeAuditLog({
@@ -21,7 +23,9 @@ export async function GET(request: NextRequest) {
     if (upstreamErrorDescription) {
       failedLoginUrl.searchParams.set("authErrorDescription", upstreamErrorDescription);
     }
-    return NextResponse.redirect(failedLoginUrl);
+    const response = NextResponse.redirect(failedLoginUrl);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   if (!code) {
@@ -32,7 +36,9 @@ export async function GET(request: NextRequest) {
     });
     redirectTo.pathname = "/login";
     redirectTo.searchParams.set("authError", "missing_code");
-    return NextResponse.redirect(redirectTo);
+    const response = NextResponse.redirect(redirectTo);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
@@ -46,10 +52,13 @@ export async function GET(request: NextRequest) {
     });
     redirectTo.pathname = "/login";
     redirectTo.searchParams.set("authError", "missing_config");
-    return NextResponse.redirect(redirectTo);
+    const response = NextResponse.redirect(redirectTo);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   const response = NextResponse.redirect(redirectTo);
+  response.headers.set("Cache-Control", "no-store");
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
