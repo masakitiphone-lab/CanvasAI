@@ -43,8 +43,53 @@ export async function GET(request: Request) {
     );
   }
 
-  const snapshot = await loadCanvasStateForUser(projectId, auth.user.id);
-  return NextResponse.json({ ok: true, snapshot });
+  try {
+    const snapshot = await loadCanvasStateForUser(projectId, auth.user.id);
+
+    await writeAuditLog({
+      action: snapshot ? "canvas.read" : "canvas.read.miss",
+      userId: auth.user.id,
+      projectId,
+      targetType: "canvas",
+      targetId: projectId,
+      metadata: snapshot
+        ? {
+            source: snapshot.source,
+            nodeCount: snapshot.nodes.length,
+            edgeCount: snapshot.edges.length,
+          }
+        : { reason: "not_found" },
+    });
+
+    return NextResponse.json({ ok: true, snapshot });
+  } catch (error) {
+    await writeAuditLog({
+      action: "canvas.read.error",
+      userId: auth.user.id,
+      projectId,
+      targetType: "canvas",
+      targetId: projectId,
+      status: "error",
+      metadata: {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack ?? null,
+              }
+            : { name: "UnknownError", message: String(error), stack: null },
+      },
+    });
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: { message: "Failed to load canvas." },
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function PUT(request: Request) {

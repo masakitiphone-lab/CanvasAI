@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Coins,
   CreditCard,
@@ -180,16 +180,21 @@ export function AppShell({
 
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlCanvasId = searchParams.get("canvas");
 
   useEffect(() => {
     const cached = readProjectCache(userId);
     const cachedActiveCanvas = readActiveCanvas(userId);
+    const initialCanvasId =
+      (urlCanvasId && cached.some((canvas) => canvas.id === urlCanvasId) ? urlCanvasId : null) ??
+      cachedActiveCanvas;
 
     startTransition(() => {
       setCanvases(cached);
       setActiveCanvasId(
-        cachedActiveCanvas && cached.some((canvas) => canvas.id === cachedActiveCanvas)
-          ? cachedActiveCanvas
+        initialCanvasId && cached.some((canvas) => canvas.id === initialCanvasId)
+          ? initialCanvasId
           : cached[0]?.id ?? null,
       );
     });
@@ -213,6 +218,7 @@ export function AppShell({
         }
 
         const nextActiveCanvasId =
+          (urlCanvasId && projects.some((canvas) => canvas.id === urlCanvasId) ? urlCanvasId : null) ??
           (cachedActiveCanvas && projects.some((canvas) => canvas.id === cachedActiveCanvas) ? cachedActiveCanvas : null) ??
           projects[0]?.id ??
           null;
@@ -270,7 +276,7 @@ export function AppShell({
       cancelled = true;
       window.removeEventListener("canvas:project-updated", handleProjectUpdated as EventListener);
     };
-  }, [userId]);
+  }, [urlCanvasId, userId]);
 
   useEffect(() => {
     const refreshCredits = () => {
@@ -297,15 +303,7 @@ export function AppShell({
     if (activeCanvasId) {
       writeActiveCanvas(userId, activeCanvasId);
     }
-
-    const activeCanvas = canvases.find(c => c.id === activeCanvasId);
-    window.dispatchEvent(new CustomEvent("canvas:switch-canvas", { 
-      detail: { 
-        canvasId: activeCanvasId,
-        title: activeCanvas?.title
-      } 
-    }));
-  }, [activeCanvasId, userId, canvases]);
+  }, [activeCanvasId, userId]);
 
 
   const filteredCanvases = useMemo(() => {
@@ -316,9 +314,12 @@ export function AppShell({
 
   const handleSwitchCanvas = (canvasId: string | null) => {
     setActiveCanvasId(canvasId);
-    if (pathname !== "/") {
-      router.push("/");
+    const target = canvasId ? `/?canvas=${encodeURIComponent(canvasId)}` : "/";
+    if (pathname === "/") {
+      router.replace(target, { scroll: false });
+      return;
     }
+    router.push(target);
   };
 
   const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
@@ -337,10 +338,12 @@ export function AppShell({
     // Update UI immediately
     setCanvases((current) => [newCanvas, ...current]);
     setActiveCanvasId(newId);
+    const target = `/?canvas=${encodeURIComponent(newId)}`;
 
-    // If we're not on the home page, go there
-    if (pathname !== "/") {
-      router.push("/");
+    if (pathname === "/") {
+      router.replace(target, { scroll: false });
+    } else {
+      router.push(target);
     }
 
     // Fire and forget the DB creation in the background
@@ -357,12 +360,27 @@ export function AppShell({
     setOpenCanvasMenuId(null);
     setActiveCanvasId(nextActiveCanvasId);
 
+    if (activeCanvasId === canvasId) {
+      const target = nextActiveCanvasId ? `/?canvas=${encodeURIComponent(nextActiveCanvasId)}` : "/";
+      if (pathname === "/") {
+        router.replace(target, { scroll: false });
+      } else {
+        router.push(target);
+      }
+    }
+
     await deleteProject(canvasId).catch(() => null);
 
     if (remainingCanvases.length === 0) {
       const fallback = await createProject("Canvas 1");
       setCanvases([fallback]);
       setActiveCanvasId(fallback.id);
+      const target = `/?canvas=${encodeURIComponent(fallback.id)}`;
+      if (pathname === "/") {
+        router.replace(target, { scroll: false });
+      } else {
+        router.push(target);
+      }
     }
   };
 

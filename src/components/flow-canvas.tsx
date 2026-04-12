@@ -407,7 +407,7 @@ const toWrapperPosition = (clientX: number, clientY: number, wrapper: HTMLDivEle
   return { x: clientX - rect.left, y: clientY - rect.top };
 };
 
-function FlowCanvasInner({ userId }: { userId?: string }) {
+function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const paneFileInputRef = useRef<HTMLInputElement | null>(null);
   const [nodes, setNodes] = useState<Array<Node<ConversationNodeRecord>>>([]);
@@ -417,7 +417,7 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   const [isHydratingCanvas, setIsHydratingCanvas] = useState(true);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isRangeSelectionPressed, setIsRangeSelectionPressed] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState(DEFAULT_PROJECT_ID);
+  const [currentProjectId, setCurrentProjectId] = useState(initialProjectId ?? DEFAULT_PROJECT_ID);
   const { settings } = useUserSettings(userId ?? null);
   const reactFlow = useReactFlow<Node<ConversationNodeData>, Edge>();
   const viewport = useViewport();
@@ -441,7 +441,7 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
 
   useEffect(() => {
-    if (!userId || typeof window === "undefined") {
+    if (!userId || initialProjectId || typeof window === "undefined") {
       return;
     }
 
@@ -453,7 +453,21 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
     } catch (error) {
       console.warn("Failed to read active canvas id", error);
     }
-  }, [userId]);
+  }, [initialProjectId, userId]);
+
+  useEffect(() => {
+    if (!initialProjectId) {
+      return;
+    }
+
+    setCurrentProjectId((prev) => {
+      if (prev === initialProjectId) {
+        return prev;
+      }
+      hasHydratedCanvasRef.current = false;
+      return initialProjectId;
+    });
+  }, [initialProjectId]);
 
   useEffect(() => {
     nodesRef.current = nodes;
@@ -2001,25 +2015,6 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
     };
   }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isHydratingCanvas, nodes, userId]);
   useEffect(() => {
-    const handleSwitchCanvas = (event: Event) => {
-      const customEvent = event as CustomEvent<{ canvasId?: string | null }>;
-      const canvasId = customEvent.detail?.canvasId;
-      
-      setCurrentProjectId((prev) => {
-        if (prev !== canvasId) {
-          hasHydratedCanvasRef.current = false;
-          setIsHydratingCanvas(true);
-          // If switching to no project, clear and prepare a fresh ID for auto-save
-          if (!canvasId) {
-            setNodes([]);
-            setEdges([]);
-          }
-          return canvasId ?? crypto.randomUUID();
-        }
-        return prev;
-      });
-    };
-
     const handleCreateRoot = () => createRootNodeFromViewport();
     const handleFocusRequest = (event: Event) => {
       const customEvent = event as CustomEvent<{ nodeId?: string }>;
@@ -2027,11 +2022,9 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
     };
     window.addEventListener("canvas:new-chat", handleCreateRoot);
     window.addEventListener("canvas:focus-node", handleFocusRequest as EventListener);
-    window.addEventListener("canvas:switch-canvas", handleSwitchCanvas as EventListener);
     return () => {
       window.removeEventListener("canvas:new-chat", handleCreateRoot);
       window.removeEventListener("canvas:focus-node", handleFocusRequest as EventListener);
-      window.removeEventListener("canvas:switch-canvas", handleSwitchCanvas as EventListener);
     };
   }, [createRootNodeFromViewport, focusNode]);
 
@@ -2318,10 +2311,10 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
   );
 }
 
-export function FlowCanvas({ userId }: { userId?: string }) {
+export function FlowCanvas({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
   return (
     <ReactFlowProvider>
-      <FlowCanvasInner userId={userId} />
+      <FlowCanvasInner userId={userId} initialProjectId={initialProjectId} />
     </ReactFlowProvider>
   );
 }
