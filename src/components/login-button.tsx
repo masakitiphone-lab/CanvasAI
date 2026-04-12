@@ -15,8 +15,7 @@ export function LoginButton() {
 
     try {
       const supabase = getSupabaseBrowserClient();
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-      const redirectTo = `${(siteUrl || window.location.origin).replace(/\/$/, "")}/auth/callback`;
+      const redirectTo = `${window.location.origin.replace(/\/$/, "")}/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
