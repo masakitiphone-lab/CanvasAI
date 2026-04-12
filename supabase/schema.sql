@@ -89,6 +89,29 @@ create table if not exists audit_logs (
 
 create index if not exists audit_logs_user_id_idx on audit_logs(user_id, occurred_at desc);
 create index if not exists audit_logs_project_id_idx on audit_logs(project_id, occurred_at desc);
+create index if not exists audit_logs_generation_error_idx
+on audit_logs(action, status, occurred_at desc)
+where status = 'error' and action in ('generation.text.error', 'generation.image.error');
+
+create or replace view public.generation_error_logs as
+select
+  id,
+  user_id,
+  project_id,
+  action,
+  target_id,
+  occurred_at,
+  metadata ->> 'modelName' as model_name,
+  metadata ->> 'promptMode' as prompt_mode,
+  metadata ->> 'chargedCredits' as charged_credits,
+  metadata ->> 'runtime' as runtime,
+  coalesce(metadata -> 'error' ->> 'name', metadata ->> 'code') as error_name,
+  coalesce(metadata -> 'error' ->> 'message', metadata ->> 'message') as error_message,
+  metadata -> 'error' ->> 'stack' as error_stack,
+  metadata as raw_metadata
+from audit_logs
+where status = 'error'
+  and action in ('generation.text.error', 'generation.image.error');
 
 create table if not exists user_credit_balances (
   user_id uuid primary key references auth.users(id) on delete cascade,

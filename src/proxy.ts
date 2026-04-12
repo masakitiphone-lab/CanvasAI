@@ -45,19 +45,15 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect (workspace) routes and API routes that require auth
+  // Keep API routes protected, but don't hard-redirect page navigations here.
+  // Route-level page protection was causing false unauthenticated redirects on client navigation.
   const isLoginPage = pathname === "/login";
   const isAuthRoute = pathname.startsWith("/auth");
   const isPublicApi = pathname.startsWith("/api/attachments/url"); // example of public if any
   const isApi = pathname.startsWith("/api");
 
-  if (!user && !isLoginPage && !isAuthRoute && !isPublicApi) {
-    if (isApi) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
+  if (!user && isApi && !isPublicApi) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   if (user && isLoginPage) {
