@@ -17,6 +17,14 @@ export default function AuthCompletePage() {
         } = await supabase.auth.getSession();
 
         if (session?.user) {
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              accessToken: session.access_token,
+              refreshToken: session.refresh_token,
+            }),
+          });
           window.location.replace("/");
           return;
         }
