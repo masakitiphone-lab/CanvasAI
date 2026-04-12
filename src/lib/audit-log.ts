@@ -15,6 +15,30 @@ type AuditEvent = {
   metadata?: Record<string, unknown>;
 };
 
+export function serializeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack ?? null,
+      cause:
+        error.cause instanceof Error
+          ? {
+              name: error.cause.name,
+              message: error.cause.message,
+            }
+          : error.cause ?? null,
+    };
+  }
+
+  return {
+    name: "UnknownError",
+    message: typeof error === "string" ? error : "unknown_error",
+    stack: null,
+    cause: null,
+  };
+}
+
 export async function writeAuditLog(event: AuditEvent) {
   const record = {
     id: crypto.randomUUID(),
@@ -44,15 +68,19 @@ export async function writeAuditLog(event: AuditEvent) {
     return;
   }
 
-  await supabase.from("audit_logs").insert({
-    id: record.id,
-    user_id: record.userId,
-    project_id: record.projectId,
-    action: record.action,
-    target_type: record.targetType,
-    target_id: record.targetId,
-    status: record.status,
-    metadata: record.metadata,
-    occurred_at: record.occurredAt,
-  });
+  try {
+    await supabase.from("audit_logs").insert({
+      id: record.id,
+      user_id: record.userId,
+      project_id: record.projectId,
+      action: record.action,
+      target_type: record.targetType,
+      target_id: record.targetId,
+      status: record.status,
+      metadata: record.metadata,
+      occurred_at: record.occurredAt,
+    });
+  } catch (error) {
+    console.warn("Supabase audit log write failed:", error);
+  }
 }

@@ -7,6 +7,10 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const CREDIT_STATE_FILE = path.join(DATA_DIR, "credit-state.json");
 const DEFAULT_DAILY_CREDITS = Number(process.env.DAILY_CREDIT_GRANT ?? 500);
 const CREDIT_TIME_ZONE = process.env.CREDIT_TIME_ZONE ?? "Asia/Singapore";
+let memoryCreditState: LocalCreditState = {
+  balances: [],
+  ledger: [],
+};
 
 type CreditBalanceRow = {
   user_id: string;
@@ -88,10 +92,6 @@ function normalizeRpcRow<T>(data: T | T[] | null): T | null {
 
 function requireCreditAdminClient() {
   const supabase = getSupabaseAdminClient();
-  if (!supabase && isProduction()) {
-    throw new Error("Supabase credit storage is required in production.");
-  }
-
   return supabase;
 }
 
@@ -101,7 +101,7 @@ async function ensureDataDir() {
 
 async function readLocalCreditState(): Promise<LocalCreditState> {
   if (isProduction()) {
-    throw new Error("Local credit state fallback is disabled in production.");
+    return memoryCreditState;
   }
 
   try {
@@ -118,7 +118,8 @@ async function readLocalCreditState(): Promise<LocalCreditState> {
 
 async function writeLocalCreditState(state: LocalCreditState) {
   if (isProduction()) {
-    throw new Error("Local credit state fallback is disabled in production.");
+    memoryCreditState = state;
+    return;
   }
 
   await ensureDataDir();

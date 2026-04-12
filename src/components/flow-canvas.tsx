@@ -1767,50 +1767,21 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
       setMenu(null);
       setFocusedNodeId(null);
       setEditingNodeId(null);
-
       const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
-      const localCached = localStorage.getItem(cacheKey);
-      let initialNodesSet = false;
-
-      // If we switched users or projects, we might want to clear previous state
-      // especially if we are loading a different project/user context.
-      if (!localCached && !hasHydratedCanvasRef.current) {
-        setNodes([]);
-        setEdges([]);
-      }
-
-      if (localCached) {
-        try {
-          const parsed = JSON.parse(localCached);
-          if (parsed && Array.from(parsed.nodes || []).length > 0) {
-            const cachedNodes = sanitizeNodesForPersistence(parsed.nodes || []);
-            setNodes(cachedNodes.map((node: Node<ConversationNodeRecord>) => normalizeNode({ ...node, selected: false })));
-            setEdges((parsed.edges || []).map(normalizeEdge));
-            // Fast path: Hide the main loader immediately if we have cached data to show
-            setIsHydratingCanvas(false);
-            initialNodesSet = true;
-          }
-        } catch (e) {
-          console.warn("Failed to parse local canvas cache", e);
-        }
-      }
-
-      // If no cache, we MUST show the loader while we fetch the first time
-      if (!initialNodesSet) {
-        setIsHydratingCanvas(true);
-      }
+      setIsHydratingCanvas(true);
+      setNodes([]);
+      setEdges([]);
 
       try {
-        const response = await fetch(`/api/canvas?projectId=${encodeURIComponent(currentProjectId)}`);
+        const response = await fetch(`/api/canvas?projectId=${encodeURIComponent(currentProjectId)}`, {
+          cache: "no-store",
+        });
         const payload = (await response.json()) as { ok: boolean; snapshot?: { nodes: Array<Node<ConversationNodeRecord>>; edges: Edge[] } | null };
         
         if (!response.ok || !payload.ok || cancelled) return;
 
         if (!payload.snapshot) {
-          if (!initialNodesSet) {
-            setNodes([]);
-            setEdges([]);
-          }
+          localStorage.removeItem(cacheKey);
           return;
         }
 
@@ -1821,10 +1792,23 @@ function FlowCanvasInner({ userId }: { userId?: string }) {
         setNodes(freshNodes);
         setEdges(freshEdges);
 
-        // Update cache for next time
+        // Keep a local snapshot only as a recovery fallback if a later fetch fails.
         localStorage.setItem(cacheKey, JSON.stringify({ nodes: sanitizeNodesForPersistence(freshNodes), edges: freshEdges, updatedAt: Date.now() }));
       } catch (err) {
         console.error("Hydration failed", err);
+        const localCached = localStorage.getItem(cacheKey);
+        if (!localCached || cancelled) {
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(localCached);
+          const cachedNodes = sanitizeNodesForPersistence(parsed.nodes || []);
+          setNodes(cachedNodes.map((node: Node<ConversationNodeRecord>) => normalizeNode({ ...node, selected: false })));
+          setEdges((parsed.edges || []).map(normalizeEdge));
+        } catch (cacheError) {
+          console.warn("Failed to recover local canvas cache", cacheError);
+        }
       } finally {
         if (!cancelled) {
           hasHydratedCanvasRef.current = true;

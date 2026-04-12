@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ConversationModelName } from "@/lib/canvas-types";
+import { startTransition, useEffect, useState } from "react";
 
 const SETTINGS_KEY_PREFIX = "canvasai-settings-";
 
@@ -22,17 +21,28 @@ export function useUserSettings(userId: string | null) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      startTransition(() => {
+        setSettings(DEFAULT_SETTINGS);
+        setIsLoaded(true);
+      });
+      return;
+    }
 
+    let nextSettings = DEFAULT_SETTINGS;
     try {
       const stored = localStorage.getItem(`${SETTINGS_KEY_PREFIX}${userId}`);
       if (stored) {
-        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
+        nextSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       }
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
-    setIsLoaded(true);
+
+    startTransition(() => {
+      setSettings(nextSettings);
+      setIsLoaded(true);
+    });
   }, [userId]);
 
   const updateSettings = (updates: Partial<UserSettings>) => {

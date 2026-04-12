@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import type { LineageEntry } from "@/lib/build-lineage-context";
 import { requireSessionUser } from "@/lib/api-auth";
 import { readAttachmentBinary, storeGeneratedImageAttachment } from "@/lib/attachment-store";
-import { writeAuditLog } from "@/lib/audit-log";
+import { serializeError, writeAuditLog } from "@/lib/audit-log";
 import type { ConversationAttachment, ConversationImageModelName } from "@/lib/canvas-types";
 import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-ledger";
 import { consumeRateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const GEMINI_IMAGE_MODEL: ConversationImageModelName = "gemini-2.5-flash-image";
 
@@ -617,6 +620,7 @@ export async function POST(request: Request) {
       balance: debit.balance,
     });
   } catch (error) {
+    const errorInfo = serializeError(error);
     await writeAuditLog({
       action: "generation.image.error",
       userId: auth.user.id,
@@ -627,7 +631,8 @@ export async function POST(request: Request) {
       metadata: {
         modelName,
         chargedCredits: cost,
-        message: error instanceof Error ? error.message : "unknown_error",
+        error: errorInfo,
+        runtime: process.env.VERCEL ? "vercel" : "local",
       },
     });
     await refundCredits({
@@ -639,7 +644,7 @@ export async function POST(request: Request) {
       promptMode: "image-create",
       requestId,
       metadata: {
-        message: error instanceof Error ? error.message : "unknown_error",
+        error: errorInfo,
       },
     });
     throw error;

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { readAttachmentBinary } from "@/lib/attachment-store";
 import { requireSessionUser } from "@/lib/api-auth";
-import { writeAuditLog } from "@/lib/audit-log";
+import { serializeError, writeAuditLog } from "@/lib/audit-log";
 import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-ledger";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import type { ConversationPromptMode, ConversationTextModelName } from "@/lib/canvas-types";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const GEMINI_MODEL: ConversationTextModelName = "gemini-3.1-flash";
 const MARKDOWN_SYSTEM_INSTRUCTION = [
@@ -409,152 +412,164 @@ async function streamGeminiResponse(params: {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireSessionUser();
-  if (auth.response || !auth.user) {
-    await writeAuditLog({
-      action: "generation.text.rejected",
-      status: "error",
-      metadata: { reason: "missing_session" },
-    });
-    return auth.response;
-  }
-
-  const rate = consumeRateLimit({ key: `generation:text:${auth.user.id}`, scope: "generation" });
-  if (!rate.ok) {
-    await writeAuditLog({
-      action: "generation.text.rejected",
-      userId: auth.user.id,
-      status: "error",
-      metadata: { scope: "generation", reason: "rate_limited" },
-    });
-    return jsonError("Too many generation requests. Please wait a moment and try again.", "rate_limited", 429);
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    await writeAuditLog({
-      action: "generation.text.error",
-      userId: auth.user.id,
-      status: "error",
-      metadata: { reason: "missing_api_key" },
-    });
-    return jsonError("GEMINI_API_KEY is not configured.", "missing_api_key", 500);
-  }
-
-  const body = (await request.json()) as GenerateRequestBody;
-  const lineage = body.lineage ?? [];
-  const modelName = (body.model?.name?.trim() as ConversationTextModelName | undefined) || GEMINI_MODEL;
-  const targetNodeId = body.targetNodeId?.trim();
-  const projectId = body.projectId?.trim() || null;
-  const promptMode = body.promptMode ?? "auto";
-
-  if (!targetNodeId || lineage.length === 0) {
-    await writeAuditLog({
-      action: "generation.text.rejected",
-      userId: auth.user.id,
-      projectId,
-      status: "error",
-      metadata: { reason: "missing_lineage_or_target", targetNodeId, lineageLength: lineage.length },
-    });
-    return jsonError("targetNodeId and lineage are required.", "missing_lineage", 400);
-  }
-
-  const cost = estimateCreditCost({
-    promptMode,
-    modelName,
-    attachmentCount: lineage.reduce((count, entry) => count + (entry.attachments?.length ?? 0), 0),
-  });
-  const requestId = crypto.randomUUID();
-  const debit = await consumeCredits({
-    userId: auth.user.id,
-    projectId,
-    amount: cost,
-    reason: "generation_text",
-    modelName,
-    promptMode,
-    requestId,
-    metadata: {
-      targetNodeId,
-      lineageLength: lineage.length,
-    },
-  });
-
-  if (!debit.ok) {
-    await writeAuditLog({
-      action: "generation.text.rejected",
-      userId: auth.user.id,
-      projectId,
-      status: "error",
-      metadata: {
-        modelName,
-        promptMode,
-        requiredCredits: debit.required,
-        balance: debit.balance,
-      },
-    });
-    return jsonError(
-      `Not enough credits. Required: ${debit.required}, available: ${debit.balance}.`,
-      "insufficient_credits",
-      402,
-    );
-  }
-
-  const { parts, uploadedFiles } = await buildGeminiParts(lineage, apiKey);
-  const tools: GeminiTool[] | undefined = shouldEnableGoogleSearch(lineage) ? [{ google_search: {} }] : undefined;
-
-  if (body.stream) {
-    return streamGeminiResponse({
-      apiKey,
-      modelName,
-      parts,
-      uploadedFiles,
-      tools,
-      onDone: async ({ tokenCount, webSearchUsed }) => {
-        await writeAuditLog({
-          action: "generation.text",
-          userId: auth.user.id,
-          projectId,
-          targetType: "generation",
-          targetId: requestId,
-          metadata: {
-            modelName,
-            promptMode,
-            tokenCount,
-            webSearchUsed,
-            chargedCredits: cost,
-          },
-        });
-      },
-      onError: async (message) => {
-        await refundCredits({
-          userId: auth.user.id,
-          projectId,
-          amount: cost,
-          reason: "generation_text_failed",
-          modelName,
-          promptMode,
-          requestId,
-          metadata: { message },
-        });
-        await writeAuditLog({
-          action: "generation.text.error",
-          userId: auth.user.id,
-          projectId,
-          targetType: "generation",
-          targetId: requestId,
-          status: "error",
-          metadata: {
-            modelName,
-            promptMode,
-            chargedCredits: cost,
-            message,
-          },
-        });
-      },
-    });
-  }
+  let authUserId: string | null = null;
+  let projectId: string | null = null;
+  let modelName: ConversationTextModelName = GEMINI_MODEL;
+  let promptMode: ConversationPromptMode = "auto";
+  let requestId: string | null = null;
+  let cost = 0;
+  let apiKey = "";
+  let uploadedFiles: UploadedGeminiFile[] = [];
 
   try {
+    const auth = await requireSessionUser();
+    if (auth.response || !auth.user) {
+      await writeAuditLog({
+        action: "generation.text.rejected",
+        status: "error",
+        metadata: { reason: "missing_session" },
+      });
+      return auth.response;
+    }
+    authUserId = auth.user.id;
+
+    const rate = consumeRateLimit({ key: `generation:text:${auth.user.id}`, scope: "generation" });
+    if (!rate.ok) {
+      await writeAuditLog({
+        action: "generation.text.rejected",
+        userId: auth.user.id,
+        status: "error",
+        metadata: { scope: "generation", reason: "rate_limited" },
+      });
+      return jsonError("Too many generation requests. Please wait a moment and try again.", "rate_limited", 429);
+    }
+
+    apiKey = process.env.GEMINI_API_KEY?.trim() ?? "";
+    if (!apiKey) {
+      await writeAuditLog({
+        action: "generation.text.error",
+        userId: auth.user.id,
+        status: "error",
+        metadata: { reason: "missing_api_key" },
+      });
+      return jsonError("GEMINI_API_KEY is not configured.", "missing_api_key", 500);
+    }
+
+    const body = (await request.json()) as GenerateRequestBody;
+    const lineage = body.lineage ?? [];
+    modelName = (body.model?.name?.trim() as ConversationTextModelName | undefined) || GEMINI_MODEL;
+    const targetNodeId = body.targetNodeId?.trim();
+    projectId = body.projectId?.trim() || null;
+    promptMode = body.promptMode ?? "auto";
+
+    if (!targetNodeId || lineage.length === 0) {
+      await writeAuditLog({
+        action: "generation.text.rejected",
+        userId: auth.user.id,
+        projectId,
+        status: "error",
+        metadata: { reason: "missing_lineage_or_target", targetNodeId, lineageLength: lineage.length },
+      });
+      return jsonError("targetNodeId and lineage are required.", "missing_lineage", 400);
+    }
+
+    cost = estimateCreditCost({
+      promptMode,
+      modelName,
+      attachmentCount: lineage.reduce((count, entry) => count + (entry.attachments?.length ?? 0), 0),
+    });
+    requestId = crypto.randomUUID();
+    const debit = await consumeCredits({
+      userId: auth.user.id,
+      projectId,
+      amount: cost,
+      reason: "generation_text",
+      modelName,
+      promptMode,
+      requestId,
+      metadata: {
+        targetNodeId,
+        lineageLength: lineage.length,
+      },
+    });
+
+    if (!debit.ok) {
+      await writeAuditLog({
+        action: "generation.text.rejected",
+        userId: auth.user.id,
+        projectId,
+        status: "error",
+        metadata: {
+          modelName,
+          promptMode,
+          requiredCredits: debit.required,
+          balance: debit.balance,
+        },
+      });
+      return jsonError(
+        `Not enough credits. Required: ${debit.required}, available: ${debit.balance}.`,
+        "insufficient_credits",
+        402,
+      );
+    }
+
+    const built = await buildGeminiParts(lineage, apiKey);
+    const parts = built.parts;
+    uploadedFiles = built.uploadedFiles;
+    const tools: GeminiTool[] | undefined = shouldEnableGoogleSearch(lineage) ? [{ google_search: {} }] : undefined;
+
+    if (body.stream) {
+      return streamGeminiResponse({
+        apiKey,
+        modelName,
+        parts,
+        uploadedFiles,
+        tools,
+        onDone: async ({ tokenCount, webSearchUsed }) => {
+          await writeAuditLog({
+            action: "generation.text",
+            userId: auth.user.id,
+            projectId,
+            targetType: "generation",
+            targetId: requestId,
+            metadata: {
+              modelName,
+              promptMode,
+              tokenCount,
+              webSearchUsed,
+              chargedCredits: cost,
+            },
+          });
+        },
+        onError: async (message) => {
+          await refundCredits({
+            userId: auth.user.id,
+            projectId,
+            amount: cost,
+            reason: "generation_text_failed",
+            modelName,
+            promptMode,
+            requestId,
+            metadata: { message },
+          });
+          await writeAuditLog({
+            action: "generation.text.error",
+            userId: auth.user.id,
+            projectId,
+            targetType: "generation",
+            targetId: requestId,
+            status: "error",
+            metadata: {
+              modelName,
+              promptMode,
+              chargedCredits: cost,
+              message,
+            },
+          });
+        },
+      });
+    }
+
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
       method: "POST",
       headers: {
@@ -658,34 +673,43 @@ export async function POST(request: Request) {
       balance: debit.balance,
     });
   } catch (error) {
-    await writeAuditLog({
-      action: "generation.text.error",
-      userId: auth.user.id,
-      projectId,
-      targetType: "generation",
-      targetId: requestId,
-      status: "error",
-      metadata: {
-        modelName,
-        promptMode,
-        chargedCredits: cost,
-        message: error instanceof Error ? error.message : "unknown_error",
-      },
-    });
-    await refundCredits({
-      userId: auth.user.id,
-      projectId,
-      amount: cost,
-      reason: "generation_text_failed",
-      modelName,
-      promptMode,
-      requestId,
-      metadata: {
-        message: error instanceof Error ? error.message : "unknown_error",
-      },
-    });
-    throw error;
+    const errorInfo = serializeError(error);
+    const message = errorInfo.message;
+
+    if (authUserId && requestId && cost > 0) {
+      await Promise.allSettled([
+        refundCredits({
+          userId: authUserId,
+          projectId,
+          amount: cost,
+          reason: "generation_text_failed",
+          modelName,
+          promptMode,
+          requestId,
+          metadata: { message },
+        }),
+        writeAuditLog({
+          action: "generation.text.error",
+          userId: authUserId,
+          projectId,
+          targetType: "generation",
+          targetId: requestId,
+          status: "error",
+          metadata: {
+            modelName,
+            promptMode,
+            chargedCredits: cost,
+            error: errorInfo,
+            runtime: process.env.VERCEL ? "vercel" : "local",
+          },
+        }),
+      ]);
+    }
+
+    return jsonError(message, "generation_route_failed", 500);
   } finally {
-    await Promise.allSettled(uploadedFiles.map((file) => deleteGeminiFile(apiKey, file.name)));
+    if (apiKey && uploadedFiles.length > 0) {
+      await Promise.allSettled(uploadedFiles.map((file) => deleteGeminiFile(apiKey, file.name)));
+    }
   }
 }
