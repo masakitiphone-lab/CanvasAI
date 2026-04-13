@@ -178,7 +178,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               </CodeBlock>
             );
           },
-          img: ({ className: imageClassName, alt, src, ...props }) => (
+          img: ({ className: imageClassName, alt, src }) => (
             <MagicImage
               src={typeof src === "string" ? src : undefined}
               alt={alt ?? ""}

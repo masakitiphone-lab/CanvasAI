@@ -1,34 +1,24 @@
 "use client";
 
-import { memo, useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent, type DragEvent as ReactDragEvent, useCallback } from "react";
+import { memo, useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent, type DragEvent as ReactDragEvent } from "react";
 import { Handle, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  AlertCircle,
-  ArrowDownToLine,
-  ArrowRight,
   ArrowUp,
   BarChart,
   Bot,
   Camera,
   ChevronDown,
   Clock,
-  Clock3,
-  FileEdit,
   FileImage,
   FileText,
   Globe,
   ImagePlus,
   Link2,
-  Mic,
-  MoreHorizontal,
-  PencilLine,
   Plus,
-  RefreshCcw,
   RotateCcw,
   Search,
   StickyNote,
-  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -39,23 +29,12 @@ import { MagicImage } from "@/components/ui/magic-image";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type {
   ConversationAttachment,
-  ConversationImageModelName,
   ConversationNodeData,
   ConversationPromptMode,
-  ConversationTextModelName,
-  ConversationModelName,
-  NodeStatus,
 } from "@/lib/canvas-types";
 import {
-  getDefaultModelForPromptMode,
   IMAGE_MODEL_OPTIONS,
   normalizeModelName,
   TEXT_MODEL_OPTIONS,
@@ -72,15 +51,6 @@ type ResizeDirection =
   | "top-right"
   | "bottom-left"
   | "bottom-right";
-
-const statusMeta: Record<
-  Extract<NodeStatus, "generating" | "error" | "outdated">,
-  { label: string; variant: "secondary" | "destructive" | "outline"; icon: typeof Clock3 }
-> = {
-  generating: { label: "Generating", variant: "secondary", icon: Clock3 },
-  error: { label: "Error", variant: "destructive", icon: AlertCircle },
-  outdated: { label: "Outdated", variant: "outline", icon: PencilLine },
-};
 
 const promptModeMeta: Record<
   ConversationPromptMode,
@@ -260,7 +230,6 @@ function areAttachmentsEqual(prevAttachments: ConversationAttachment[], nextAtta
 }
 
 function ConversationNodeComponent({
-  id: nodeId,
   selected,
   data,
   width,
@@ -278,9 +247,6 @@ function ConversationNodeComponent({
   const isNote = data.kind === "note";
   const isEditing = Boolean(data.isEditing);
   const title = deriveTitle(data.content, data.kind);
-  const statusKey: keyof typeof statusMeta | null =
-    data.status === "generating" || data.status === "error" || data.status === "outdated" ? data.status : null;
-  const StatusIcon = statusKey ? statusMeta[statusKey].icon : null;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const footerControlsRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<"mode" | "model" | null>(null);
@@ -332,11 +298,11 @@ function ConversationNodeComponent({
     };
   }, [openPanel]);
 
-  const handleScrollAreaWheelCapture = (event: ReactWheelEvent<HTMLDivElement>) => {
+  const handleScrollAreaWheelCapture = () => {
     // Scroll navigation disabled as per user request
   };
 
-  const handleTextareaWheelCapture = (event: ReactWheelEvent<HTMLTextAreaElement>) => {
+  const handleTextareaWheelCapture = () => {
     // Scroll navigation disabled as per user request
   };
 

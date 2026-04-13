@@ -1,8 +1,8 @@
 "use client";
 
-import { X, Settings2, Monitor, Moon, Sun, Bot, Sparkles } from "lucide-react";
+import { X, Settings2, Monitor, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUserSettings, type UserSettings } from "@/hooks/use-user-settings";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import { TEXT_MODEL_OPTIONS, IMAGE_MODEL_OPTIONS } from "@/lib/model-options";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";

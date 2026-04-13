@@ -1,10 +1,17 @@
 "use client";
 
-import { Bot, Coins, type LucideIcon } from "lucide-react";
+import { Bot, Check, ChevronDown, Coins, ImageIcon, Sparkles, type LucideIcon } from "lucide-react";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { authFetch } from "@/lib/auth-fetch";
 import { TEXT_MODEL_OPTIONS, IMAGE_MODEL_OPTIONS } from "@/lib/model-options";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -32,6 +39,79 @@ const SECTION_META: Array<{ id: SectionId; label: string; icon: LucideIcon }> = 
   { id: "models", label: "Models", icon: Bot },
   { id: "credits", label: "Credits", icon: Coins },
 ];
+
+function ModelSelectCard({
+  label,
+  icon: Icon,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  options: Array<{ value: string; label: string; description: string }>;
+  onChange: (value: string) => void;
+}) {
+  const activeOption = options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <div className="rounded-[18px] border border-neutral-200 bg-neutral-50 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+            <Icon className="size-3.5" />
+            <span>{label}</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-base font-semibold text-neutral-950">{activeOption.label}</p>
+            <p className="mt-1 text-sm text-neutral-500">{activeOption.description}</p>
+          </div>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 shrink-0 rounded-full border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-100"
+            >
+              Change
+              <ChevronDown className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[320px] rounded-2xl p-2">
+            {options.map((option) => {
+              const isActive = option.value === value;
+              return (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => onChange(option.value)}
+                  className="flex items-start gap-3 rounded-xl px-3 py-3"
+                >
+                  <div
+                    className={cn(
+                      "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
+                      isActive
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-300 bg-white text-transparent",
+                    )}
+                  >
+                    <Check className="size-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-neutral-500">{option.description}</p>
+                  </div>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
 
 function formatReason(entry: CreditLedgerEntry) {
   if (entry.reason === "daily_grant") return "Daily grant";
@@ -202,64 +282,26 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Models</p>
                   <h2 className="mt-2 text-2xl font-semibold text-neutral-950">Default models</h2>
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Pick the defaults for new chats. Existing nodes keep whatever model they already have.
+                  </p>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Text model</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {TEXT_MODEL_OPTIONS.map((model) => (
-                      <button
-                        key={model.value}
-                        type="button"
-                        onClick={() => updateSettings({ defaultTextModel: model.value })}
-                        className={cn(
-                          "flex flex-col gap-1 rounded-2xl border p-4 text-left transition-colors",
-                          settings.defaultTextModel === model.value
-                            ? "border-neutral-900 bg-neutral-900 text-white"
-                            : "border-neutral-200 bg-neutral-50 text-neutral-900 hover:bg-neutral-100",
-                        )}
-                      >
-                        <span className="text-sm font-bold">{model.label}</span>
-                        <span
-                          className={cn(
-                            "text-xs opacity-70",
-                            settings.defaultTextModel === model.value ? "text-white" : "text-neutral-500",
-                          )}
-                        >
-                          {model.description}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Image model</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {IMAGE_MODEL_OPTIONS.map((model) => (
-                      <button
-                        key={model.value}
-                        type="button"
-                        onClick={() => updateSettings({ defaultImageModel: model.value })}
-                        className={cn(
-                          "flex flex-col gap-1 rounded-2xl border p-4 text-left transition-colors",
-                          settings.defaultImageModel === model.value
-                            ? "border-neutral-900 bg-neutral-900 text-white"
-                            : "border-neutral-200 bg-neutral-50 text-neutral-900 hover:bg-neutral-100",
-                        )}
-                      >
-                        <span className="text-sm font-bold">{model.label}</span>
-                        <span
-                          className={cn(
-                            "text-xs opacity-70",
-                            settings.defaultImageModel === model.value ? "text-white" : "text-neutral-500",
-                          )}
-                        >
-                          {model.description}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <ModelSelectCard
+                    label="Text model"
+                    icon={Sparkles}
+                    value={settings.defaultTextModel}
+                    options={TEXT_MODEL_OPTIONS}
+                    onChange={(value) => updateSettings({ defaultTextModel: value })}
+                  />
+                  <ModelSelectCard
+                    label="Image model"
+                    icon={ImageIcon}
+                    value={settings.defaultImageModel}
+                    options={IMAGE_MODEL_OPTIONS}
+                    onChange={(value) => updateSettings({ defaultImageModel: value })}
+                  />
                 </div>
               </section>
 

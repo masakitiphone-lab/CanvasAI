@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, Shield, Zap } from "lucide-react";
@@ -43,11 +44,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="login-screen">
       {/* Left: Hero visual panel */}
       <section className="login-visual-panel" aria-hidden="true">
-        <img
+        <Image
           src="/login-hero.jpg"
           alt=""
+          fill
+          sizes="50vw"
           className="login-visual-panel__image"
-          draggable={false}
+          priority
         />
         <div className="login-visual-panel__overlay" />
         <div className="login-visual-panel__content">
@@ -70,7 +73,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {/* Top: Brand */}
           <div className="login-auth-panel__brand">
             <div className="login-auth-panel__brand-icon">
-              <img src="/logo.png" alt="CanvasAI" className="size-full object-contain" />
+              <Image src="/logo.png" alt="CanvasAI" width={36} height={36} className="size-full object-contain" priority />
             </div>
             <span className="login-auth-panel__brand-name">CanvasAI</span>
           </div>

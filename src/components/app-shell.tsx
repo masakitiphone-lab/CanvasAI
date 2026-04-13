@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CreditCard,
   Edit2,
+  LayoutDashboard,
   LayoutGrid,
   Loader2,
   LogOut,
@@ -16,6 +18,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DevAuthPanel } from "@/components/dev-auth-panel";
+import { FlowCanvas } from "@/components/flow-canvas";
+import { MagicImage } from "@/components/ui/magic-image";
 import { Input } from "@/components/ui/input";
 import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { authFetch } from "@/lib/auth-fetch";
@@ -103,6 +107,21 @@ function markFreshCanvas(userId: string, canvasId: string) {
   } catch {
     // Ignore sessionStorage failures.
   }
+}
+
+function syncCanvasUrl(canvasId: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextUrl = new URL(window.location.href);
+  if (canvasId) {
+    nextUrl.searchParams.set("canvas", canvasId);
+  } else {
+    nextUrl.searchParams.delete("canvas");
+  }
+
+  window.history.replaceState(window.history.state, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 }
 
 
@@ -367,11 +386,11 @@ export function AppShell({
 
   const handleSwitchCanvas = (canvasId: string | null) => {
     setActiveCanvasId(canvasId);
-    const target = canvasId ? `/?canvas=${encodeURIComponent(canvasId)}` : "/";
     if (pathname === "/") {
-      router.replace(target, { scroll: false });
+      syncCanvasUrl(canvasId);
       return;
     }
+    const target = canvasId ? `/?canvas=${encodeURIComponent(canvasId)}` : "/";
     router.push(target);
   };
 
@@ -392,11 +411,11 @@ export function AppShell({
     setCanvases((current) => [newCanvas, ...current]);
     setActiveCanvasId(newId);
     markFreshCanvas(userId, newId);
-    const target = `/?canvas=${encodeURIComponent(newId)}`;
 
     if (pathname === "/") {
-      router.replace(target, { scroll: false });
+      syncCanvasUrl(newId);
     } else {
+      const target = `/?canvas=${encodeURIComponent(newId)}`;
       router.push(target);
     }
 
@@ -417,10 +436,10 @@ export function AppShell({
     setActiveCanvasId(nextActiveCanvasId);
 
     if (activeCanvasId === canvasId) {
-      const target = nextActiveCanvasId ? `/?canvas=${encodeURIComponent(nextActiveCanvasId)}` : "/";
       if (pathname === "/") {
-        router.replace(target, { scroll: false });
+        syncCanvasUrl(nextActiveCanvasId);
       } else {
+        const target = nextActiveCanvasId ? `/?canvas=${encodeURIComponent(nextActiveCanvasId)}` : "/";
         router.push(target);
       }
     }
@@ -448,10 +467,10 @@ export function AppShell({
       setCanvases([fallback]);
       setActiveCanvasId(fallback.id);
       writeProjectCache(userId, [fallback]);
-      const target = `/?canvas=${encodeURIComponent(fallback.id)}`;
       if (pathname === "/") {
-        router.replace(target, { scroll: false });
+        syncCanvasUrl(fallback.id);
       } else {
+        const target = `/?canvas=${encodeURIComponent(fallback.id)}`;
         router.push(target);
       }
     }
@@ -501,7 +520,7 @@ export function AppShell({
         <div className="sidebar__brand">
           <Link href="/" prefetch={false} className="sidebar__brand-copy" onClick={() => handleSwitchCanvas(activeCanvasId)}>
             <div className="sidebar__brand-icon">
-              <img src="/logo.png" alt="CanvasAI" className="size-full object-contain" />
+              <Image src="/logo.png" alt="CanvasAI" width={30} height={30} className="size-full object-contain" priority />
             </div>
             <span>CanvasAI</span>
           </Link>
@@ -527,6 +546,13 @@ export function AppShell({
             <Link href="/plans" prefetch={false}>
               <CreditCard className="size-4" />
               Plans
+            </Link>
+          </Button>
+
+          <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/" && "sidebar__nav-item--active")}>
+            <Link href="/" prefetch={false}>
+              <LayoutDashboard className="size-4" />
+              Workspace
             </Link>
           </Button>
 
@@ -623,11 +649,11 @@ export function AppShell({
         >
           <div className="sidebar__account-avatar">
             {userAvatarUrl && !avatarError ? (
-              <img
+              <MagicImage
                 src={userAvatarUrl}
                 alt={userName}
                 className="sidebar__account-avatar-image"
-                draggable={false}
+                imageClassName="object-cover"
                 onError={() => setAvatarError(true)}
               />
             ) : (
@@ -657,7 +683,13 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="workspace">{isBrowserAuthReady ? children : null}</div>
+      <div className="workspace">
+        {isBrowserAuthReady
+          ? pathname === "/"
+            ? <FlowCanvas userId={userId} initialProjectId={activeCanvasId ?? undefined} />
+            : children
+          : null}
+      </div>
       {!isBrowserAuthReady ? (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-white/72 backdrop-blur-sm">
           <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 shadow-sm">

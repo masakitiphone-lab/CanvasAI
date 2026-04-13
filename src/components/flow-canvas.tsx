@@ -21,21 +21,18 @@ import {
   type NodeTypes,
   type OnConnectStartParams,
   type Connection,
-  type OnNodeDrag,
   type XYPosition,
   useEdgesState,
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
 import {
-  MousePointer2,
   Clipboard,
   MessageSquare,
   StickyNote,
   FileUp,
   Copy,
   Trash2,
-  FileEdit,
   X,
   LayoutDashboard
 } from "lucide-react";
@@ -43,6 +40,7 @@ import { ConversationNode } from "@/components/conversation-node";
 import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Button } from "@/components/ui/button";
+import { MagicImage } from "@/components/ui/magic-image";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
 import { authFetch } from "@/lib/auth-fetch";
 import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
@@ -54,8 +52,6 @@ import type {
   ConversationNodeData,
   ConversationPromptMode,
   ConversationNodeRecord,
-  ConversationTextModelName,
-  NodeStatus,
 } from "@/lib/canvas-types";
 import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
 import { CANVAS_COPY } from "@/lib/workspace-copy";
@@ -89,6 +85,11 @@ type VisibleNodeCacheEntry = {
   className?: string;
   node: Node<ConversationNodeData>;
 };
+type CanvasSnapshotCacheEntry = {
+  nodes: Array<Node<ConversationNodeRecord>>;
+  edges: Edge[];
+  updatedAt: number;
+};
 type NodeActionRefs = {
   addNodeAttachments: (nodeId: string, files: File[]) => Promise<void>;
   removeNodeAttachment: (nodeId: string, attachmentId: string) => void;
@@ -110,15 +111,12 @@ const MIN_VERTICAL_GAP = 48;
 const OVERLAP_GAP = 24;
 const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-2.5-flash";
 const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-2.5-flash-image";
-const DEFAULT_STATUS: NodeStatus = "idle";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
 const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
 const FILE_NODE_UPLOAD_ERROR = CANVAS_COPY.fileUploadFailed;
-const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
-const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2);
 
 const timestampLabel = () =>
   new Date().toLocaleTimeString([], {
@@ -165,7 +163,10 @@ const revokeAttachmentPreviewUrls = (attachments: ConversationAttachment[]) => {
 };
 
 const sanitizeAttachmentsForPersistence = (attachments: ConversationAttachment[]): ConversationAttachment[] =>
-  attachments.map(({ previewUrl: _previewUrl, ...attachment }) => attachment);
+  attachments.map(({ previewUrl, ...attachment }) => {
+    void previewUrl;
+    return attachment;
+  });
 
 const sanitizeNodesForPersistence = (nodes: Array<Node<ConversationNodeRecord>>) =>
   nodes.map((node) => ({
@@ -176,16 +177,19 @@ const sanitizeNodesForPersistence = (nodes: Array<Node<ConversationNodeRecord>>)
     },
   }));
 
+const normalizeSnapshot = (snapshot: {
+  nodes?: Array<Node<ConversationNodeRecord>>;
+  edges?: Edge[];
+}): CanvasSnapshotCacheEntry => ({
+  nodes: sanitizeNodesForPersistence(snapshot.nodes || []).map((node) => normalizeNode({ ...node, selected: false })),
+  edges: (snapshot.edges || []).map(normalizeEdge),
+  updatedAt: Date.now(),
+});
+
 const getActiveImageModel = (name: string | undefined): ConversationImageModelName => {
   const normalized = normalizeModelName(name, "image-create");
   if (isSupportedImageModelName(normalized)) return normalized;
   return GEMINI_IMAGE_MODEL_NAME;
-};
-
-const getActiveTextModel = (name: string | undefined): ConversationTextModelName => {
-  const normalized = normalizeModelName(name, "auto");
-  if (isSupportedTextModelName(normalized)) return normalized;
-  return GEMINI_TEXT_MODEL_NAME;
 };
 
 async function requestGeminiText(requestPayload: {
@@ -457,7 +461,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const isBrowserAuthReady = useBrowserAuthReady();
   const reactFlow = useReactFlow<Node<ConversationNodeData>, Edge>();
   const viewport = useViewport();
-  const screenToFlowPosition = reactFlow.screenToFlowPosition;
   const hasHydratedCanvasRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectSourceNodeIdRef = useRef<string | null>(null);
@@ -471,10 +474,37 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const streamedTextFrameRef = useRef<number | null>(null);
   const nodeHandlerCacheRef = useRef<Map<string, NodeHandlerSet>>(new Map());
   const visibleNodeCacheRef = useRef<Map<string, VisibleNodeCacheEntry>>(new Map());
+  const projectSnapshotCacheRef = useRef<Map<string, CanvasSnapshotCacheEntry>>(new Map());
   const mousePositionRef = useRef<XYPosition>({ x: 0, y: 0 });
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isMultiDragging, setIsMultiDragging] = useState(false);
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
+  const defaultUserModel = getDefaultModelForPromptMode("auto", settings);
+
+  const getProjectCacheKey = useCallback(
+    (projectId: string) => `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${projectId}`,
+    [userId],
+  );
+
+  const applySnapshotToCanvas = useCallback((snapshot: CanvasSnapshotCacheEntry) => {
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+  }, [setEdges]);
+
+  const storeSnapshotInCaches = useCallback(
+    (projectId: string, snapshot: CanvasSnapshotCacheEntry) => {
+      projectSnapshotCacheRef.current.set(projectId, snapshot);
+      localStorage.setItem(
+        getProjectCacheKey(projectId),
+        JSON.stringify({
+          nodes: sanitizeNodesForPersistence(snapshot.nodes),
+          edges: snapshot.edges,
+          updatedAt: snapshot.updatedAt,
+        }),
+      );
+    },
+    [getProjectCacheKey],
+  );
 
   useEffect(() => {
     if (!isBrowserAuthReady) {
@@ -555,7 +585,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
     setNodes((current) => current.filter((n) => !selectedNodeIds.has(n.id)));
     setEdges((current) => current.filter((e) => !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)));
-  }, [copySelected, nodes]);
+  }, [copySelected, nodes, setEdges]);
 
   const paste = useCallback(() => {
     if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return;
@@ -973,7 +1003,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       const viewportWidth = wrapper?.clientWidth ?? 1440;
       const viewportHeight = wrapper?.clientHeight ?? 900;
       const horizontalPadding = 24;
-      const verticalPadding = 20;
       const targetZoom = Math.max(
         1.25,
         Math.min(
@@ -1326,7 +1355,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         kind,
         content: "",
         attachments: [],
-        modelConfig: kind === "user" ? { provider: "gemini", name: GEMINI_TEXT_MODEL_NAME } : undefined,
+        modelConfig: kind === "user" ? { provider: "gemini", name: defaultUserModel } : undefined,
         promptMode: kind === "user" ? "auto" : undefined,
         status: "idle",
         createdAt: timestampLabel(),
@@ -1350,7 +1379,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       setMenu(null);
       setFocusedNodeId(null);
     },
-    [getInsertedChildPosition, setEdges],
+    [defaultUserModel, getInsertedChildPosition, setEdges],
   );
 
   const createEditableUserNode = useCallback(
@@ -1731,34 +1760,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const onNodeDragStop = useCallback(() => {
     setIsMultiDragging(false);
   }, []);
-  const resetFocus = useCallback(() => {
-    if (!focusedNodeIdRef.current) {
-      return;
-    }
-
-    setFocusedNodeId(null);
-
-    const restoreViewport = focusRestoreViewportRef.current;
-    focusRestoreViewportRef.current = null;
-
-    requestAnimationFrame(() => {
-      if (restoreViewport) {
-        void reactFlow.setViewport(restoreViewport, {
-          duration: 420,
-          ease: easeOutQuint,
-          interpolate: "smooth",
-        });
-        return;
-      }
-
-      void reactFlow.fitView({
-        padding: 0.18,
-        duration: 420,
-        ease: easeOutQuint,
-        interpolate: "smooth",
-      });
-    });
-  }, [reactFlow]);
   const clearEditing = useCallback(() => setEditingNodeId(null), []);
 
   const handlePaneContextMenu = useCallback((event: MouseEvent | ReactMouseEvent<Element, MouseEvent>) => {
@@ -1792,14 +1793,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     },
     [closeMenu, createFileNodesFromFiles],
   );
-
-  const handleNodeDragStop = useCallback<OnNodeDrag<Node<ConversationNodeData>>>((_, draggedNode) => {
-    setNodes((current) =>
-      current.map((node) =>
-        node.id === draggedNode.id ? { ...node, position: draggedNode.position, data: { ...node.data, isPositionPinned: true } } : node,
-      ),
-    );
-  }, []);
 
   const handleNodeContextMenu = useCallback((event: ReactMouseEvent<Element, MouseEvent>, node: Node<ConversationNodeData>) => {
     event.preventDefault();
@@ -1858,13 +1851,14 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       setMenu(null);
       setFocusedNodeId(null);
       setEditingNodeId(null);
-      const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
+      const cacheKey = getProjectCacheKey(currentProjectId);
       const freshCanvas = consumeFreshCanvasFlag(currentProjectId, userId);
       setIsFreshCanvas(freshCanvas);
       setIsHydratingCanvas(true);
 
+      const memoryCached = projectSnapshotCacheRef.current.get(currentProjectId);
       const localCached = localStorage.getItem(cacheKey);
-      if (freshCanvas && !localCached) {
+      if (freshCanvas && !memoryCached && !localCached) {
         setNodes([]);
         setEdges([]);
         hasHydratedCanvasRef.current = true;
@@ -1872,12 +1866,14 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         return;
       }
 
-      if (localCached) {
+      if (memoryCached) {
+        applySnapshotToCanvas(memoryCached);
+      } else if (localCached) {
         try {
-          const parsed = JSON.parse(localCached);
-          const cachedNodes = sanitizeNodesForPersistence(parsed.nodes || []);
-          setNodes(cachedNodes.map((node: Node<ConversationNodeRecord>) => normalizeNode({ ...node, selected: false })));
-          setEdges((parsed.edges || []).map(normalizeEdge));
+          const parsed = JSON.parse(localCached) as { nodes?: Array<Node<ConversationNodeRecord>>; edges?: Edge[] };
+          const snapshot = normalizeSnapshot(parsed);
+          projectSnapshotCacheRef.current.set(currentProjectId, snapshot);
+          applySnapshotToCanvas(snapshot);
         } catch (cacheError) {
           console.warn("Failed to hydrate local canvas cache", cacheError);
         }
@@ -1892,33 +1888,31 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (!response.ok || !payload.ok || cancelled) return;
 
         if (!payload.snapshot) {
+          projectSnapshotCacheRef.current.delete(currentProjectId);
           localStorage.removeItem(cacheKey);
           setIsFreshCanvas(true);
           return;
         }
 
-        const freshNodes = sanitizeNodesForPersistence(payload.snapshot.nodes).map((node) => normalizeNode({ ...node, selected: false }));
-        const freshEdges = payload.snapshot.edges.map(normalizeEdge);
+        const snapshot = normalizeSnapshot(payload.snapshot);
 
-        // Update the state with fresh data from server
-        setNodes(freshNodes);
-        setEdges(freshEdges);
-
-        // Keep a local snapshot only as a recovery fallback if a later fetch fails.
-        localStorage.setItem(cacheKey, JSON.stringify({ nodes: sanitizeNodesForPersistence(freshNodes), edges: freshEdges, updatedAt: Date.now() }));
+        applySnapshotToCanvas(snapshot);
+        storeSnapshotInCaches(currentProjectId, snapshot);
       } catch (err) {
         console.error("Hydration failed", err);
-        if (!localCached || cancelled) {
+        if ((!memoryCached && !localCached) || cancelled) {
           return;
         }
 
-        try {
-          const parsed = JSON.parse(localCached);
-          const cachedNodes = sanitizeNodesForPersistence(parsed.nodes || []);
-          setNodes(cachedNodes.map((node: Node<ConversationNodeRecord>) => normalizeNode({ ...node, selected: false })));
-          setEdges((parsed.edges || []).map(normalizeEdge));
-        } catch (cacheError) {
-          console.warn("Failed to recover local canvas cache", cacheError);
+        if (!memoryCached && localCached) {
+          try {
+            const parsed = JSON.parse(localCached) as { nodes?: Array<Node<ConversationNodeRecord>>; edges?: Edge[] };
+            const snapshot = normalizeSnapshot(parsed);
+            projectSnapshotCacheRef.current.set(currentProjectId, snapshot);
+            applySnapshotToCanvas(snapshot);
+          } catch (cacheError) {
+            console.warn("Failed to recover local canvas cache", cacheError);
+          }
         }
       } finally {
         if (!cancelled) {
@@ -1939,61 +1933,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       cancelled = true; 
       clearTimeout(safetyTimer);
     };
-  }, [currentProjectId, isBrowserAuthReady, setEdges, userId]);
-
-  const handleWrapperPaste = useCallback(
-    async (event: React.ClipboardEvent<HTMLDivElement>) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLElement &&
-        (target.closest("textarea") || target.closest("input") || target.isContentEditable)
-      ) {
-        return;
-      }
-
-      const clipboardData = event.clipboardData;
-      const clipboardFiles = Array.from(clipboardData.items)
-        .filter((item) => item.kind === "file")
-        .map((item) => item.getAsFile())
-        .filter((file): file is File => Boolean(file));
-
-      const wrapper = wrapperRef.current;
-      if (!wrapper) return;
-      const rect = wrapper.getBoundingClientRect();
-      const centerPosition = reactFlow.screenToFlowPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
-
-      if (clipboardFiles.length > 0) {
-        event.preventDefault();
-        await createFileNodesFromFiles(clipboardFiles, centerPosition);
-        closeMenu();
-        return;
-      }
-
-      const clipboardText = clipboardData.getData("text/plain");
-      if (clipboardText) {
-        event.preventDefault();
-        const nextNodeId = crypto.randomUUID();
-        const record: ConversationNodeRecord = {
-          parentId: null,
-          kind: "note",
-          content: clipboardText,
-          attachments: [],
-          status: "idle",
-          createdAt: timestampLabel(),
-          isRoot: true,
-          isPositionPinned: false,
-        };
-        const position = findAvailablePosition(centerPosition, getNodeDefaultSize("note"), nodesRef.current);
-        const draftNode = buildNode(nextNodeId, position, record);
-        setNodes((latest) => [...latest.map((node) => ({ ...node, selected: false })), { ...draftNode, position, selected: true }]);
-        closeMenu();
-      }
-    },
-    [closeMenu, createFileNodesFromFiles, reactFlow, setNodes],
-  );
+  }, [applySnapshotToCanvas, currentProjectId, getProjectCacheKey, isBrowserAuthReady, setEdges, storeSnapshotInCaches, userId]);
 
   useEffect(() => {
     const handlePasteGlobal = (event: ClipboardEvent) => {
@@ -2067,8 +2007,13 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     if (!hasHydratedCanvasRef.current || isHydratingCanvas || hasDraggingNode || hasGeneratingNode) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-    const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
-    localStorage.setItem(cacheKey, JSON.stringify({ nodes: sanitizeNodesForPersistence(nodes), edges, updatedAt: Date.now() }));
+    const snapshot: CanvasSnapshotCacheEntry = {
+      nodes: sanitizeNodesForPersistence(nodes),
+      edges,
+      updatedAt: Date.now(),
+    };
+    projectSnapshotCacheRef.current.set(currentProjectId, snapshot);
+    localStorage.setItem(getProjectCacheKey(currentProjectId), JSON.stringify(snapshot));
 
     saveTimerRef.current = setTimeout(() => {
       const currentTitle =
@@ -2096,7 +2041,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isBrowserAuthReady, isHydratingCanvas, nodes, userId]);
+  }, [currentProjectId, edges, getProjectCacheKey, hasDraggingNode, hasGeneratingNode, isBrowserAuthReady, isHydratingCanvas, nodes]);
   useEffect(() => {
     const handleCreateRoot = () => createRootNodeFromViewport();
     const handleFocusRequest = (event: Event) => {
@@ -2261,7 +2206,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
              </Button>
           </Panel>
           <Controls showInteractive={false} position="bottom-right" />
-          <Background variant={BackgroundVariant.Dots} gap={24} size={2.5} />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={2.5} color="rgba(255,255,255,0.95)" />
         </ReactFlow>
         {menu ? (
           <div
@@ -2382,7 +2327,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             onClick={() => setPreviewImageUrl(null)}
           >
             <div className="mindmap-lightbox__content animate-in zoom-in-95 duration-200">
-              <img src={previewImageUrl || undefined} alt="Preview" className="mindmap-lightbox__image" />
+              <MagicImage
+                src={previewImageUrl || undefined}
+                alt="Preview"
+                className="mindmap-lightbox__image"
+                imageClassName="object-contain"
+              />
               <button className="mindmap-lightbox__close">
                 <X className="size-6" />
               </button>
