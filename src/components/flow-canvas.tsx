@@ -1810,8 +1810,18 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       setEditingNodeId(null);
       const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
       setIsHydratingCanvas(true);
-      setNodes([]);
-      setEdges([]);
+
+      const localCached = localStorage.getItem(cacheKey);
+      if (localCached) {
+        try {
+          const parsed = JSON.parse(localCached);
+          const cachedNodes = sanitizeNodesForPersistence(parsed.nodes || []);
+          setNodes(cachedNodes.map((node: Node<ConversationNodeRecord>) => normalizeNode({ ...node, selected: false })));
+          setEdges((parsed.edges || []).map(normalizeEdge));
+        } catch (cacheError) {
+          console.warn("Failed to hydrate local canvas cache", cacheError);
+        }
+      }
 
       try {
         const response = await authFetch(`/api/canvas?projectId=${encodeURIComponent(currentProjectId)}`, {
@@ -1837,7 +1847,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         localStorage.setItem(cacheKey, JSON.stringify({ nodes: sanitizeNodesForPersistence(freshNodes), edges: freshEdges, updatedAt: Date.now() }));
       } catch (err) {
         console.error("Hydration failed", err);
-        const localCached = localStorage.getItem(cacheKey);
         if (!localCached || cancelled) {
           return;
         }
