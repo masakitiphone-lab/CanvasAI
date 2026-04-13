@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
+import { normalizeModelName } from "@/lib/model-options";
 
 const SETTINGS_KEY_PREFIX = "canvasai-settings-";
 
@@ -11,10 +12,18 @@ export type UserSettings = {
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
-  defaultTextModel: "gemini-3.1-flash",
-  defaultImageModel: "gemini-3.1-flash-image",
+  defaultTextModel: "gemini-2.5-flash",
+  defaultImageModel: "gemini-2.5-flash-image",
   theme: "light",
 };
+
+function normalizeSettings(settings: UserSettings): UserSettings {
+  return {
+    ...settings,
+    defaultTextModel: normalizeModelName(settings.defaultTextModel, "auto") as string,
+    defaultImageModel: normalizeModelName(settings.defaultImageModel, "image-create") as string,
+  };
+}
 
 export function useUserSettings(userId: string | null) {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
@@ -33,7 +42,7 @@ export function useUserSettings(userId: string | null) {
     try {
       const stored = localStorage.getItem(`${SETTINGS_KEY_PREFIX}${userId}`);
       if (stored) {
-        nextSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+        nextSettings = normalizeSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
       }
     } catch (e) {
       console.error("Failed to load settings:", e);
@@ -48,7 +57,7 @@ export function useUserSettings(userId: string | null) {
   const updateSettings = (updates: Partial<UserSettings>) => {
     if (!userId) return;
 
-    const newSettings = { ...settings, ...updates };
+    const newSettings = normalizeSettings({ ...settings, ...updates });
     setSettings(newSettings);
     try {
       localStorage.setItem(`${SETTINGS_KEY_PREFIX}${userId}`, JSON.stringify(newSettings));

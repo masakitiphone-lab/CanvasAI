@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
 import { authFetch } from "@/lib/auth-fetch";
 import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
+import { getDefaultModelForPromptMode, isSupportedImageModelName, isSupportedTextModelName, normalizeModelName } from "@/lib/model-options";
 import type {
   ConversationAttachment,
   ConversationImageModelName,
@@ -56,7 +57,6 @@ import type {
   ConversationTextModelName,
   NodeStatus,
 } from "@/lib/canvas-types";
-import { getDefaultModelForPromptMode } from "@/lib/model-options";
 import { getNodeDefaultSize } from "@/lib/node-layout";
 import { cn } from "@/lib/utils";
 
@@ -107,8 +107,8 @@ const nodeTypes: NodeTypes = { conversation: ConversationNode };
 const MIN_HORIZONTAL_GAP = 56;
 const MIN_VERTICAL_GAP = 48;
 const OVERLAP_GAP = 24;
-const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3.1-pro";
-const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3-pro-image";
+const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-2.5-flash";
+const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-2.5-flash-image";
 const DEFAULT_STATUS: NodeStatus = "idle";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
@@ -144,28 +144,15 @@ const sanitizeNodesForPersistence = (nodes: Array<Node<ConversationNodeRecord>>)
     },
   }));
 
-const isSupportedTextModelName = (value: string | undefined): value is ConversationTextModelName =>
-  value === "gemini-3.1-pro" ||
-  value === "gemini-3.1-flash" ||
-  value === "gemini-3.1-flash-lite" ||
-  value === "gemini-3-flash" ||
-  value === "gemini-2.5-pro" ||
-  value === "gemini-2.5-flash" ||
-  value === "gemini-2.5-flash-lite";
-
-const isSupportedImageModelName = (value: string | undefined): value is ConversationImageModelName =>
-  value === "gemini-3.1-flash-image" ||
-  value === "gemini-3-pro-image" ||
-  value === "gemini-2.5-flash-image" ||
-  value === "imagen-4.0-generate-001";
-
 const getActiveImageModel = (name: string | undefined): ConversationImageModelName => {
-  if (isSupportedImageModelName(name)) return name;
+  const normalized = normalizeModelName(name, "image-create");
+  if (isSupportedImageModelName(normalized)) return normalized;
   return GEMINI_IMAGE_MODEL_NAME;
 };
 
 const getActiveTextModel = (name: string | undefined): ConversationTextModelName => {
-  if (isSupportedTextModelName(name)) return name;
+  const normalized = normalizeModelName(name, "auto");
+  if (isSupportedTextModelName(normalized)) return normalized;
   return GEMINI_TEXT_MODEL_NAME;
 };
 
@@ -1669,6 +1656,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const deferredEdges = useDeferredValue(edges);
   const flowNodes = shouldDeferCanvasRender ? deferredVisibleNodes : visibleNodes;
   const flowEdges = shouldDeferCanvasRender ? deferredEdges : edges;
+  const showHydrationIndicator = isHydratingCanvas && flowNodes.length === 0 && flowEdges.length === 0;
   const closeMenu = useCallback(() => setMenu(null), []);
 
   const onNodeDragStart = useCallback((_: ReactMouseEvent | MouseEvent, node: Node, nodes: Node[]) => {
@@ -2111,12 +2099,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           className="hidden"
           onChange={handlePaneFileChange}
         />
-        {isHydratingCanvas ? (
-          <div className="absolute left-6 top-6 z-50 flex items-center gap-3 rounded-full border border-neutral-200 bg-white/95 px-4 py-2 text-sm font-medium text-neutral-600 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4">
-            <div className="size-2 animate-pulse rounded-full bg-indigo-500" />
-            Synchronizing with cloud...
-          </div>
-        ) : null}
+        {showHydrationIndicator ? (
+            <div className="absolute left-6 top-6 z-50 flex items-center gap-3 rounded-full border border-neutral-200 bg-white/95 px-4 py-2 text-sm font-medium text-neutral-600 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+              <div className="size-2 animate-pulse rounded-full bg-indigo-500" />
+             Synchronizing with cloud...
+            </div>
+          ) : null}
 
         {hasGeneratingNode ? (
           <div className="absolute right-6 top-6 z-50 rounded-full border border-neutral-200 bg-white/95 px-3 py-1.5 text-sm text-neutral-600 shadow-sm backdrop-blur flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
@@ -2166,7 +2154,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             animated: false,
             style: { stroke: "#8f949c", strokeWidth: 2.6, opacity: 0.95 },
           }}
-          fitView={!isHydratingCanvas && focusedNodeId === null}
+          fitView={false}
           minZoom={0.2}
           maxZoom={2.6}
           deleteKeyCode={["Delete", "Backspace"]}

@@ -6,11 +6,11 @@ import type {
 } from "@/lib/canvas-types";
 
 export const TEXT_MODEL_OPTIONS: Array<{ value: ConversationTextModelName; label: string; description: string }> = [
-  { value: "gemini-3.1-pro", label: "Gemini 3.1 Pro", description: "Flagship intelligence for complex reasoning" },
-  { value: "gemini-3.1-flash", label: "Gemini 3.1 Flash", description: "High-speed versatility for general tasks" },
-  { value: "gemini-3.1-flash-lite", label: "3.1 Flash-Lite", description: "Ultra-low latency for quick replies" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Stable default for general production use" },
   { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Balanced stable reasoning for long context" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Cost-effective stable production model" },
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", description: "Fastest low-cost option for short replies" },
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Preview frontier-speed model" },
+  { value: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview", description: "Preview flagship reasoning model" },
 ];
 
 export const IMAGE_MODEL_OPTIONS: Array<{
@@ -18,11 +18,20 @@ export const IMAGE_MODEL_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "gemini-3.1-flash-image", label: "Nano Banana 2", description: "Next-gen character consistency engine" },
-  { value: "gemini-3-pro-image", label: "Nano Banana Pro", description: "Advanced conversational image editing" },
-  { value: "gemini-2.5-flash-image", label: "Nano Banana", description: "Fast high-fidelity generation base" },
+  { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image", description: "Stable default for image generation and editing" },
+  { value: "gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image Preview", description: "Preview high-speed image model" },
+  { value: "gemini-3-pro-image-preview", label: "Gemini 3 Pro Image Preview", description: "Preview highest-fidelity image model" },
   { value: "imagen-4.0-generate-001", label: "Imagen 4.0", description: "Professional photorealistic engine" },
 ];
+
+const LEGACY_MODEL_ALIASES: Partial<Record<string, ConversationModelName>> = {
+  "gemini-3.1-pro": "gemini-3-pro-preview",
+  "gemini-3.1-flash": "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite": "gemini-2.5-flash-lite",
+  "gemini-3-flash": "gemini-3-flash-preview",
+  "gemini-3.1-flash-image": "gemini-3.1-flash-image-preview",
+  "gemini-3-pro-image": "gemini-3-pro-image-preview",
+};
 
 export function isSupportedTextModelName(value: string | undefined): value is ConversationTextModelName {
   return TEXT_MODEL_OPTIONS.some((option) => option.value === value);
@@ -37,15 +46,17 @@ export function normalizeModelName(
   promptMode: ConversationPromptMode,
   settings?: { defaultTextModel?: string; defaultImageModel?: string },
 ): ConversationModelName {
+  const normalizedValue = (value && LEGACY_MODEL_ALIASES[value]) || value;
+
   if (promptMode === "image-create") {
-    if (isSupportedImageModelName(value)) {
-      return value;
+    if (isSupportedImageModelName(normalizedValue)) {
+      return normalizedValue;
     }
     return getDefaultModelForPromptMode(promptMode, settings);
   }
 
-  if (isSupportedTextModelName(value)) {
-    return value;
+  if (isSupportedTextModelName(normalizedValue)) {
+    return normalizedValue;
   }
 
   return getDefaultModelForPromptMode(promptMode, settings);
@@ -56,13 +67,18 @@ export function getDefaultModelForPromptMode(
   settings?: { defaultTextModel?: string; defaultImageModel?: string }
 ) {
   if (promptMode === "image-create") {
-    return (settings?.defaultImageModel as ConversationImageModelName) || IMAGE_MODEL_OPTIONS[0].value;
+    const normalizedImageModel = (settings?.defaultImageModel && LEGACY_MODEL_ALIASES[settings.defaultImageModel]) || settings?.defaultImageModel;
+    if (isSupportedImageModelName(normalizedImageModel)) {
+      return normalizedImageModel;
+    }
+    return "gemini-2.5-flash-image";
   }
   
-  if (settings?.defaultTextModel) {
-    return settings.defaultTextModel as ConversationTextModelName;
+  const normalizedTextModel = (settings?.defaultTextModel && LEGACY_MODEL_ALIASES[settings.defaultTextModel]) || settings?.defaultTextModel;
+  if (isSupportedTextModelName(normalizedTextModel)) {
+    return normalizedTextModel;
   }
 
-  if (promptMode === "deep-research") return TEXT_MODEL_OPTIONS[0].value;
-  return TEXT_MODEL_OPTIONS[1].value;
+  if (promptMode === "deep-research") return "gemini-2.5-pro";
+  return "gemini-2.5-flash";
 }
