@@ -40,6 +40,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { ConversationNode } from "@/components/conversation-node";
+import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Button } from "@/components/ui/button";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
@@ -420,6 +421,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const [isRangeSelectionPressed, setIsRangeSelectionPressed] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState(initialProjectId ?? DEFAULT_PROJECT_ID);
   const { settings } = useUserSettings(userId ?? null);
+  const isBrowserAuthReady = useBrowserAuthReady();
   const reactFlow = useReactFlow<Node<ConversationNodeData>, Edge>();
   const viewport = useViewport();
   const screenToFlowPosition = reactFlow.screenToFlowPosition;
@@ -442,6 +444,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     if (!userId || initialProjectId || typeof window === "undefined") {
       return;
     }
@@ -454,7 +460,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     } catch (error) {
       console.warn("Failed to read active canvas id", error);
     }
-  }, [initialProjectId, userId]);
+  }, [initialProjectId, isBrowserAuthReady, userId]);
 
   useEffect(() => {
     if (!initialProjectId) {
@@ -1791,6 +1797,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   }, [createEditableUserNode, nodes, reactFlow]);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     let cancelled = false;
     async function hydrate() {
       // Clear states that shouldn't persist across projects
@@ -1858,7 +1868,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       cancelled = true; 
       clearTimeout(safetyTimer);
     };
-  }, [currentProjectId, setEdges, userId]);
+  }, [currentProjectId, isBrowserAuthReady, setEdges, userId]);
 
   const handleWrapperPaste = useCallback(
     async (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1982,6 +1992,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   }, [closeMenu, createFileNodesFromFiles, reactFlow, setNodes, addNodeAttachments]);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) return;
     if (!hasHydratedCanvasRef.current || isHydratingCanvas || hasDraggingNode || hasGeneratingNode) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
@@ -2014,7 +2025,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isHydratingCanvas, nodes, userId]);
+  }, [currentProjectId, edges, hasDraggingNode, hasGeneratingNode, isBrowserAuthReady, isHydratingCanvas, nodes, userId]);
   useEffect(() => {
     const handleCreateRoot = () => createRootNodeFromViewport();
     const handleFocusRequest = (event: Event) => {

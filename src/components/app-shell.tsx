@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
 import { SettingsDialog } from "@/components/settings-dialog";
@@ -200,6 +201,7 @@ export function AppShell({
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(null);
   const [avatarError, setAvatarError] = useState(false);
+  const isBrowserAuthReady = useBrowserAuthReady();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -207,6 +209,10 @@ export function AppShell({
   const urlCanvasId = searchParams.get("canvas");
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     const cached = readProjectCache(userId);
     const cachedActiveCanvas = readActiveCanvas(userId);
     const initialCanvasId =
@@ -299,9 +305,13 @@ export function AppShell({
       cancelled = true;
       window.removeEventListener("canvas:project-updated", handleProjectUpdated as EventListener);
     };
-  }, [urlCanvasId, userId]);
+  }, [isBrowserAuthReady, urlCanvasId, userId]);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     const refreshCredits = () => {
       void fetchCredits()
         .then((summary) => setCreditSummary(summary))
@@ -310,15 +320,23 @@ export function AppShell({
 
     window.addEventListener("credits:refresh", refreshCredits);
     return () => window.removeEventListener("credits:refresh", refreshCredits);
-  }, []);
+  }, [isBrowserAuthReady]);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     writeProjectCache(userId, canvases);
-  }, [canvases, userId]);
+  }, [canvases, isBrowserAuthReady, userId]);
 
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     if (!userId) {
       setCanvases([]);
       return;
@@ -326,7 +344,7 @@ export function AppShell({
     if (activeCanvasId) {
       writeActiveCanvas(userId, activeCanvasId);
     }
-  }, [activeCanvasId, userId]);
+  }, [activeCanvasId, isBrowserAuthReady, userId]);
 
 
   const filteredCanvases = useMemo(() => {
@@ -622,7 +640,14 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="workspace">{children}</div>
+      <div className="workspace">{isBrowserAuthReady ? children : null}</div>
+      {!isBrowserAuthReady ? (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-white/72 backdrop-blur-sm">
+          <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 shadow-sm">
+            Restoring session...
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
