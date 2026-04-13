@@ -2,26 +2,32 @@
 
 import { Bot, Monitor, Sparkles, Settings2 } from "lucide-react";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
+import { authFetch } from "@/lib/auth-fetch";
 import { TEXT_MODEL_OPTIONS, IMAGE_MODEL_OPTIONS } from "@/lib/model-options";
 import { cn } from "@/lib/utils";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { MagicCard } from "@/components/ui/magic-card";
 import { SparklesText } from "@/components/ui/sparkles-text";
-import { getSessionUser } from "@/lib/supabase-server";
 import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
+  const isBrowserAuthReady = useBrowserAuthReady();
   
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     // We need the userId from the session to load settings
     const fetchUser = async () => {
-      const response = await fetch("/api/auth/session"); // Assuming there's a session endpoint
+      const response = await authFetch("/api/auth/session", { cache: "no-store" });
       const data = await response.json();
       if (data.user?.id) setUserId(data.user.id);
     };
-    fetchUser();
-  }, []);
+    void fetchUser();
+  }, [isBrowserAuthReady]);
 
   const { settings, updateSettings } = useUserSettings(userId);
 

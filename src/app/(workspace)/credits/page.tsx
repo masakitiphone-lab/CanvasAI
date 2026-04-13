@@ -6,6 +6,8 @@ import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { MagicCard } from "@/components/ui/magic-card";
 import { SparklesText } from "@/components/ui/sparkles-text";
+import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
+import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
 
 type CreditSummary = {
@@ -44,12 +46,17 @@ function formatReason(entry: CreditLedgerEntry) {
 export default function CreditsPage() {
   const [summary, setSummary] = useState<CreditSummary | null>(null);
   const [ledger, setLedger] = useState<CreditLedgerEntry[]>([]);
+  const isBrowserAuthReady = useBrowserAuthReady();
 
   useEffect(() => {
+    if (!isBrowserAuthReady) {
+      return;
+    }
+
     let cancelled = false;
 
     async function hydrate() {
-      const response = await fetch("/api/credits", { cache: "no-store" });
+      const response = await authFetch("/api/credits", { cache: "no-store" });
       const payload = (await response.json()) as
         | { ok: true; summary: CreditSummary; ledger: CreditLedgerEntry[] }
         | { ok: false };
@@ -64,7 +71,7 @@ export default function CreditsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isBrowserAuthReady]);
 
   const recentDebits = useMemo(
     () => ledger.filter((entry) => entry.direction === "debit").slice(0, 3).reduce((sum, entry) => sum + entry.amount, 0),

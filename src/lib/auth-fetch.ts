@@ -9,14 +9,6 @@ async function resolveAccessToken() {
   const supabase = getSupabaseBrowserClient();
 
   const {
-    data: { session: initialSession },
-  } = await supabase.auth.getSession();
-
-  if (initialSession?.access_token) {
-    return initialSession.access_token;
-  }
-
-  const {
     data: { user },
   } = await supabase.auth.getUser();
 
@@ -26,6 +18,14 @@ async function resolveAccessToken() {
     } = await supabase.auth.getSession();
     if (refreshedSession?.access_token) {
       return refreshedSession.access_token;
+    }
+  } else {
+    const {
+      data: { session: staleSession },
+    } = await supabase.auth.getSession();
+
+    if (staleSession) {
+      await supabase.auth.signOut();
     }
   }
 
