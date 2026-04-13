@@ -41,9 +41,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const claimsResult = await supabase.auth.getClaims();
+  const claims = claimsResult.data?.claims ?? null;
 
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname === "/login";
@@ -52,7 +51,7 @@ export async function updateSession(request: NextRequest) {
 
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
 
-  if (user && isLoginPage) {
+  if (claims && isLoginPage) {
     const appUrl = request.nextUrl.clone();
     appUrl.pathname = "/";
     return NextResponse.redirect(appUrl);

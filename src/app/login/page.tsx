@@ -89,7 +89,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 <span>or</span>
               </div>
 
-              <Link href="/auth/signout" className="login-reset-link">
+              <Link href="/auth/signout" prefetch={false} className="login-reset-link">
                 Reset session
                 <ArrowRight className="size-4" />
               </Link>

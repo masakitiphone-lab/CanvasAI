@@ -488,7 +488,7 @@ export function AppShell({
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar__brand">
-          <Link href="/" className="sidebar__brand-copy" onClick={() => handleSwitchCanvas(activeCanvasId)}>
+          <Link href="/" prefetch={false} className="sidebar__brand-copy" onClick={() => handleSwitchCanvas(activeCanvasId)}>
             <div className="sidebar__brand-icon">
               <img src="/logo.png" alt="CanvasAI" className="size-full object-contain" />
             </div>
@@ -513,21 +513,21 @@ export function AppShell({
           </Button>
 
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/credits" && "sidebar__nav-item--active")}>
-            <Link href="/credits">
+            <Link href="/credits" prefetch={false}>
               <Coins className="size-4" />
               Credits
             </Link>
           </Button>
 
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/plans" && "sidebar__nav-item--active")}>
-            <Link href="/plans">
+            <Link href="/plans" prefetch={false}>
               <CreditCard className="size-4" />
               Plans
             </Link>
           </Button>
 
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/settings" && "sidebar__nav-item--active")}>
-            <Link href="/settings">
+            <Link href="/settings" prefetch={false}>
               <Settings2 className="size-4" />
               Settings
             </Link>
@@ -635,7 +635,7 @@ export function AppShell({
             ) : null}
           </div>
           <Button asChild type="button" variant="ghost" size="icon" className="sidebar__account-action">
-            <Link href="/auth/signout" aria-label="Sign out">
+            <Link href="/auth/signout" prefetch={false} aria-label="Sign out">
               <LogOut className="size-4" />
             </Link>
           </Button>
