@@ -1,12 +1,7 @@
 "use client";
 
 import { Check, Coins, Crown, Rocket, Shield } from "lucide-react";
-import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
-import { BorderBeam } from "@/components/ui/border-beam";
-import { MagicCard } from "@/components/ui/magic-card";
-import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { SparklesText } from "@/components/ui/sparkles-text";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const plans = [
   {
@@ -15,8 +10,7 @@ const plans = [
     price: "$0",
     tag: "Default",
     icon: Coins,
-    accent: "amber",
-    description: "無料で回すための標準枠。今の運用はこれ前提です。",
+    description: "辟｡譁吶〒蝗槭☆縺溘ａ縺ｮ讓呎ｺ匁棧縲ゆｻ翫・驕狗畑縺ｯ縺薙ｌ蜑肴署縺ｧ縺吶・",
     features: ["Daily 500 credits", "Canvas + attachments", "Standard queue", "Basic audit trail"],
   },
   {
@@ -25,8 +19,7 @@ const plans = [
     price: "$24",
     tag: "Coming soon",
     icon: Crown,
-    accent: "rose",
-    description: "重いモデルをもっと雑に叩きたい人向け。見た目だけ先に完成。",
+    description: "驥阪＞繝｢繝・Ν繧偵ｂ縺｣縺ｨ髮代↓蜿ｩ縺阪◆縺・ｺｺ蜷代￠縲りｦ九◆逶ｮ縺縺大・縺ｫ螳梧・縲・",
     features: ["Larger daily credit pool", "Priority generation", "Faster refill options", "Advanced image quota"],
   },
   {
@@ -35,127 +28,93 @@ const plans = [
     price: "$79",
     tag: "Coming soon",
     icon: Rocket,
-    accent: "sky",
-    description: "複数人運用と監査を本気でやる時の席。まだ決済は未接続。",
+    description: "隍・焚莠ｺ驕狗畑縺ｨ逶｣譟ｻ繧呈悽豌励〒繧・ｋ譎ゅ・蟶ｭ縲ゅ∪縺豎ｺ貂医・譛ｪ謗･邯壹・",
     features: ["Shared workspaces", "Central admin controls", "Expanded audit visibility", "Team-level billing later"],
   },
 ] as const;
 
-const accentClassMap = {
-  amber: "from-amber-400/30 to-orange-300/10",
-  rose: "from-rose-400/30 to-fuchsia-300/10",
-  sky: "from-sky-400/30 to-cyan-300/10",
-} as const;
-
 export default function PlansPage() {
   return (
-    <section className="relative min-h-full overflow-hidden rounded-[32px] border border-neutral-200/70 bg-[linear-gradient(180deg,#fffdfa_0%,#f4f1ea_100%)] p-8 shadow-[0_20px_80px_rgba(15,23,42,0.06)]">
-      <AnimatedGridPattern
-        width={42}
-        height={42}
-        x={-1}
-        y={-1}
-        className="absolute inset-0 h-full w-full fill-neutral-300/30 stroke-neutral-300/30 [mask-image:radial-gradient(ellipse_at_top,white,transparent_72%)]"
-      />
-
-      <div className="relative z-10 flex flex-col gap-8">
+    <section className="min-h-full rounded-[24px] border border-neutral-200 bg-neutral-50 p-8">
+      <div className="flex flex-col gap-6">
         <header className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-500">Plans</p>
-          <SparklesText className="text-4xl font-semibold tracking-tight text-neutral-950" sparklesCount={7}>
-            Pricing shell, visually done
-          </SparklesText>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Plans</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-950">Pricing</h1>
           <p className="max-w-3xl text-sm leading-6 text-neutral-600">
-            決済はまだ未接続。でも画面は先に完成させます。無料クレジット運用から、そのまま有料プランへ拡張できる形にしてあります。
+            豎ｺ貂医・縺ｾ縺譛ｪ謗･邯壹ゅ〒繧ら判髱｢縺ｯ蜈医↓螳梧・縺輔○縺ｾ縺吶ら┌譁吶け繝ｬ繧ｸ繝・ヨ驕狗畑縺九ｉ縲√◎縺ｮ縺ｾ縺ｾ譛画侭繝励Λ繝ｳ縺ｸ諡｡蠑ｵ縺ｧ縺阪ｋ蠖｢縺ｫ縺励※縺ゅｊ縺ｾ縺吶・
           </p>
         </header>
 
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-3">
           {plans.map((plan) => {
             const Icon = plan.icon;
             return (
-              <MagicCard key={plan.id} className="rounded-[30px]">
-                <article className="relative h-full overflow-hidden rounded-[30px] bg-white p-7">
-                  <BorderBeam
-                    size={320}
-                    duration={6}
-                    colorFrom={plan.id === "free" ? "#f59e0b" : plan.id === "pro" ? "#fb7185" : "#38bdf8"}
-                    colorTo={plan.id === "free" ? "#fb7185" : plan.id === "pro" ? "#c084fc" : "#22d3ee"}
-                  />
-                  <div className={cn("absolute inset-x-0 top-0 h-28 bg-gradient-to-br opacity-80", accentClassMap[plan.accent])} />
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-3">
-                        <div className="flex size-12 items-center justify-center rounded-2xl border border-white/60 bg-white/80 text-neutral-900 shadow-sm">
-                          <Icon className="size-5" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-semibold text-neutral-950">{plan.name}</h2>
-                          <p className="mt-2 text-sm leading-6 text-neutral-600">{plan.description}</p>
-                        </div>
-                      </div>
-                      <span className="rounded-full border border-neutral-200 bg-white/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
-                        {plan.tag}
-                      </span>
+              <article key={plan.id} className="h-full rounded-[20px] border border-neutral-200 bg-white p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <div className="flex size-12 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-100 text-neutral-900">
+                      <Icon className="size-5" />
                     </div>
-
-                    <div className="mt-8 flex items-end gap-2">
-                      <p className="text-5xl font-semibold tracking-tight text-neutral-950">{plan.price}</p>
-                      <span className="pb-1 text-sm text-neutral-500">/ month</span>
-                    </div>
-
-                    <div className="mt-8 space-y-3">
-                      {plan.features.map((feature) => (
-                        <div key={feature} className="flex items-start gap-3 rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
-                          <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-neutral-900 text-white">
-                            <Check className="size-3" />
-                          </div>
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-8">
-                      <ShimmerButton
-                        className="h-12 w-full rounded-2xl text-sm font-semibold"
-                        background={plan.id === "free" ? "rgba(24,24,27,1)" : "rgba(10,10,10,1)"}
-                      >
-                        {plan.id === "free" ? "Current free path" : "Billing hookup later"}
-                      </ShimmerButton>
+                    <div>
+                      <h2 className="text-2xl font-semibold text-neutral-950">{plan.name}</h2>
+                      <p className="mt-2 text-sm leading-6 text-neutral-600">{plan.description}</p>
                     </div>
                   </div>
-                </article>
-              </MagicCard>
+                  <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
+                    {plan.tag}
+                  </span>
+                </div>
+
+                <div className="mt-8 flex items-end gap-2">
+                  <p className="text-5xl font-semibold tracking-tight text-neutral-950">{plan.price}</p>
+                  <span className="pb-1 text-sm text-neutral-500">/ month</span>
+                </div>
+
+                <div className="mt-8 space-y-3">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-start gap-3 rounded-[18px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                      <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-neutral-900 text-white">
+                        <Check className="size-3" />
+                      </div>
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8">
+                  <Button className="h-12 w-full rounded-2xl text-sm font-semibold">
+                    {plan.id === "free" ? "Current free path" : "Billing hookup later"}
+                  </Button>
+                </div>
+              </article>
             );
           })}
         </div>
 
-        <MagicCard className="rounded-[28px]">
-          <section className="relative overflow-hidden rounded-[28px] bg-neutral-950 px-7 py-8 text-white">
-            <BorderBeam size={260} duration={7} colorFrom="#f59e0b" colorTo="#22d3ee" />
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70">
-                  <Shield className="size-3.5" />
-                  Rollout note
-                </div>
-                <h3 className="mt-4 text-2xl font-semibold">Good enough for launch visuals</h3>
-                <p className="mt-3 text-sm leading-6 text-white/70">
-                  見た目はもう十分。あとは決済接続、上限変更 UI、請求履歴をつなげれば商用っぽさは出ます。
-                </p>
+        <section className="rounded-[20px] border border-neutral-200 bg-white px-7 py-8">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs uppercase tracking-[0.2em] text-neutral-600">
+                <Shield className="size-3.5" />
+                Rollout note
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/50">Today</p>
-                  <p className="mt-2 text-lg font-medium">Daily free-credit model is live</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/50">Later</p>
-                  <p className="mt-2 text-lg font-medium">Stripe or equivalent billing hookup</p>
-                </div>
+              <h3 className="mt-4 text-2xl font-semibold text-neutral-950">Plan rollout</h3>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">
+                隕九◆逶ｮ縺ｯ繧ゅ≧蜊∝・縲ゅ≠縺ｨ縺ｯ豎ｺ貂域磁邯壹∽ｸ企剞螟画峩 UI縲∬ｫ区ｱょｱ･豁ｴ繧偵▽縺ｪ縺偵ｌ縺ｰ蝠・畑縺｣縺ｽ縺輔・蜃ｺ縺ｾ縺吶・
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[18px] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Today</p>
+                <p className="mt-2 text-lg font-medium text-neutral-950">Daily free-credit model is live</p>
+              </div>
+              <div className="rounded-[18px] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Later</p>
+                <p className="mt-2 text-lg font-medium text-neutral-950">Stripe or equivalent billing hookup</p>
               </div>
             </div>
-          </section>
-        </MagicCard>
+          </div>
+        </section>
       </div>
     </section>
   );
