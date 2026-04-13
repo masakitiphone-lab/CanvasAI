@@ -353,9 +353,7 @@ const getNodeSize = (kind: ConversationNodeRecord["kind"]): PlacementOptions => 
   return getNodeDefaultSize(kind);
 };
 
-const getNodeSizeForRecord = (record: ConversationNodeRecord): PlacementOptions => {
-  return getContentAwareNodeSize(record.kind, record.content);
-};
+const getNodeSizeForRecord = (record: ConversationNodeRecord): PlacementOptions => getNodeDefaultSize(record.kind);
 
 const buildNode = (id: string, position: XYPosition, record: ConversationNodeRecord): Node<ConversationNodeRecord> => {
   const size = getNodeSizeForRecord(record);
@@ -2300,7 +2298,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Clipboard className="size-3.5" />
                     <span>Paste</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">竚老</span>
+                  <span className="mindmap-context-menu__shortcut">Ctrl+V</span>
                 </button>
                 <div className="mindmap-context-menu__divider" />
                 <button
@@ -2339,7 +2337,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <FileUp className="size-3.5" />
                     <span>Upload File</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">竚倪・U</span>
+                  <span className="mindmap-context-menu__shortcut">Ctrl+U</span>
                 </button>
               </div>
             ) : (
@@ -2358,7 +2356,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Copy className="size-3.5" />
                     <span>Copy Content</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">竚呂</span>
+                  <span className="mindmap-context-menu__shortcut">Ctrl+C</span>
                 </button>
                 <div className="mindmap-context-menu__divider" />
                 <button
@@ -2372,7 +2370,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Trash2 className="size-3.5" />
                     <span>Delete</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">竚ｫ</span>
+                  <span className="mindmap-context-menu__shortcut">Del</span>
                 </button>
               </div>
             )}

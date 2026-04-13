@@ -77,9 +77,9 @@ const statusMeta: Record<
   Extract<NodeStatus, "generating" | "error" | "outdated">,
   { label: string; variant: "secondary" | "destructive" | "outline"; icon: typeof Clock3 }
 > = {
-  generating: { label: "生成中", variant: "secondary", icon: Clock3 },
-  error: { label: "エラー", variant: "destructive", icon: AlertCircle },
-  outdated: { label: "要更新", variant: "outline", icon: PencilLine },
+  generating: { label: "Generating", variant: "secondary", icon: Clock3 },
+  error: { label: "Error", variant: "destructive", icon: AlertCircle },
+  outdated: { label: "Outdated", variant: "outline", icon: PencilLine },
 };
 
 const promptModeMeta: Record<
@@ -190,14 +190,14 @@ const sourceHandleStyle = {
 };
 
 function deriveTitle(content: string, kind: ConversationNodeData["kind"]) {
-  if (kind === "file") return "ファイル";
+  if (kind === "file") return "File";
 
   const trimmed = content.trim();
   if (!trimmed) {
-    if (kind === "user") return "新しいプロンプト";
-    if (kind === "image") return "画像生成";
-    if (kind === "note") return "メモ";
-    return "AIレスポンス";
+    if (kind === "user") return "New prompt";
+    if (kind === "image") return "Image generation";
+    if (kind === "note") return "Memo";
+    return "AI response";
   }
 
   const [firstLine] = trimmed.split("\n");
@@ -506,8 +506,8 @@ function ConversationNodeComponent({
                   ) : (
                     <div className="mindmap-file-node__placeholder" aria-busy={data.status === "generating"}>
                       <div className="mindmap-file-node__meta">
-                        <strong>{data.content || "ファイルを準備しています"}</strong>
-                        <span>{data.status === "error" ? "読み込みに失敗しました" : "読み込み中"}</span>
+                        <strong>{data.content || "Preparing file..."}</strong>
+                        <span>{data.status === "error" ? "Upload failed" : "Uploading"}</span>
                       </div>
                       <div className="mindmap-file-node__progress" aria-hidden="true">
                         <div className="mindmap-file-node__progress-bar" />
@@ -556,7 +556,7 @@ function ConversationNodeComponent({
                   onWheelCapture={handleTextareaWheelCapture}
                   autoFocus={isEditing}
                   className="mindmap-node-shell__textarea nodrag nowheel resize-none rounded-[22px] border-neutral-200 bg-white text-[15px] leading-7 shadow-none focus-visible:ring-0 focus-visible:border-neutral-300 transition-all duration-200"
-                  placeholder={isUser ? "ここにプロンプトを書いてください" : "ここにメモを書いてください"}
+                  placeholder={isUser ? "Write your prompt here" : "Write your memo here"}
                 />
               ) : (
                 <ScrollArea className="mindmap-node-shell__content nodrag nowheel rounded-[22px]" onWheelCapture={handleScrollAreaWheelCapture}>

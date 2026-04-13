@@ -1,29 +1,23 @@
 export const CANVAS_COPY = {
   syncIndicator: "Synchronizing with cloud...",
-  fileUploadFailed: "ファイルの読み込みに失敗しました。",
-  geminiRequestFailed: "AI のリクエストに失敗しました。",
-  geminiStreamFailed: "AI のストリームが途中で終了しました。",
-  imageRequestFailed: "画像生成のリクエストに失敗しました。",
-  attachmentUploadFailed: "添付ファイルのアップロードに失敗しました。",
-  deepResearchUnavailable:
-    "Deep Research はまだ有効化されていません。通常モードで利用してください。",
-  generateFailedPrefix: "生成に失敗しました。",
-  imageGenerateFailedPrefix: "画像生成に失敗しました。",
+  fileUploadFailed: "Failed to upload file.",
+  geminiRequestFailed: "Gemini request failed.",
+  geminiStreamFailed: "Gemini stream ended unexpectedly.",
+  imageRequestFailed: "Image generation request failed.",
+  attachmentUploadFailed: "Failed to upload attachment.",
+  deepResearchUnavailable: "Deep Research is not available for the selected model.",
+  generateFailedPrefix: "Generation failed.",
+  imageGenerateFailedPrefix: "Image generation failed.",
 } as const;
 
 export const SETTINGS_COPY = {
-  description:
-    "既定のテキストモデル、画像モデル、クレジット利用状況をまとめて管理します。余計な演出は削って、必要な設定だけを見やすくしています。",
-  creditsDescription:
-    "毎日付与されるクレジットの残高と最近の消費履歴です。生成失敗時の返金や、おおよその消費量もここで確認できます。",
+  creditsDescription: "Credits are consumed when you run text or image generation.",
 } as const;
 
 export const PLANS_COPY = {
-  intro:
-    "料金プランはまだ仮置きです。今は無料クレジット運用が中心で、将来的に有料プランとチーム課金を接続する想定です。",
-  freeDescription: "日常的な試作と検証向けの無料枠です。基本機能を一通り使えます。",
-  proDescription: "より重いモデルを安定して使いたい個人向けの拡張プランです。",
-  teamDescription: "共有ワークスペース、監査、請求の集約を想定したチーム向けプランです。",
-  rolloutDescription:
-    "現時点では無料枠が本番運用中で、有料課金の実装は後続タスクです。見た目だけ先に派手にしても意味がないので、必要な情報だけを残しています。",
+  intro: "Choose the plan that matches your usage.",
+  freeDescription: "Basic access for evaluation and light usage.",
+  proDescription: "Higher limits and better models for regular work.",
+  teamDescription: "Shared usage and admin controls for teams.",
+  rolloutDescription: "Plan changes roll out gradually to keep upgrades stable.",
 } as const;

@@ -18,8 +18,8 @@ export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
     focusedSize: { width: 760, height: 520 },
   },
   ai: {
-    defaultSize: { width: 760, height: 220 },
-    minSize: { width: 720, height: 200 },
+    defaultSize: { width: 760, height: 320 },
+    minSize: { width: 720, height: 220 },
     focusedSize: { width: 920, height: 640 },
   },
   image: {
