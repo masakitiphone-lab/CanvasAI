@@ -18,9 +18,9 @@ export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
     focusedSize: { width: 760, height: 520 },
   },
   ai: {
-    defaultSize: { width: 980, height: 780 },
-    minSize: { width: 960, height: 680 },
-    focusedSize: { width: 980, height: 720 },
+    defaultSize: { width: 760, height: 220 },
+    minSize: { width: 720, height: 200 },
+    focusedSize: { width: 920, height: 640 },
   },
   image: {
     defaultSize: { width: 920, height: 640 },
@@ -49,4 +49,29 @@ export function getNodeMinSize(kind: NodeKind): NodeDimensions {
 
 export function getNodeFocusedSize(kind: NodeKind): NodeDimensions {
   return NODE_LAYOUT[kind].focusedSize;
+}
+
+function estimateWrappedLineCount(content: string, charsPerLine: number) {
+  const lines = content.split(/\r?\n/);
+  return lines.reduce((count, line) => {
+    const lineLength = line.trim().length;
+    return count + Math.max(1, Math.ceil(lineLength / charsPerLine));
+  }, 0);
+}
+
+export function getContentAwareNodeSize(kind: NodeKind, content: string): NodeDimensions {
+  const base = getNodeDefaultSize(kind);
+
+  if (kind !== "ai") {
+    return base;
+  }
+
+  const wrappedLines = estimateWrappedLineCount(content, 68);
+  const lineCount = Math.max(1, wrappedLines);
+  const nextHeight = Math.max(200, Math.min(560, 132 + lineCount * 24));
+
+  return {
+    width: 760,
+    height: nextHeight,
+  };
 }

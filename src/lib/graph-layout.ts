@@ -40,18 +40,79 @@ function buildGraph(
   return graph;
 }
 
+function buildRowGroups(
+  nodes: Array<Node<ConversationNodeRecord>>,
+  graph: ReturnType<typeof buildGraph>,
+  options: LayoutOptions,
+) {
+  const tolerance = Math.max(32, Math.round(options.nodeHeight * 0.35));
+  const rows: Array<{
+    centerY: number;
+    nodes: Array<Node<ConversationNodeRecord>>;
+  }> = [];
+
+  const sortedNodes = [...nodes].sort((left, right) => {
+    const leftPosition = graph.node(left.id);
+    const rightPosition = graph.node(right.id);
+    return (leftPosition?.y ?? 0) - (rightPosition?.y ?? 0);
+  });
+
+  for (const node of sortedNodes) {
+    const position = graph.node(node.id);
+    if (!position) {
+      continue;
+    }
+
+    const existingRow = rows.find((row) => Math.abs(row.centerY - position.y) <= tolerance);
+    if (existingRow) {
+      existingRow.nodes.push(node);
+      existingRow.centerY = (existingRow.centerY + position.y) / 2;
+      continue;
+    }
+
+    rows.push({
+      centerY: position.y,
+      nodes: [node],
+    });
+  }
+
+  return rows;
+}
+
 export function layoutNodesForMindMap(params: {
   nodes: Array<Node<ConversationNodeRecord>>;
   edges: Edge[];
   options: LayoutOptions;
 }) {
   const graph = buildGraph(params.nodes, params.edges, params.options);
+  const rows = buildRowGroups(params.nodes, graph, params.options);
+  const rowTopByNodeId = new Map<string, number>();
+
+  let cursorTop = 0;
+  rows.forEach((row, rowIndex) => {
+    const rowHeight = Math.max(
+      ...row.nodes.map((node) => Number(node.style?.height ?? node.height ?? params.options.nodeHeight)),
+      params.options.nodeHeight,
+    );
+
+    if (rowIndex === 0) {
+      const firstTop = Math.min(
+        ...row.nodes.map((node) => {
+          const position = graph.node(node.id);
+          const height = Number(node.style?.height ?? node.height ?? params.options.nodeHeight);
+          return (position?.y ?? 0) - height / 2;
+        }),
+      );
+      cursorTop = Number.isFinite(firstTop) ? firstTop : 0;
+    }
+
+    row.nodes.forEach((node) => rowTopByNodeId.set(node.id, cursorTop));
+    cursorTop += rowHeight + params.options.nodeSep;
+  });
 
   return params.nodes.map((node) => {
     const nextPosition = graph.node(node.id);
-    // Use measured dimensions if available for better accuracy
     const width = node.measured?.width ?? node.width ?? params.options.nodeWidth;
-    const height = node.measured?.height ?? node.height ?? params.options.nodeHeight;
 
     if (!nextPosition) {
       return node;
@@ -61,9 +122,7 @@ export function layoutNodesForMindMap(params: {
       ...node,
       position: {
         x: nextPosition.x - width / 2,
-        // Align tops: Dagre gives center-y, so subtracting half height makes it a bit messy.
-        // To strictly "top align", we keep the top relative to the rank's center.
-        y: nextPosition.y - height / 2,
+        y: rowTopByNodeId.get(node.id) ?? nextPosition.y,
       },
     };
   });
@@ -81,10 +140,11 @@ export function getSuggestedChildPosition(params: {
 
   const nextPosition = graph.node(newNode.id);
   const width = Number(newNode.style?.width ?? options.nodeWidth);
-  const height = Number(newNode.style?.height ?? options.nodeHeight);
+  const parentNode = nodes.find((node) => node.id === newEdge.source);
+  const parentTop = parentNode?.position.y ?? null;
 
   return {
     x: nextPosition.x - width / 2,
-    y: nextPosition.y - height / 2,
+    y: parentTop ?? nextPosition.y - Number(newNode.style?.height ?? options.nodeHeight) / 2,
   };
 }

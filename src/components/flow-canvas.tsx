@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, MouseEvent as ReactMouseEvent } from "react";
@@ -57,7 +57,8 @@ import type {
   ConversationTextModelName,
   NodeStatus,
 } from "@/lib/canvas-types";
-import { getNodeDefaultSize } from "@/lib/node-layout";
+import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
+import { CANVAS_COPY } from "@/lib/workspace-copy";
 import { cn } from "@/lib/utils";
 
 type PaneMenu = { kind: "pane"; flowPosition: XYPosition; top: number; left: number };
@@ -112,8 +113,9 @@ const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-2.5-flash-image";
 const DEFAULT_STATUS: NodeStatus = "idle";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
+const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
-const FILE_NODE_UPLOAD_ERROR = "ファイルの読み込みに失敗しました。";
+const FILE_NODE_UPLOAD_ERROR = CANVAS_COPY.fileUploadFailed;
 const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2);
@@ -123,6 +125,36 @@ const timestampLabel = () =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+function getNewCanvasKey(userId?: string) {
+  return `${NEW_CANVAS_KEY_PREFIX}.${userId ?? "anonymous"}`;
+}
+
+function consumeFreshCanvasFlag(projectId: string, userId?: string) {
+  try {
+    const key = getNewCanvasKey(userId);
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) {
+      return false;
+    }
+
+    const pendingIds = JSON.parse(raw) as string[];
+    if (!Array.isArray(pendingIds) || !pendingIds.includes(projectId)) {
+      return false;
+    }
+
+    const nextIds = pendingIds.filter((id) => id !== projectId);
+    if (nextIds.length === 0) {
+      window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.setItem(key, JSON.stringify(nextIds));
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const revokeAttachmentPreviewUrls = (attachments: ConversationAttachment[]) => {
   attachments.forEach((attachment) => {
@@ -186,7 +218,7 @@ async function requestGeminiText(requestPayload: {
 
     if (!response.ok || !response.body) {
       const payload = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
-      throw new Error(payload?.error?.message ?? "Gemini のリクエストに失敗しました。");
+      throw new Error(payload?.error?.message ?? CANVAS_COPY.geminiRequestFailed);
     }
 
     const reader = response.body.getReader();
@@ -256,7 +288,7 @@ async function requestGeminiText(requestPayload: {
     }
 
     if (!result) {
-      throw new Error("Gemini のストリームが途中で壊れました。");
+      throw new Error(CANVAS_COPY.geminiStreamFailed);
     }
 
     return result;
@@ -283,7 +315,7 @@ async function requestGeminiImage(requestPayload: {
       | { ok: false; error?: { message?: string } };
 
     if (!response.ok || !payload.ok) {
-      throw new Error(payload.ok ? "Gemini の画像生成に失敗しました。" : payload.error?.message ?? "Gemini の画像生成に失敗しました。");
+      throw new Error(payload.ok ? CANVAS_COPY.imageRequestFailed : payload.error?.message ?? CANVAS_COPY.imageRequestFailed);
     }
 
     return payload;
@@ -305,7 +337,7 @@ async function uploadFiles(files: File[], projectId?: string) {
       | { ok: true; attachment: ConversationNodeRecord["attachments"][number] }
       | { ok: false; error?: { message?: string } };
     if (!response.ok || !payload.ok) {
-      throw new Error(payload.ok ? "添付ファイルの追加に失敗しました。" : payload.error?.message ?? "添付ファイルの追加に失敗しました。");
+      throw new Error(payload.ok ? CANVAS_COPY.attachmentUploadFailed : payload.error?.message ?? CANVAS_COPY.attachmentUploadFailed);
     }
     uploaded.push(payload.attachment);
   }
@@ -321,8 +353,12 @@ const getNodeSize = (kind: ConversationNodeRecord["kind"]): PlacementOptions => 
   return getNodeDefaultSize(kind);
 };
 
+const getNodeSizeForRecord = (record: ConversationNodeRecord): PlacementOptions => {
+  return getContentAwareNodeSize(record.kind, record.content);
+};
+
 const buildNode = (id: string, position: XYPosition, record: ConversationNodeRecord): Node<ConversationNodeRecord> => {
-  const size = getNodeSize(record.kind);
+  const size = getNodeSizeForRecord(record);
   return {
     id,
     type: "conversation",
@@ -350,7 +386,7 @@ const buildEdge = (source: string, target: string): Edge => ({
 });
 
 const normalizeNode = (node: Node<ConversationNodeRecord>) => {
-  const size = getNodeSize(node.data.kind);
+  const size = getNodeSizeForRecord(node.data);
   return {
     ...node,
     dragHandle: ".node-drag-handle",
@@ -374,8 +410,19 @@ const overlaps = (a: ReturnType<typeof getNodeRect>, b: ReturnType<typeof getNod
   !(a.right + OVERLAP_GAP <= b.left || a.left >= b.right + OVERLAP_GAP || a.bottom + OVERLAP_GAP <= b.top || a.top >= b.bottom + OVERLAP_GAP);
 
 function findAvailablePosition(desired: XYPosition, size: PlacementOptions, nodes: Array<Node<ConversationNodeRecord>>) {
-  for (let attempt = 0; attempt < 36; attempt += 1) {
-    const candidate = { x: desired.x + Math.floor(attempt / 6) * 84, y: desired.y + (attempt % 6) * MIN_VERTICAL_GAP };
+  const xOffsets = [0, 84, 168, -84, 252, -168, 336, -252];
+  const yOffsets = [0, MIN_VERTICAL_GAP, -MIN_VERTICAL_GAP, MIN_VERTICAL_GAP * 2, -MIN_VERTICAL_GAP * 2, MIN_VERTICAL_GAP * 3, -MIN_VERTICAL_GAP * 3];
+  const candidates = xOffsets.flatMap((xOffset) =>
+    yOffsets.map((yOffset) => ({
+      x: desired.x + xOffset,
+      y: desired.y + yOffset,
+      score: Math.abs(xOffset) + Math.abs(yOffset),
+    })),
+  )
+    .sort((left, right) => left.score - right.score);
+
+  for (const candidatePosition of candidates) {
+    const candidate = { x: candidatePosition.x, y: candidatePosition.y };
     const candidateRect = getNodeRect(candidate, size);
     const hasOverlap = nodes.some((node) =>
       overlaps(
@@ -404,6 +451,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const [menu, setMenu] = useState<PaneMenu | NodeMenu | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [isHydratingCanvas, setIsHydratingCanvas] = useState(true);
+  const [isFreshCanvas, setIsFreshCanvas] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [isRangeSelectionPressed, setIsRangeSelectionPressed] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState(initialProjectId ?? DEFAULT_PROJECT_ID);
@@ -656,7 +704,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             data: {
               ...entry.data,
               status: "error",
-              content: `${entry.data.content}\n\nDeep Research はまだ通常送信に接続していません。明示モードだけ先に用意しています。`,
+              content: `${entry.data.content}\n\n${CANVAS_COPY.deepResearchUnavailable}`,
             },
           }
           : entry,
@@ -894,11 +942,19 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       });
       const parentWidth = Number(parentNode.style?.width ?? getNodeSize(parentNode.data.kind).width);
       const minimumX = parentNode.position.x + parentWidth + MIN_HORIZONTAL_GAP;
+      const alignedTopY = parentNode.position.y;
       if (preferredPosition) {
-        return findAvailablePosition({ x: Math.max(preferredPosition.x, minimumX), y: preferredPosition.y }, { width: nextWidth, height: nextHeight }, currentNodes);
+        return findAvailablePosition(
+          { x: Math.max(preferredPosition.x, minimumX), y: preferredPosition.y },
+          { width: nextWidth, height: nextHeight },
+          currentNodes,
+        );
       }
       return findAvailablePosition(
-        { x: Math.max(minimumX, suggested.x), y: siblingCount === 0 ? parentNode.position.y : parentNode.position.y + siblingCount * MIN_VERTICAL_GAP },
+        {
+          x: Math.max(minimumX, suggested.x),
+          y: siblingCount === 0 ? alignedTopY : alignedTopY + siblingCount * (nextHeight + 16),
+        },
         { width: nextWidth, height: nextHeight },
         currentNodes,
       );
@@ -1110,6 +1166,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             node.id === nextNodeId
               ? {
                 ...node,
+                style: {
+                  ...node.style,
+                  ...getContentAwareNodeSize("ai", result.text),
+                },
                 data: {
                   ...node.data,
                   content: result.text,
@@ -1122,7 +1182,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Gemini のリクエストに失敗しました。";
+        const message = error instanceof Error ? error.message : CANVAS_COPY.geminiRequestFailed;
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
@@ -1133,7 +1193,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 ...node,
                 data: {
                   ...node.data,
-                  content: `生成に失敗しました。\n\n${message}`,
+                  content: `${CANVAS_COPY.generateFailedPrefix}\n\n${message}`,
                   status: "error",
                 },
               }
@@ -1227,7 +1287,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Gemini の画像生成に失敗しました。";
+        const message = error instanceof Error ? error.message : CANVAS_COPY.imageRequestFailed;
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
@@ -1238,7 +1298,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 ...node,
                 data: {
                   ...node.data,
-                  content: `${prompt}\n\n画像生成に失敗しました。\n${message}`,
+                  content: `${prompt}\n\n${CANVAS_COPY.imageGenerateFailedPrefix}\n${message}`,
                   status: "error",
                 },
               }
@@ -1365,6 +1425,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           node.id === nodeId
             ? {
               ...node,
+              style: {
+                ...node.style,
+                ...getContentAwareNodeSize("ai", result.text),
+              },
               data: {
                 ...node.data,
                 content: result.text,
@@ -1378,7 +1442,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         ),
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Gemini のリクエストに失敗しました。";
+      const message = error instanceof Error ? error.message : CANVAS_COPY.geminiRequestFailed;
       if (deletedNodeIdsRef.current.has(nodeId)) {
         return;
       }
@@ -1389,7 +1453,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
               ...node,
               data: {
                 ...node.data,
-                content: `再生成に失敗しました。\n\n${message}`,
+                content: `${CANVAS_COPY.generateFailedPrefix}\n\n${message}`,
                 status: "error",
                 createdAt: timestampLabel(),
               },
@@ -1465,7 +1529,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Gemini の画像生成に失敗しました。";
+        const message = error instanceof Error ? error.message : CANVAS_COPY.imageRequestFailed;
         if (deletedNodeIdsRef.current.has(nodeId)) {
           return;
         }
@@ -1476,7 +1540,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 ...node,
                 data: {
                   ...node.data,
-                  content: `${prompt}\n\n画像生成に失敗しました。\n${message}`,
+                  content: `${prompt}\n\n${CANVAS_COPY.imageGenerateFailedPrefix}\n${message}`,
                   attachments: [],
                   status: "error",
                   createdAt: timestampLabel(),
@@ -1656,7 +1720,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const deferredEdges = useDeferredValue(edges);
   const flowNodes = shouldDeferCanvasRender ? deferredVisibleNodes : visibleNodes;
   const flowEdges = shouldDeferCanvasRender ? deferredEdges : edges;
-  const showHydrationIndicator = isHydratingCanvas && flowNodes.length === 0 && flowEdges.length === 0;
+  const showHydrationIndicator = !isFreshCanvas && isHydratingCanvas && flowNodes.length === 0 && flowEdges.length === 0;
   const closeMenu = useCallback(() => setMenu(null), []);
 
   const onNodeDragStart = useCallback((_: ReactMouseEvent | MouseEvent, node: Node, nodes: Node[]) => {
@@ -1797,9 +1861,19 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       setFocusedNodeId(null);
       setEditingNodeId(null);
       const cacheKey = `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${currentProjectId}`;
+      const freshCanvas = consumeFreshCanvasFlag(currentProjectId, userId);
+      setIsFreshCanvas(freshCanvas);
       setIsHydratingCanvas(true);
 
       const localCached = localStorage.getItem(cacheKey);
+      if (freshCanvas && !localCached) {
+        setNodes([]);
+        setEdges([]);
+        hasHydratedCanvasRef.current = true;
+        setIsHydratingCanvas(false);
+        return;
+      }
+
       if (localCached) {
         try {
           const parsed = JSON.parse(localCached);
@@ -1821,6 +1895,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
         if (!payload.snapshot) {
           localStorage.removeItem(cacheKey);
+          setIsFreshCanvas(true);
           return;
         }
 
@@ -1851,6 +1926,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (!cancelled) {
           hasHydratedCanvasRef.current = true;
           setIsHydratingCanvas(false);
+          setIsFreshCanvas(false);
         }
       }
     }
@@ -2102,7 +2178,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         {showHydrationIndicator ? (
             <div className="absolute left-6 top-6 z-50 flex items-center gap-3 rounded-full border border-neutral-200 bg-white/95 px-4 py-2 text-sm font-medium text-neutral-600 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4">
               <div className="size-2 animate-pulse rounded-full bg-indigo-500" />
-             Synchronizing with cloud...
+             {CANVAS_COPY.syncIndicator}
             </div>
           ) : null}
 
@@ -2224,7 +2300,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Clipboard className="size-3.5" />
                     <span>Paste</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">⌘V</span>
+                  <span className="mindmap-context-menu__shortcut">竚老</span>
                 </button>
                 <div className="mindmap-context-menu__divider" />
                 <button
@@ -2263,7 +2339,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <FileUp className="size-3.5" />
                     <span>Upload File</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">⌘⇧U</span>
+                  <span className="mindmap-context-menu__shortcut">竚倪・U</span>
                 </button>
               </div>
             ) : (
@@ -2282,7 +2358,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Copy className="size-3.5" />
                     <span>Copy Content</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">⌘C</span>
+                  <span className="mindmap-context-menu__shortcut">竚呂</span>
                 </button>
                 <div className="mindmap-context-menu__divider" />
                 <button
@@ -2296,7 +2372,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <Trash2 className="size-3.5" />
                     <span>Delete</span>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">⌫</span>
+                  <span className="mindmap-context-menu__shortcut">竚ｫ</span>
                 </button>
               </div>
             )}

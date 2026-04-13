@@ -2,6 +2,7 @@
 
 import { Check, Coins, Crown, Rocket, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PLANS_COPY } from "@/lib/workspace-copy";
 
 const plans = [
   {
@@ -10,7 +11,7 @@ const plans = [
     price: "$0",
     tag: "Default",
     icon: Coins,
-    description: "辟｡譁吶〒蝗槭☆縺溘ａ縺ｮ讓呎ｺ匁棧縲ゆｻ翫・驕狗畑縺ｯ縺薙ｌ蜑肴署縺ｧ縺吶・",
+    description: PLANS_COPY.freeDescription,
     features: ["Daily 500 credits", "Canvas + attachments", "Standard queue", "Basic audit trail"],
   },
   {
@@ -19,7 +20,7 @@ const plans = [
     price: "$24",
     tag: "Coming soon",
     icon: Crown,
-    description: "驥阪＞繝｢繝・Ν繧偵ｂ縺｣縺ｨ髮代↓蜿ｩ縺阪◆縺・ｺｺ蜷代￠縲りｦ九◆逶ｮ縺縺大・縺ｫ螳梧・縲・",
+    description: PLANS_COPY.proDescription,
     features: ["Larger daily credit pool", "Priority generation", "Faster refill options", "Advanced image quota"],
   },
   {
@@ -28,7 +29,7 @@ const plans = [
     price: "$79",
     tag: "Coming soon",
     icon: Rocket,
-    description: "隍・焚莠ｺ驕狗畑縺ｨ逶｣譟ｻ繧呈悽豌励〒繧・ｋ譎ゅ・蟶ｭ縲ゅ∪縺豎ｺ貂医・譛ｪ謗･邯壹・",
+    description: PLANS_COPY.teamDescription,
     features: ["Shared workspaces", "Central admin controls", "Expanded audit visibility", "Team-level billing later"],
   },
 ] as const;
@@ -40,9 +41,7 @@ export default function PlansPage() {
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Plans</p>
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-950">Pricing</h1>
-          <p className="max-w-3xl text-sm leading-6 text-neutral-600">
-            豎ｺ貂医・縺ｾ縺譛ｪ謗･邯壹ゅ〒繧ら判髱｢縺ｯ蜈医↓螳梧・縺輔○縺ｾ縺吶ら┌譁吶け繝ｬ繧ｸ繝・ヨ驕狗畑縺九ｉ縲√◎縺ｮ縺ｾ縺ｾ譛画侭繝励Λ繝ｳ縺ｸ諡｡蠑ｵ縺ｧ縺阪ｋ蠖｢縺ｫ縺励※縺ゅｊ縺ｾ縺吶・
-          </p>
+          <p className="max-w-3xl text-sm leading-6 text-neutral-600">{PLANS_COPY.intro}</p>
         </header>
 
         <div className="grid gap-4 xl:grid-cols-3">
@@ -99,9 +98,7 @@ export default function PlansPage() {
                 Rollout note
               </div>
               <h3 className="mt-4 text-2xl font-semibold text-neutral-950">Plan rollout</h3>
-              <p className="mt-3 text-sm leading-6 text-neutral-600">
-                隕九◆逶ｮ縺ｯ繧ゅ≧蜊∝・縲ゅ≠縺ｨ縺ｯ豎ｺ貂域磁邯壹∽ｸ企剞螟画峩 UI縲∬ｫ区ｱょｱ･豁ｴ繧偵▽縺ｪ縺偵ｌ縺ｰ蝠・畑縺｣縺ｽ縺輔・蜃ｺ縺ｾ縺吶・
-              </p>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">{PLANS_COPY.rolloutDescription}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-[18px] border border-neutral-200 bg-neutral-50 px-4 py-4">

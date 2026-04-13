@@ -4,7 +4,6 @@ import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Coins,
   CreditCard,
   Edit2,
   LayoutGrid,
@@ -13,10 +12,7 @@ import {
   MoreHorizontal,
   PlusSquare,
   Search,
-  Settings,
-  Settings2,
   Trash2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DevAuthPanel } from "@/components/dev-auth-panel";
@@ -24,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
-import { SettingsDialog } from "@/components/settings-dialog";
 
 type CanvasSummary = {
   id: string;
@@ -54,6 +49,7 @@ type CreditLedgerEntry = {
 
 const CACHE_KEY_PREFIX = "canvasai.projects";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
+const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";
 
 function getProjectCacheKey(userId: string) {
   return `${CACHE_KEY_PREFIX}.${userId}`;
@@ -61,6 +57,10 @@ function getProjectCacheKey(userId: string) {
 
 function getActiveCanvasKey(userId: string) {
   return `${ACTIVE_CANVAS_KEY_PREFIX}.${userId}`;
+}
+
+function getNewCanvasKey(userId: string) {
+  return `${NEW_CANVAS_KEY_PREFIX}.${userId}`;
 }
 
 function readProjectCache(userId: string): CanvasSummary[] {
@@ -91,6 +91,18 @@ function readActiveCanvas(userId: string) {
 
 function writeActiveCanvas(userId: string, canvasId: string) {
   window.localStorage.setItem(getActiveCanvasKey(userId), canvasId);
+}
+
+function markFreshCanvas(userId: string, canvasId: string) {
+  try {
+    const key = getNewCanvasKey(userId);
+    const raw = window.sessionStorage.getItem(key);
+    const ids = raw ? (JSON.parse(raw) as string[]) : [];
+    const nextIds = Array.isArray(ids) ? [...new Set([...ids, canvasId])] : [canvasId];
+    window.sessionStorage.setItem(key, JSON.stringify(nextIds));
+  } catch {
+    // Ignore sessionStorage failures.
+  }
 }
 
 
@@ -332,8 +344,6 @@ export function AppShell({
     writeProjectCache(userId, canvases);
   }, [canvases, isBrowserAuthReady, userId]);
 
-  const [showSettings, setShowSettings] = useState(false);
-
   useEffect(() => {
     if (!isBrowserAuthReady) {
       return;
@@ -365,7 +375,7 @@ export function AppShell({
     router.push(target);
   };
 
-  const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
+  const isCreatingCanvas = false;
   const handleCreateCanvas = () => {
     // Generate an ID and metadata optimistically to avoid waiting for Supabase
     const newId = crypto.randomUUID();
@@ -381,6 +391,7 @@ export function AppShell({
     // Update UI immediately
     setCanvases((current) => [newCanvas, ...current]);
     setActiveCanvasId(newId);
+    markFreshCanvas(userId, newId);
     const target = `/?canvas=${encodeURIComponent(newId)}`;
 
     if (pathname === "/") {
@@ -512,24 +523,10 @@ export function AppShell({
             {isCreatingCanvas ? "Creating..." : "New canvas"}
           </Button>
 
-          <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/credits" && "sidebar__nav-item--active")}>
-            <Link href="/credits" prefetch={false}>
-              <Coins className="size-4" />
-              Credits
-            </Link>
-          </Button>
-
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/plans" && "sidebar__nav-item--active")}>
             <Link href="/plans" prefetch={false}>
               <CreditCard className="size-4" />
               Plans
-            </Link>
-          </Button>
-
-          <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/settings" && "sidebar__nav-item--active")}>
-            <Link href="/settings" prefetch={false}>
-              <Settings2 className="size-4" />
-              Settings
             </Link>
           </Button>
 
@@ -612,7 +609,18 @@ export function AppShell({
           </div>
         </div>
 
-        <div className="sidebar__account">
+        <div
+          className="sidebar__account cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onClick={() => router.push("/settings")}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              router.push("/settings");
+            }
+          }}
+        >
           <div className="sidebar__account-avatar">
             {userAvatarUrl && !avatarError ? (
               <img
@@ -634,8 +642,15 @@ export function AppShell({
               </span>
             ) : null}
           </div>
-          <Button asChild type="button" variant="ghost" size="icon" className="sidebar__account-action">
-            <Link href="/auth/signout" prefetch={false} aria-label="Sign out">
+          <Button
+            asChild
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="sidebar__account-action"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Link href="/auth/signout" prefetch={false} aria-label="Sign out" onClick={(event) => event.stopPropagation()}>
               <LogOut className="size-4" />
             </Link>
           </Button>
