@@ -18,9 +18,9 @@ export const IMAGE_MODEL_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image", description: "Stable default for image generation and editing" },
-  { value: "gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image Preview", description: "Preview high-speed image model" },
-  { value: "gemini-3-pro-image-preview", label: "Gemini 3 Pro Image Preview", description: "Preview highest-fidelity image model" },
+  { value: "gemini-2.5-flash-image", label: "Nano Banana", description: "Google's Gemini 2.5 Flash Image model" },
+  { value: "gemini-3.1-flash-image-preview", label: "Nano Banana 2", description: "Google's Gemini 3.1 Flash Image Preview model" },
+  { value: "gemini-3-pro-image-preview", label: "Nano Banana Pro", description: "Google's Gemini 3 Pro Image Preview model" },
   { value: "imagen-4.0-generate-001", label: "Imagen 4.0", description: "Professional photorealistic engine" },
 ];
 

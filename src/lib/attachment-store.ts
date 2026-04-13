@@ -98,6 +98,10 @@ async function readMetadataFile(): Promise<StoredAttachmentMetadata> {
 }
 
 async function appendMetadataRecord(attachment: StoredAttachmentRecord) {
+  if (getSupabaseAdminClient()) {
+    return;
+  }
+
   const current = await readMetadataFile();
   const existingIndex = current.attachments.findIndex((entry) => entry.id === attachment.id);
   if (existingIndex >= 0) {
@@ -111,11 +115,63 @@ async function appendMetadataRecord(attachment: StoredAttachmentRecord) {
 }
 
 export async function findStoredAttachmentByPath(storagePath: string) {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    const result = await supabase
+      .from("attachment_objects")
+      .select("id, owner_user_id, project_id, kind, name, mime_type, size_bytes, url, storage_path, created_at")
+      .eq("storage_path", storagePath)
+      .maybeSingle();
+
+    if (result.error || !result.data) {
+      return null;
+    }
+
+    return {
+      id: result.data.id,
+      ownerUserId: result.data.owner_user_id,
+      projectId: result.data.project_id,
+      kind: result.data.kind,
+      name: result.data.name,
+      mimeType: result.data.mime_type ?? undefined,
+      sizeBytes: result.data.size_bytes ?? undefined,
+      url: result.data.url,
+      storagePath: result.data.storage_path ?? undefined,
+      createdAt: result.data.created_at,
+    } satisfies StoredAttachmentRecord;
+  }
+
   const current = await readMetadataFile();
   return current.attachments.find((attachment) => attachment.storagePath === storagePath) ?? null;
 }
 
 export async function findStoredAttachmentById(attachmentId: string) {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    const result = await supabase
+      .from("attachment_objects")
+      .select("id, owner_user_id, project_id, kind, name, mime_type, size_bytes, url, storage_path, created_at")
+      .eq("id", attachmentId)
+      .maybeSingle();
+
+    if (result.error || !result.data) {
+      return null;
+    }
+
+    return {
+      id: result.data.id,
+      ownerUserId: result.data.owner_user_id,
+      projectId: result.data.project_id,
+      kind: result.data.kind,
+      name: result.data.name,
+      mimeType: result.data.mime_type ?? undefined,
+      sizeBytes: result.data.size_bytes ?? undefined,
+      url: result.data.url,
+      storagePath: result.data.storage_path ?? undefined,
+      createdAt: result.data.created_at,
+    } satisfies StoredAttachmentRecord;
+  }
+
   const current = await readMetadataFile();
   return current.attachments.find((attachment) => attachment.id === attachmentId) ?? null;
 }

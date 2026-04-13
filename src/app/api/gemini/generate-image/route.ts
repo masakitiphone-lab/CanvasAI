@@ -647,6 +647,15 @@ export async function POST(request: Request) {
         error: errorInfo,
       },
     });
-    throw error;
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          message: errorInfo.message || "Image generation failed.",
+          code: "generation_image_failed",
+        },
+      },
+      { status: 500 },
+    );
   }
 }
