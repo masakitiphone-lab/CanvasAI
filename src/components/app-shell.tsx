@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DevAuthPanel } from "@/components/dev-auth-panel";
 import { Input } from "@/components/ui/input";
 import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { authFetch } from "@/lib/auth-fetch";
@@ -207,6 +208,7 @@ export function AppShell({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlCanvasId = searchParams.get("canvas");
+  const isDevMode = searchParams.get("dev") === "1";
 
   useEffect(() => {
     if (!isBrowserAuthReady) {
@@ -648,6 +650,7 @@ export function AppShell({
           </div>
         </div>
       ) : null}
+      {isDevMode ? <DevAuthPanel /> : null}
     </div>
   );
 }

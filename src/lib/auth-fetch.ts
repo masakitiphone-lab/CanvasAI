@@ -62,8 +62,24 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  return fetch(input, {
+  const response = await fetch(input, {
     ...init,
     headers,
   });
+
+  if (typeof window !== "undefined") {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    window.dispatchEvent(
+      new CustomEvent("auth-fetch:debug", {
+        detail: {
+          url,
+          hasAccessToken: Boolean(accessToken),
+          status: response.status,
+          at: new Date().toISOString(),
+        },
+      }),
+    );
+  }
+
+  return response;
 }
