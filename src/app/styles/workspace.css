@@ -25,7 +25,7 @@
   height: 100%;
   overflow: hidden;
   padding: 1.25rem;
-  background: rgb(248, 251, 255);
+  background: rgb(252, 254, 255);
 }
 
 .workspace__content {
@@ -333,7 +333,7 @@
   min-height: calc(100vh - 2.5rem);
   border: 1px solid var(--border-soft);
   border-radius: 1.75rem;
-  background: rgba(246, 250, 255, 0.94);
+  background: rgba(252, 254, 255, 0.96);
   backdrop-filter: blur(22px);
   overflow: hidden;
 }
@@ -345,7 +345,7 @@
   gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-soft);
-  background: rgba(246, 250, 255, 0.96);
+  background: rgba(252, 254, 255, 0.98);
 }
 
 .canvas-shell__header h2,
@@ -377,7 +377,7 @@
   padding: 0.45rem 0.8rem;
   border: 1px solid var(--border-soft);
   border-radius: 999px;
-  background: rgba(246, 250, 255, 0.96);
+  background: rgba(252, 254, 255, 0.98);
   color: var(--foreground-muted);
   font-size: 0.78rem;
 }
@@ -388,7 +388,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #e9f2ff;
+  background: #f9fbff;
 }
 
 .react-flow__background {
