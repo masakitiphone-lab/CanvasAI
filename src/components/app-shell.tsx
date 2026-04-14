@@ -14,6 +14,7 @@ import {
   PlusSquare,
   Search,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DevAuthPanel } from "@/components/dev-auth-panel";
@@ -232,6 +233,9 @@ export function AppShell({
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(null);
   const [avatarError, setAvatarError] = useState(false);
+  const [isCreateCanvasDialogOpen, setIsCreateCanvasDialogOpen] = useState(false);
+  const [newCanvasTitle, setNewCanvasTitle] = useState("");
+  const [isSubmittingNewCanvas, setIsSubmittingNewCanvas] = useState(false);
   const isBrowserAuthReady = useBrowserAuthReady();
 
   const router = useRouter();
@@ -376,6 +380,10 @@ export function AppShell({
     }
   }, [activeCanvasId, isBrowserAuthReady, userId]);
 
+  useEffect(() => {
+    setAvatarError(false);
+  }, [userAvatarUrl]);
+
 
   const filteredCanvases = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -393,14 +401,31 @@ export function AppShell({
     router.push(target);
   };
 
-  const isCreatingCanvas = false;
-  const handleCreateCanvas = () => {
+  const getDefaultCanvasTitle = () => `Canvas ${canvases.length + 1}`;
+
+  const openCreateCanvasDialog = () => {
+    setNewCanvasTitle(getDefaultCanvasTitle());
+    setIsCreateCanvasDialogOpen(true);
+  };
+
+  const closeCreateCanvasDialog = () => {
+    if (isSubmittingNewCanvas) {
+      return;
+    }
+
+    setIsCreateCanvasDialogOpen(false);
+  };
+
+  const handleCreateCanvas = async () => {
+    const title = newCanvasTitle.trim() || getDefaultCanvasTitle();
+
+    setIsSubmittingNewCanvas(true);
+
     // Generate an ID and metadata optimistically to avoid waiting for Supabase
     const newId = crypto.randomUUID();
-    const nextIndex = canvases.length + 1;
     const newCanvas: CanvasSummary = {
       id: newId,
-      title: `Canvas ${nextIndex}`,
+      title,
       updatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       planKey: "free",
@@ -422,6 +447,9 @@ export function AppShell({
     void createProject(newCanvas.title, newId).catch((err) => {
       console.warn("Background project creation failed, but auto-save may recover:", err);
     });
+
+    setIsSubmittingNewCanvas(false);
+    setIsCreateCanvasDialogOpen(false);
   };
 
   const handleDeleteCanvas = async (canvasId: string) => {
@@ -514,7 +542,8 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="app-shell">
+    <>
+      <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar__brand">
           <Link href="/" prefetch={false} className="sidebar__brand-copy" onClick={() => handleSwitchCanvas(activeCanvasId)}>
@@ -530,15 +559,15 @@ export function AppShell({
             type="button" 
             variant="ghost" 
             className="sidebar__nav-item justify-start" 
-            onClick={() => void handleCreateCanvas()}
-            disabled={isCreatingCanvas}
+            onClick={openCreateCanvasDialog}
+            disabled={isSubmittingNewCanvas}
           >
-            {isCreatingCanvas ? (
+            {isSubmittingNewCanvas ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <PlusSquare className="size-4" />
             )}
-            {isCreatingCanvas ? "Creating..." : "New canvas"}
+            {isSubmittingNewCanvas ? "Creating..." : "New canvas"}
           </Button>
 
           <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/plans" && "sidebar__nav-item--active")}>
@@ -690,6 +719,71 @@ export function AppShell({
         </div>
       ) : null}
       {isDevMode ? <DevAuthPanel /> : null}
-    </div>
+      </div>
+
+      {isCreateCanvasDialogOpen ? (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-[rgba(15,23,42,0.18)] backdrop-blur-sm"
+            aria-label="Close new canvas dialog"
+            onClick={closeCreateCanvasDialog}
+          />
+          <div className="relative z-[111] w-full max-w-md rounded-[1.75rem] border border-white/70 bg-[rgba(255,255,255,0.94)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-900">New canvas</h2>
+                <p className="mt-1 text-sm text-slate-500">最初に名前を決めろ。あとで変更はできる。</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 rounded-full"
+                onClick={closeCreateCanvasDialog}
+                disabled={isSubmittingNewCanvas}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700" htmlFor="new-canvas-title">
+                Canvas name
+              </label>
+              <Input
+                id="new-canvas-title"
+                value={newCanvasTitle}
+                onChange={(event) => setNewCanvasTitle(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void handleCreateCanvas();
+                  }
+                }}
+                placeholder="Canvas name"
+                className="h-11 rounded-xl border-slate-200 bg-white/90"
+                autoFocus
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={closeCreateCanvasDialog} disabled={isSubmittingNewCanvas}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleCreateCanvas()}
+                disabled={isSubmittingNewCanvas || newCanvasTitle.trim().length === 0}
+                className="rounded-full px-5"
+              >
+                {isSubmittingNewCanvas ? <Loader2 className="size-4 animate-spin" /> : null}
+                Create canvas
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

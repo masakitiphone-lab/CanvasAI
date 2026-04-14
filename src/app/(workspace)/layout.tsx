@@ -6,19 +6,26 @@ import { getSessionUser } from "@/lib/supabase-server";
 function getUserAvatarUrl(user: NonNullable<Awaited<ReturnType<typeof getSessionUser>>>) {
   const metadata = user.user_metadata ?? {};
   const identities = Array.isArray(user.identities) ? user.identities : [];
-  const firstIdentity = identities.find((identity) => identity.provider === "google") ?? identities[0];
-  const identityData =
-    firstIdentity && typeof firstIdentity.identity_data === "object" && firstIdentity.identity_data !== null
-      ? firstIdentity.identity_data
-      : null;
+  const identityDataList = identities
+    .map((identity) =>
+      typeof identity.identity_data === "object" && identity.identity_data !== null ? identity.identity_data : null,
+    )
+    .filter((identityData): identityData is Record<string, unknown> => identityData !== null);
 
-  return (
-    metadata.avatar_url ??
-    metadata.picture ??
-    (typeof identityData?.avatar_url === "string" ? identityData.avatar_url : null) ??
-    (typeof identityData?.picture === "string" ? identityData.picture : null) ??
-    null
-  );
+  const avatarCandidates = [
+    metadata.avatar_url,
+    metadata.picture,
+    metadata.photo_url,
+    metadata.profile_image,
+    ...identityDataList.flatMap((identityData) => [
+      identityData.avatar_url,
+      identityData.picture,
+      identityData.photo_url,
+      identityData.profile_image,
+    ]),
+  ];
+
+  return avatarCandidates.find((value): value is string => typeof value === "string" && value.trim().length > 0) ?? null;
 }
 
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {

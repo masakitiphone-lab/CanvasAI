@@ -17,6 +17,8 @@ export function MagicImage({
   alt = "",
   className,
   imageClassName,
+  onError,
+  onLoad,
   ...props
 }: MagicImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -53,13 +55,20 @@ export function MagicImage({
             filter: isLoaded ? "blur(0px)" : "blur(10px)",
           }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setHasError(true)}
+          onLoad={(event) => {
+            setIsLoaded(true);
+            onLoad?.(event);
+          }}
+          onError={(event) => {
+            setHasError(true);
+            onError?.(event);
+          }}
           className={cn(
             "h-full w-full object-cover transition-transform duration-500",
             imageClassName
           )}
           decoding="async"
+          referrerPolicy="no-referrer"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-neutral-50 text-neutral-400">

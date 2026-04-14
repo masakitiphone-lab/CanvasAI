@@ -2207,7 +2207,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
              </Button>
           </Panel>
           <Controls showInteractive={false} position="bottom-right" />
-          <Background variant={BackgroundVariant.Dots} gap={24} size={2.5} color="rgba(148, 163, 184, 0.42)" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={2.6} color="rgba(100, 116, 139, 0.66)" />
         </ReactFlow>
         {menu ? (
           <div
