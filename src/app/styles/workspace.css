@@ -25,7 +25,7 @@
   height: 100%;
   overflow: hidden;
   padding: 1.25rem;
-  background: #edf4ff;
+  background: rgb(248, 251, 255);
 }
 
 .workspace__content {

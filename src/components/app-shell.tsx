@@ -733,7 +733,7 @@ export function AppShell({
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-900">New canvas</h2>
-                <p className="mt-1 text-sm text-slate-500">最初に名前を決めろ。あとで変更はできる。</p>
+                <p className="mt-1 text-sm text-slate-500">作成前に、キャンバス名を入力してください。名前はあとから変更できます。</p>
               </div>
               <Button
                 type="button"

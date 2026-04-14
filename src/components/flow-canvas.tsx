@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
@@ -2345,10 +2345,16 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   );
 }
 
-export function FlowCanvas({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
+function FlowCanvasComponent({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
   return (
     <ReactFlowProvider>
       <FlowCanvasInner userId={userId} initialProjectId={initialProjectId} />
     </ReactFlowProvider>
   );
 }
+
+export const FlowCanvas = memo(
+  FlowCanvasComponent,
+  (prevProps, nextProps) =>
+    prevProps.userId === nextProps.userId && prevProps.initialProjectId === nextProps.initialProjectId,
+);
