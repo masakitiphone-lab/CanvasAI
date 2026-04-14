@@ -240,3 +240,5 @@
 
 .markdown-body .not-prose button,
 .markdown-body button {
+  cursor: pointer;
+}

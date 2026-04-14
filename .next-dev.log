@@ -13,3 +13,9 @@
  GET / 500 in 103ms (next.js: 52ms, proxy.ts: 42ms, application-code: 9ms)
  GET / 500 in 60ms (next.js: 45ms, proxy.ts: 6ms, application-code: 9ms)
  GET / 500 in 22ms (next.js: 7ms, proxy.ts: 6ms, application-code: 9ms)
+ GET / 500 in 22ms (next.js: 9ms, proxy.ts: 6ms, application-code: 7ms)
+ GET / 500 in 25ms (next.js: 8ms, proxy.ts: 9ms, application-code: 8ms)
+ GET / 500 in 25ms (next.js: 8ms, proxy.ts: 8ms, application-code: 10ms)
+ GET / 500 in 63ms (next.js: 46ms, proxy.ts: 7ms, application-code: 9ms)
+ GET / 500 in 44ms (next.js: 21ms, proxy.ts: 10ms, application-code: 13ms)
+✓ Compiled in 326ms
