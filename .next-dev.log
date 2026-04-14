@@ -12,3 +12,4 @@
  GET / 500 in 5.0s (next.js: 4.4s, proxy.ts: 489ms, application-code: 152ms)
  GET / 500 in 103ms (next.js: 52ms, proxy.ts: 42ms, application-code: 9ms)
  GET / 500 in 60ms (next.js: 45ms, proxy.ts: 6ms, application-code: 9ms)
+ GET / 500 in 22ms (next.js: 7ms, proxy.ts: 6ms, application-code: 9ms)

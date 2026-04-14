@@ -446,6 +446,7 @@ const toWrapperPosition = (clientX: number, clientY: number, wrapper: HTMLDivEle
 };
 
 function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
+  const stableNodeTypes = useMemo(() => nodeTypes, []);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const paneFileInputRef = useRef<HTMLInputElement | null>(null);
   const [nodes, setNodes] = useState<Array<Node<ConversationNodeRecord>>>([]);
@@ -2136,7 +2137,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
           nodes={flowNodes}
           edges={flowEdges}
-          nodeTypes={nodeTypes}
+          nodeTypes={stableNodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeContextMenu={handleNodeContextMenu}
