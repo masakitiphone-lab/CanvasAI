@@ -446,6 +446,7 @@ const toWrapperPosition = (clientX: number, clientY: number, wrapper: HTMLDivEle
 };
 
 function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initialProjectId?: string }) {
+  const stableNodeTypes = useMemo(() => nodeTypes, []);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const paneFileInputRef = useRef<HTMLInputElement | null>(null);
   const [nodes, setNodes] = useState<Array<Node<ConversationNodeRecord>>>([]);
@@ -2136,7 +2137,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
           nodes={flowNodes}
           edges={flowEdges}
-          nodeTypes={nodeTypes}
+          nodeTypes={stableNodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeContextMenu={handleNodeContextMenu}
@@ -2206,7 +2207,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
              </Button>
           </Panel>
           <Controls showInteractive={false} position="bottom-right" />
-          <Background variant={BackgroundVariant.Dots} gap={24} size={2.5} color="rgba(255,255,255,0.95)" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={2.5} color="rgba(148, 163, 184, 0.42)" />
         </ReactFlow>
         {menu ? (
           <div

@@ -7,7 +7,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CreditCard,
   Edit2,
-  LayoutDashboard,
   LayoutGrid,
   Loader2,
   LogOut,
@@ -549,13 +548,6 @@ export function AppShell({
             </Link>
           </Button>
 
-          <Button asChild type="button" variant="ghost" className={cn("sidebar__nav-item justify-start", pathname === "/" && "sidebar__nav-item--active")}>
-            <Link href="/" prefetch={false}>
-              <LayoutDashboard className="size-4" />
-              Workspace
-            </Link>
-          </Button>
-
           <label className="sidebar__search">
             <Search className="size-4 shrink-0 text-neutral-500" />
             <Input
@@ -687,7 +679,7 @@ export function AppShell({
         {isBrowserAuthReady
           ? pathname === "/"
             ? <FlowCanvas userId={userId} initialProjectId={activeCanvasId ?? undefined} />
-            : children
+            : <div className="workspace__content">{children}</div>
           : null}
       </div>
       {!isBrowserAuthReady ? (

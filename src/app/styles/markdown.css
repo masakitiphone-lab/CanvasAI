@@ -1,0 +1,244 @@
+.markdown-body {
+  color: #18181b;
+  word-break: break-word;
+  font-feature-settings: "liga" 1, "calt" 1;
+  text-wrap: pretty;
+  max-width: 760px;
+  margin-inline: auto;
+  padding-inline: 14px;
+}
+
+.markdown-body> :first-child {
+  margin-top: 0;
+}
+
+.markdown-body> :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body> :where(p, ul, ol, blockquote, hr, .not-prose, table) {
+  margin-top: 1.4rem;
+  margin-bottom: 1.4rem;
+}
+
+.markdown-body table tr:last-child td {
+  border-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: #09090b;
+  text-wrap: balance;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5rem;
+  margin-top: 1.15rem;
+  margin-bottom: 1.15rem;
+  list-style-position: outside;
+}
+
+.markdown-body :where(ul, ol)+* {
+  margin-top: 1.3rem;
+}
+
+.markdown-body *+ :where(ul, ol) {
+  margin-top: 1.15rem;
+}
+
+.markdown-body ul {
+  list-style: disc;
+}
+
+.markdown-body ol {
+  list-style: decimal;
+}
+
+.markdown-body ul ul {
+  list-style: disc;
+}
+
+.markdown-body li {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+  padding-left: 0.1rem;
+}
+
+.markdown-body li::marker {
+  color: #71717a;
+  font-weight: 600;
+}
+
+.markdown-body li>p {
+  margin-bottom: 0;
+}
+
+.markdown-body li>ul,
+.markdown-body li>ol {
+  margin-top: 0.55rem;
+  margin-bottom: 0.2rem;
+}
+
+.markdown-body li:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body ol>li {
+  padding-left: 0.22rem;
+}
+
+.markdown-body ul>li {
+  padding-left: 0.12rem;
+}
+
+.markdown-body :is(strong, b) {
+  font-weight: 700;
+  color: #09090b;
+}
+
+.markdown-body blockquote p {
+  color: inherit;
+}
+
+.markdown-body blockquote {
+  margin-left: 0;
+  padding-left: 1rem;
+  padding-right: 0;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  color: #52525b;
+  border-left-color: #cbd5e1;
+}
+
+.markdown-body blockquote+* {
+  margin-top: 1.65rem;
+}
+
+.markdown-body blockquote p {
+  color: #52525b;
+}
+
+.markdown-body hr {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.markdown-body hr+* {
+  margin-top: 1.9rem;
+}
+
+.markdown-body .katex-display {
+  margin: 1.4rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0 0.35rem;
+}
+
+.markdown-body .katex {
+  font-size: 1.08em;
+}
+
+.markdown-body p+h2,
+.markdown-body p+h3,
+.markdown-body p+h4,
+.markdown-body p+h5,
+.markdown-body p+h6 {
+  margin-top: 3rem;
+}
+
+.markdown-body :where(ul, ol)+p,
+.markdown-body blockquote+p,
+.markdown-body blockquote+h2,
+.markdown-body blockquote+h3,
+.markdown-body blockquote+h4,
+.markdown-body blockquote+h5,
+.markdown-body blockquote+h6,
+.markdown-body .not-prose+p,
+.markdown-body .not-prose+h2,
+.markdown-body .not-prose+h3,
+.markdown-body .not-prose+h4,
+.markdown-body .not-prose+h5,
+.markdown-body .not-prose+h6 {
+  margin-top: 2.35rem;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-body :not(pre)>code::before,
+.markdown-body :not(pre)>code::after {
+  content: none;
+}
+
+.markdown-body pre {
+  margin-left: 0;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.markdown-body table {
+  margin-inline: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  width: auto;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+}
+
+.markdown-body table :is(th, td)> :first-child {
+  margin-top: 0;
+}
+
+.markdown-body table :is(th, td)> :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body .not-prose {
+  width: auto;
+  max-width: 100%;
+}
+
+.markdown-body :where(h2, h3, h4, h5, h6)+p {
+  margin-top: 0.75rem;
+}
+
+.markdown-body img {
+  display: block;
+}
+
+.mindmap-node-shell__content,
+.mindmap-node-shell__content-inner,
+.mindmap-node-shell__textarea,
+.markdown-body,
+.markdown-body * {
+  user-select: text;
+}
+
+.mindmap-node-shell__content,
+.mindmap-node-shell__content-inner,
+.mindmap-node-shell__textarea {
+  cursor: text;
+}
+
+.markdown-body :is(p, li, blockquote, code, pre, span, strong, em, a, td, th, h1, h2, h3, h4, h5, h6) {
+  cursor: text;
+}
+
+.markdown-body .not-prose button,
+.markdown-body button {
+  cursor: pointer;
+}
