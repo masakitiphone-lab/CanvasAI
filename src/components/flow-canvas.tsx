@@ -712,6 +712,13 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
             return {
               ...node,
+              style:
+                node.data.kind === "ai"
+                  ? {
+                    ...node.style,
+                    ...getContentAwareNodeSize("ai", pendingText),
+                  }
+                  : node.style,
               data: {
                 ...node.data,
                 content: pendingText,
@@ -2207,7 +2214,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
              </Button>
           </Panel>
           <Controls showInteractive={false} position="bottom-right" />
-          <Background variant={BackgroundVariant.Dots} gap={24} size={2.7} color="rgba(71, 85, 105, 0.72)" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={2.7} color="rgba(71, 85, 105, 0.58)" />
         </ReactFlow>
         {menu ? (
           <div

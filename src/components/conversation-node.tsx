@@ -528,7 +528,7 @@ function ConversationNodeComponent({
                 <ScrollArea className="mindmap-node-shell__content nodrag nowheel rounded-[22px]" onWheelCapture={handleScrollAreaWheelCapture}>
                   {isAi ? (
                     <div className="mindmap-node-shell__content-inner">
-                      {data.status === "generating" ? (
+                      {data.status === "generating" && !data.content ? (
                         <div className="flex flex-col gap-6 py-6 opacity-40">
                           <div className="h-4 w-[92%] rounded-full bg-neutral-100" />
                           <div className="h-4 w-[65%] rounded-full bg-neutral-100" />
@@ -548,7 +548,7 @@ function ConversationNodeComponent({
                 </ScrollArea>
               )}
 
-              {(isUser ? data.attachments : otherAttachments).length > 0 && (
+              {!isFile && (isUser ? data.attachments : otherAttachments).length > 0 && (
                 <div className="mindmap-attachments-row">
                   {(isUser ? data.attachments : otherAttachments).map((att, i) => {
                     const Icon = attachmentIcon(att.kind);
