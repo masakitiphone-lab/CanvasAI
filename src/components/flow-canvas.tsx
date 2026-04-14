@@ -190,6 +190,39 @@ const normalizeSnapshot = (snapshot: {
   updatedAt: Date.now(),
 });
 
+const mergeSnapshotNodeSizes = (
+  snapshot: CanvasSnapshotCacheEntry,
+  cachedSnapshot?: CanvasSnapshotCacheEntry | null,
+): CanvasSnapshotCacheEntry => {
+  if (!cachedSnapshot) {
+    return snapshot;
+  }
+
+  const cachedNodeMap = new Map(cachedSnapshot.nodes.map((node) => [node.id, node]));
+
+  return {
+    ...snapshot,
+    nodes: snapshot.nodes.map((node) => {
+      const cachedNode = cachedNodeMap.get(node.id);
+      const cachedWidth = Number(cachedNode?.style?.width);
+      const cachedHeight = Number(cachedNode?.style?.height);
+
+      if (!Number.isFinite(cachedWidth) || !Number.isFinite(cachedHeight)) {
+        return node;
+      }
+
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          width: cachedWidth,
+          height: cachedHeight,
+        },
+      };
+    }),
+  };
+};
+
 const getActiveImageModel = (name: string | undefined): ConversationImageModelName => {
   const normalized = normalizeModelName(name, "image-create");
   if (isSupportedImageModelName(normalized)) return normalized;
@@ -475,7 +508,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const deletedNodeIdsRef = useRef<Set<string>>(new Set());
   const focusedNodeIdRef = useRef<string | null>(null);
   const focusRestoreViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
-  const streamedTextRef = useRef<Record<string, string>>({});
+  const streamedTextRef = useRef<Record<string, { text: string; runId: string }>>({});
   const streamedTextFrameRef = useRef<number | null>(null);
   const nodeHandlerCacheRef = useRef<Map<string, NodeHandlerSet>>(new Map());
   const visibleNodeCacheRef = useRef<Map<string, VisibleNodeCacheEntry>>(new Map());
@@ -485,6 +518,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const historyFutureRef = useRef<CanvasHistorySnapshot[]>([]);
   const lastHistorySnapshotRef = useRef<CanvasHistorySnapshot | null>(null);
   const suppressHistoryRef = useRef(false);
+  const activeGenerationRunsRef = useRef<Map<string, string>>(new Map());
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isMultiDragging, setIsMultiDragging] = useState(false);
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
@@ -521,6 +555,26 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     }),
     [],
   );
+
+  const beginGenerationRun = useCallback((nodeId: string) => {
+    const runId = crypto.randomUUID();
+    activeGenerationRunsRef.current.set(nodeId, runId);
+    return runId;
+  }, []);
+
+  const clearGenerationRun = useCallback((nodeId: string, runId?: string) => {
+    const activeRunId = activeGenerationRunsRef.current.get(nodeId);
+    if (!activeRunId) {
+      return;
+    }
+
+    if (runId && activeRunId !== runId) {
+      return;
+    }
+
+    activeGenerationRunsRef.current.delete(nodeId);
+    delete streamedTextRef.current[nodeId];
+  }, []);
 
   const applyHistorySnapshot = useCallback(
     (snapshot: CanvasHistorySnapshot) => {
@@ -633,6 +687,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     historyFutureRef.current = [];
     lastHistorySnapshotRef.current = null;
     suppressHistoryRef.current = false;
+    activeGenerationRunsRef.current.clear();
+    streamedTextRef.current = {};
   }, [currentProjectId]);
 
   useEffect(() => () => {
@@ -740,8 +796,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     ]);
   }, [setNodes, setEdges]);
 
-  const scheduleStreamedNodeContentUpdate = useCallback((nodeId: string, text: string) => {
-    streamedTextRef.current[nodeId] = text;
+  const scheduleStreamedNodeContentUpdate = useCallback((nodeId: string, text: string, runId: string) => {
+    if (activeGenerationRunsRef.current.get(nodeId) !== runId) {
+      return;
+    }
+
+    streamedTextRef.current[nodeId] = { text, runId };
 
     if (streamedTextFrameRef.current !== null) {
       return;
@@ -759,8 +819,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       startTransition(() => {
         setNodes((latest) =>
           latest.map((node) => {
-            const pendingText = pendingUpdates.get(node.id);
-            if (pendingText === undefined) {
+            const pendingUpdate = pendingUpdates.get(node.id);
+            if (!pendingUpdate) {
+              return node;
+            }
+
+            if (activeGenerationRunsRef.current.get(node.id) !== pendingUpdate.runId) {
               return node;
             }
 
@@ -770,12 +834,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 node.data.kind === "ai"
                   ? {
                     ...node.style,
-                    ...getContentAwareNodeSize("ai", pendingText),
+                    ...getContentAwareNodeSize("ai", pendingUpdate.text),
                   }
                   : node.style,
               data: {
                 ...node.data,
-                content: pendingText,
+                content: pendingUpdate.text,
                 status: "generating",
               },
             };
@@ -1009,6 +1073,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           }
         }
         deletedNodeIdsRef.current = new Set([...deletedNodeIdsRef.current, ...ids]);
+        ids.forEach((id) => {
+          activeGenerationRunsRef.current.delete(id);
+          delete streamedTextRef.current[id];
+        });
         if (editingNodeId && ids.has(editingNodeId)) setEditingNodeId(null);
         if (focusedNodeId && ids.has(focusedNodeId)) setFocusedNodeId(null);
         setEdges((currentEdges) => currentEdges.filter((edge) => !ids.has(edge.source) && !ids.has(edge.target)).map(normalizeEdge));
@@ -1285,6 +1353,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       const lineage = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges);
       const nextNodeId = crypto.randomUUID();
       deletedNodeIdsRef.current.delete(nextNodeId);
+      const generationRunId = beginGenerationRun(nextNodeId);
       const activeModelName = latestParentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME;
       const draftNode = buildNode(nextNodeId, latestParentNode.position, {
         parentId: latestParentNode.id,
@@ -1324,12 +1393,13 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             if (deletedNodeIdsRef.current.has(nextNodeId)) {
               return;
             }
-            scheduleStreamedNodeContentUpdate(nextNodeId, text);
+            scheduleStreamedNodeContentUpdate(nextNodeId, text, generationRunId);
           },
         });
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
+        clearGenerationRun(nextNodeId, generationRunId);
         setNodes((latest) =>
           latest.map((node) =>
             node.id === nextNodeId
@@ -1355,6 +1425,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
+        clearGenerationRun(nextNodeId, generationRunId);
         setNodes((latest) =>
           latest.map((node) =>
             node.id === nextNodeId
@@ -1371,7 +1442,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, currentProjectId, getInsertedChildPosition, scheduleStreamedNodeContentUpdate, setEdges],
+    [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, getInsertedChildPosition, scheduleStreamedNodeContentUpdate, setEdges],
   );
 
   const runImageGenerationForUserNode = useCallback(
@@ -1555,6 +1626,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     if (!targetNode || targetNode.data.kind !== "ai" || !targetNode.data.parentId) return;
     const activeModelName = targetNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME;
     const lineage = buildPromptRequestLineage(targetNode.data.parentId, latestNodes, latestEdges);
+    const generationRunId = beginGenerationRun(nodeId);
     setNodes((current) =>
       current.map((node) =>
         node.id === nodeId
@@ -1583,12 +1655,13 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           if (deletedNodeIdsRef.current.has(nodeId)) {
             return;
           }
-          scheduleStreamedNodeContentUpdate(nodeId, text);
+          scheduleStreamedNodeContentUpdate(nodeId, text, generationRunId);
         },
       });
       if (deletedNodeIdsRef.current.has(nodeId)) {
         return;
       }
+      clearGenerationRun(nodeId, generationRunId);
       setNodes((current) =>
         current.map((node) =>
           node.id === nodeId
@@ -1615,6 +1688,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       if (deletedNodeIdsRef.current.has(nodeId)) {
         return;
       }
+      clearGenerationRun(nodeId, generationRunId);
       setNodes((current) =>
         current.map((node) =>
           node.id === nodeId
@@ -1631,7 +1705,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         ),
       );
     }
-  }, [buildPromptRequestLineage, currentProjectId, scheduleStreamedNodeContentUpdate]);
+  }, [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, scheduleStreamedNodeContentUpdate]);
 
   const regenerateImageNode = useCallback(
     async (nodeId: string) => {
@@ -2000,6 +2074,18 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
       const memoryCached = projectSnapshotCacheRef.current.get(currentProjectId);
       const localCached = localStorage.getItem(cacheKey);
+      const cachedSnapshot = memoryCached
+        ? memoryCached
+        : localCached
+          ? (() => {
+            try {
+              const parsed = JSON.parse(localCached) as { nodes?: Array<Node<ConversationNodeRecord>>; edges?: Edge[] };
+              return normalizeSnapshot(parsed);
+            } catch {
+              return null;
+            }
+          })()
+          : null;
       if (freshCanvas && !memoryCached && !localCached) {
         setNodes([]);
         setEdges([]);
@@ -2036,7 +2122,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           return;
         }
 
-        const snapshot = normalizeSnapshot(payload.snapshot);
+        const snapshot = mergeSnapshotNodeSizes(normalizeSnapshot(payload.snapshot), cachedSnapshot);
 
         applySnapshotToCanvas(snapshot);
         storeSnapshotInCaches(currentProjectId, snapshot);
@@ -2241,16 +2327,46 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     mousePositionRef.current = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
   }, [reactFlow]);
 
+  const handleWrapperPasteCapture = useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.closest("textarea") || target.closest("input") || target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const clipboardFiles = Array.from(event.clipboardData?.items ?? [])
+        .filter((item) => item.kind === "file")
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+
+      if (clipboardFiles.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      void createFileNodesFromFiles(clipboardFiles, mousePositionRef.current);
+      closeMenu();
+    },
+    [closeMenu, createFileNodesFromFiles],
+  );
+
   return (
     <section className="canvas-shell" aria-label="Conversation canvas">
 
       <div
         className={cn("flow-wrapper", focusedNodeId !== null && "flow-wrapper--focus-mode")}
         ref={wrapperRef}
+        tabIndex={0}
         onContextMenu={handleWrapperContextMenu}
         onDrop={handleWrapperDrop}
         onDragOver={handleWrapperDragOver}
         onMouseMove={handleWrapperMouseMove}
+        onPasteCapture={handleWrapperPasteCapture}
+        onPointerDown={(event) => event.currentTarget.focus()}
       >
         <input
           ref={paneFileInputRef}

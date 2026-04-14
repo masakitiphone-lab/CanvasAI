@@ -20,7 +20,7 @@ export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
   ai: {
     defaultSize: { width: 760, height: 320 },
     minSize: { width: 720, height: 220 },
-    focusedSize: { width: 920, height: 640 },
+    focusedSize: { width: 920, height: 760 },
   },
   image: {
     defaultSize: { width: 920, height: 640 },
@@ -68,7 +68,7 @@ export function getContentAwareNodeSize(kind: NodeKind, content: string): NodeDi
 
   const wrappedLines = estimateWrappedLineCount(content, 68);
   const lineCount = Math.max(1, wrappedLines);
-  const nextHeight = Math.max(200, Math.min(560, 132 + lineCount * 24));
+  const nextHeight = Math.max(220, Math.min(720, 156 + lineCount * 26));
 
   return {
     width: 760,
