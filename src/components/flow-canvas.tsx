@@ -90,6 +90,10 @@ type CanvasSnapshotCacheEntry = {
   edges: Edge[];
   updatedAt: number;
 };
+type CanvasHistorySnapshot = {
+  nodes: Array<Node<ConversationNodeRecord>>;
+  edges: Edge[];
+};
 type NodeActionRefs = {
   addNodeAttachments: (nodeId: string, files: File[]) => Promise<void>;
   removeNodeAttachment: (nodeId: string, attachmentId: string) => void;
@@ -477,6 +481,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const visibleNodeCacheRef = useRef<Map<string, VisibleNodeCacheEntry>>(new Map());
   const projectSnapshotCacheRef = useRef<Map<string, CanvasSnapshotCacheEntry>>(new Map());
   const mousePositionRef = useRef<XYPosition>({ x: 0, y: 0 });
+  const historyPastRef = useRef<CanvasHistorySnapshot[]>([]);
+  const historyFutureRef = useRef<CanvasHistorySnapshot[]>([]);
+  const lastHistorySnapshotRef = useRef<CanvasHistorySnapshot | null>(null);
+  const suppressHistoryRef = useRef(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isMultiDragging, setIsMultiDragging] = useState(false);
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
@@ -491,6 +499,39 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     setNodes(snapshot.nodes);
     setEdges(snapshot.edges);
   }, [setEdges]);
+
+  const cloneHistorySnapshot = useCallback(
+    (snapshot: CanvasHistorySnapshot): CanvasHistorySnapshot => structuredClone(snapshot),
+    [],
+  );
+
+  const serializeHistorySnapshot = useCallback(
+    (snapshot: CanvasHistorySnapshot) =>
+      JSON.stringify({
+        nodes: sanitizeNodesForPersistence(snapshot.nodes),
+        edges: snapshot.edges,
+      }),
+    [],
+  );
+
+  const captureHistorySnapshot = useCallback(
+    () => ({
+      nodes: structuredClone(nodesRef.current),
+      edges: structuredClone(edgesRef.current),
+    }),
+    [],
+  );
+
+  const applyHistorySnapshot = useCallback(
+    (snapshot: CanvasHistorySnapshot) => {
+      suppressHistoryRef.current = true;
+      setNodes(cloneHistorySnapshot(snapshot).nodes);
+      setEdges(cloneHistorySnapshot(snapshot).edges);
+      setMenu(null);
+      setEditingNodeId(null);
+    },
+    [cloneHistorySnapshot, setEdges],
+  );
 
   const storeSnapshotInCaches = useCallback(
     (projectId: string, snapshot: CanvasSnapshotCacheEntry) => {
@@ -549,8 +590,50 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   }, [edges]);
 
   useEffect(() => {
+    const currentSnapshot = {
+      nodes: structuredClone(nodes),
+      edges: structuredClone(edges),
+    };
+
+    if (suppressHistoryRef.current) {
+      lastHistorySnapshotRef.current = currentSnapshot;
+      suppressHistoryRef.current = false;
+      return;
+    }
+
+    if (isHydratingCanvas) {
+      lastHistorySnapshotRef.current = currentSnapshot;
+      return;
+    }
+
+    const previousSnapshot = lastHistorySnapshotRef.current;
+    if (!previousSnapshot) {
+      lastHistorySnapshotRef.current = currentSnapshot;
+      return;
+    }
+
+    if (serializeHistorySnapshot(previousSnapshot) === serializeHistorySnapshot(currentSnapshot)) {
+      return;
+    }
+
+    historyPastRef.current.push(cloneHistorySnapshot(previousSnapshot));
+    if (historyPastRef.current.length > 100) {
+      historyPastRef.current.shift();
+    }
+    historyFutureRef.current = [];
+    lastHistorySnapshotRef.current = currentSnapshot;
+  }, [cloneHistorySnapshot, edges, isHydratingCanvas, nodes, serializeHistorySnapshot]);
+
+  useEffect(() => {
     focusedNodeIdRef.current = focusedNodeId;
   }, [focusedNodeId]);
+
+  useEffect(() => {
+    historyPastRef.current = [];
+    historyFutureRef.current = [];
+    lastHistorySnapshotRef.current = null;
+    suppressHistoryRef.current = false;
+  }, [currentProjectId]);
 
   useEffect(() => () => {
     if (streamedTextFrameRef.current !== null) {
@@ -656,35 +739,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ...newEdges,
     ]);
   }, [setNodes, setEdges]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore if user is typing in a textarea or input
-      const target = event.target as HTMLElement;
-      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable) {
-        return;
-      }
-
-      const isMod = event.ctrlKey || event.metaKey;
-
-      if (isMod && event.key === "c") {
-        event.preventDefault();
-        copySelected();
-      } else if (isMod && event.key === "x") {
-        event.preventDefault();
-        cutSelected();
-      } else if (isMod && event.key === "v") {
-        event.preventDefault();
-        paste();
-      } else if (event.key === "Delete" || event.key === "Backspace") {
-        // Option to handle manual deletion if needed, 
-        // but ReactFlow standard deletion via onNodesChange is usually enough.
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copySelected, cutSelected, paste]);
 
   const scheduleStreamedNodeContentUpdate = useCallback((nodeId: string, text: string) => {
     streamedTextRef.current[nodeId] = text;
@@ -963,6 +1017,86 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     },
     [editingNodeId, focusedNodeId, setEdges],
   );
+
+  const deleteSelected = useCallback(() => {
+    const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
+    const selectedEdgeIds = new Set(edgesRef.current.filter((edge) => edge.selected).map((edge) => edge.id));
+
+    if (selectedNodeIds.length === 0 && selectedEdgeIds.size === 0) {
+      return;
+    }
+
+    if (selectedNodeIds.length > 0) {
+      deleteNodesById(selectedNodeIds);
+      return;
+    }
+
+    setEdges((current) => current.filter((edge) => !selectedEdgeIds.has(edge.id)));
+  }, [deleteNodesById, setEdges]);
+
+  const selectAll = useCallback(() => {
+    setNodes((current) => current.map((node) => ({ ...node, selected: true })));
+    setEdges((current) => current.map((edge) => ({ ...edge, selected: true })));
+  }, [setEdges]);
+
+  const undoCanvasChange = useCallback(() => {
+    const previousSnapshot = historyPastRef.current.pop();
+    if (!previousSnapshot) {
+      return;
+    }
+
+    const currentSnapshot = captureHistorySnapshot();
+    historyFutureRef.current.push(currentSnapshot);
+    applyHistorySnapshot(previousSnapshot);
+  }, [applyHistorySnapshot, captureHistorySnapshot]);
+
+  const redoCanvasChange = useCallback(() => {
+    const nextSnapshot = historyFutureRef.current.pop();
+    if (!nextSnapshot) {
+      return;
+    }
+
+    const currentSnapshot = captureHistorySnapshot();
+    historyPastRef.current.push(currentSnapshot);
+    applyHistorySnapshot(nextSnapshot);
+  }, [applyHistorySnapshot, captureHistorySnapshot]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable) {
+        return;
+      }
+
+      const isMod = event.ctrlKey || event.metaKey;
+
+      if (isMod && event.key === "c") {
+        event.preventDefault();
+        copySelected();
+      } else if (isMod && event.key === "x") {
+        event.preventDefault();
+        cutSelected();
+      } else if (isMod && event.key === "v") {
+        event.preventDefault();
+        paste();
+      } else if (isMod && event.key === "a") {
+        event.preventDefault();
+        selectAll();
+      } else if (isMod && !event.shiftKey && event.key === "z") {
+        event.preventDefault();
+        undoCanvasChange();
+      } else if ((isMod && event.shiftKey && event.key === "Z") || (isMod && event.key === "y")) {
+        event.preventDefault();
+        redoCanvasChange();
+      } else if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        deleteSelected();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copySelected, cutSelected, deleteSelected, paste, redoCanvasChange, selectAll, undoCanvasChange]);
 
   const getInsertedChildPosition = useCallback(
     (parentNode: Node<ConversationNodeRecord>, currentNodes: Array<Node<ConversationNodeRecord>>, currentEdges: Edge[], nextNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => {
@@ -2192,6 +2326,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           panOnScroll={false}
           zoomOnScroll={true}
           zoomOnPinch
+          zoomOnDoubleClick={false}
           nodesDraggable={focusedNodeId === null}
           nodesConnectable={focusedNodeId === null}
           edgesFocusable
