@@ -2,6 +2,7 @@ export type NodeKind = "user" | "ai" | "code" | "result" | "image" | "file" | "n
 export type NodeStatus = "idle" | "generating" | "error" | "outdated" | "orphan";
 export type AttachmentKind = "image" | "pdf" | "url";
 export type ConversationPromptMode = "auto" | "code" | "image-create" | "deep-research";
+export type ConversationToolName = "google-search" | "url-context";
 export type ConversationTextModelName =
   | "gemini-3-pro-preview"
   | "gemini-3-flash-preview"
@@ -41,6 +42,7 @@ export type ConversationNodeRecord = {
   attachments: ConversationAttachment[];
   modelConfig?: ConversationModelConfig;
   promptMode?: ConversationPromptMode;
+  enabledTools?: ConversationToolName[];
   tokenCount?: number;
   status: NodeStatus;
   createdAt: string;
@@ -55,8 +57,10 @@ export type ConversationNodeData = ConversationNodeRecord & {
   isMultiDragging?: boolean;
   onAddAttachments?: (files: File[]) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
+  onAddUrlAttachment?: (url: string) => Promise<void>;
   onChangeModel?: (modelName: ConversationModelName) => void;
   onChangePromptMode?: (mode: ConversationPromptMode) => void;
+  onToggleTool?: (tool: ConversationToolName) => void;
   onClearPromptMode?: () => void;
   onResizeNode?: (nextBounds: {
     width: number;

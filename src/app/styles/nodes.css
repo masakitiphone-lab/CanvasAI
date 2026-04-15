@@ -1318,14 +1318,26 @@
 
 .react-flow__edge.mindmap-edge.selected .react-flow__edge-path,
 .react-flow__edge.mindmap-edge:focus-within .react-flow__edge-path {
-  stroke: #0f172a !important;
-  stroke-width: 5px !important;
+  stroke: #4b5563 !important;
+  stroke-width: 3.8px !important;
   opacity: 1 !important;
-  filter:
-    drop-shadow(0 0 0.35rem rgba(15, 23, 42, 0.45))
-    drop-shadow(0 0 1rem rgba(14, 165, 233, 0.35));
+  filter: drop-shadow(0 0 0.35rem rgba(31, 41, 55, 0.18));
 }
 
 .react-flow__edge.mindmap-edge.selected .react-flow__edge-interaction {
   stroke-width: 20px;
+}
+
+.react-flow__edge.mindmap-edge--generating .react-flow__edge-path {
+  stroke: #4b5563 !important;
+  stroke-linecap: round;
+  stroke-dasharray: 10 12;
+  animation: mindmap-edge-flow 1.15s linear infinite;
+  filter: drop-shadow(0 0 0.3rem rgba(99, 102, 241, 0.18));
+}
+
+@keyframes mindmap-edge-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
 }

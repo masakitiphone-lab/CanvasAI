@@ -16,7 +16,7 @@ create table if not exists canvas_nodes (
   id text primary key,
   project_id text not null references projects(id) on delete cascade,
   parent_id text null,
-  kind text not null check (kind in ('user', 'ai', 'image', 'file', 'note')),
+  kind text not null check (kind in ('user', 'ai', 'code', 'result', 'image', 'file', 'note')),
   content text not null default '',
   status text not null check (status in ('idle', 'generating', 'error', 'outdated', 'orphan')),
   position_x double precision not null default 0,
@@ -25,7 +25,8 @@ create table if not exists canvas_nodes (
   is_position_pinned boolean not null default false,
   model_provider text null,
   model_name text null,
-  prompt_mode text null check (prompt_mode in ('auto', 'image-create', 'deep-research')),
+  prompt_mode text null check (prompt_mode in ('auto', 'code', 'image-create', 'deep-research')),
+  enabled_tools text[] not null default '{}'::text[] check (enabled_tools <@ array['google-search', 'url-context']::text[]),
   token_count integer null,
   created_at text not null
 );
@@ -34,7 +35,10 @@ create index if not exists canvas_nodes_project_id_idx on canvas_nodes(project_i
 create index if not exists canvas_nodes_parent_id_idx on canvas_nodes(parent_id);
 
 alter table if exists canvas_nodes
-  add column if not exists prompt_mode text null check (prompt_mode in ('auto', 'image-create', 'deep-research'));
+  add column if not exists prompt_mode text null check (prompt_mode in ('auto', 'code', 'image-create', 'deep-research'));
+
+alter table if exists canvas_nodes
+  add column if not exists enabled_tools text[] not null default '{}'::text[];
 
 alter table if exists canvas_nodes
   add column if not exists token_count integer null;

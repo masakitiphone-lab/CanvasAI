@@ -5,7 +5,7 @@ import { requireSessionUser } from "@/lib/api-auth";
 import { serializeError, writeAuditLog } from "@/lib/audit-log";
 import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-ledger";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import type { ConversationAttachment, ConversationTextModelName } from "@/lib/canvas-types";
+import type { ConversationAttachment, ConversationTextModelName, ConversationToolName } from "@/lib/canvas-types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -42,6 +42,7 @@ type GenerateCodeRequestBody = {
     name?: ConversationTextModelName;
   };
   projectId?: string;
+  enabledTools?: ConversationToolName[];
 };
 
 type GenerateCodeSuccessResponse = {
@@ -80,6 +81,11 @@ type GeminiCodePart = {
     mimeType?: string;
     data?: string;
   };
+};
+
+type GeminiTool = {
+  code_execution?: Record<string, never>;
+  google_search?: Record<string, never>;
 };
 
 type GeminiGenerateResponse = {
@@ -382,6 +388,11 @@ export async function POST(request: Request) {
     const targetNodeId = body.targetNodeId?.trim();
     const lineage = body.lineage ?? [];
     projectId = body.projectId?.trim() || null;
+    const requestedTools = new Set(body.enabledTools ?? []);
+    const tools: GeminiTool[] = [{ code_execution: {} }];
+    if (requestedTools.has("google-search")) {
+      tools.push({ google_search: {} });
+    }
 
     if (!targetNodeId || lineage.length === 0) {
       await writeAuditLog({
@@ -437,7 +448,7 @@ export async function POST(request: Request) {
           parts: [{ text: CODE_SYSTEM_INSTRUCTION }],
         },
         contents: [{ role: "user", parts: built.parts }],
-        tools: [{ code_execution: {} }],
+        tools,
       }),
     });
 

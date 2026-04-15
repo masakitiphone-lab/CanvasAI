@@ -52,6 +52,7 @@ import type {
   ConversationNodeData,
   ConversationPromptMode,
   ConversationNodeRecord,
+  ConversationToolName,
 } from "@/lib/canvas-types";
 import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
 import { CANVAS_COPY } from "@/lib/workspace-copy";
@@ -63,9 +64,11 @@ type PlacementOptions = { width: number; height: number };
 type NodeHandlerSet = Pick<
   ConversationNodeData,
   | "onAddAttachments"
+  | "onAddUrlAttachment"
   | "onRemoveAttachment"
   | "onChangeModel"
   | "onChangePromptMode"
+  | "onToggleTool"
   | "onClearPromptMode"
   | "onUserContentChange"
   | "onResizeNode"
@@ -96,11 +99,17 @@ type CanvasHistorySnapshot = {
   nodes: Array<Node<ConversationNodeRecord>>;
   edges: Edge[];
 };
+type PromptRequestContext = {
+  lineage: LineageEntry[];
+  inputNodeIds: string[];
+};
 type NodeActionRefs = {
   addNodeAttachments: (nodeId: string, files: File[]) => Promise<void>;
+  addNodeUrlAttachment: (nodeId: string, url: string) => Promise<void>;
   removeNodeAttachment: (nodeId: string, attachmentId: string) => void;
   updateNodeModel: (nodeId: string, modelName: ConversationModelName) => void;
   updatePromptMode: (nodeId: string, promptMode: ConversationPromptMode) => void;
+  toggleNodeTool: (nodeId: string, tool: ConversationToolName) => void;
   updateUserNodeContent: (nodeId: string, nextValue: string) => void;
   resizeNode: (nodeId: string, nextBounds: { width: number; height: number; x: number; y: number }) => void;
   setEditingNodeId: (nodeId: string | null) => void;
@@ -239,6 +248,7 @@ async function requestGeminiText(requestPayload: {
   model: { provider: "gemini"; name: string };
   projectId?: string;
   promptMode?: ConversationPromptMode;
+  enabledTools?: ConversationToolName[];
   onTextDelta?: (text: string) => void;
 }): Promise<{ ok: true; model: string; text: string; tokenCount?: number | null; webSearchUsed?: boolean | null }> {
   const consumeSseEvents = (source: string) => {
@@ -257,6 +267,7 @@ async function requestGeminiText(requestPayload: {
         model: requestPayload.model,
         projectId: requestPayload.projectId,
         promptMode: requestPayload.promptMode,
+        enabledTools: requestPayload.enabledTools,
         stream: true,
       }),
     });
@@ -374,6 +385,7 @@ async function requestGeminiCode(requestPayload: {
   lineage: LineageEntry[];
   model: { provider: "gemini"; name: string };
   projectId?: string;
+  enabledTools?: ConversationToolName[];
 }): Promise<{
   ok: true;
   model: string;
@@ -446,6 +458,61 @@ async function uploadSingleFile(file: File, projectId?: string) {
 
 const getNodeSize = (kind: ConversationNodeRecord["kind"]): PlacementOptions => {
   return getNodeDefaultSize(kind);
+};
+
+const getAllowedAttachmentKindsForPromptMode = (promptMode: ConversationPromptMode): ReadonlySet<ConversationAttachment["kind"]> => {
+  if (promptMode === "image-create") {
+    return new Set(["image"]);
+  }
+
+  if (promptMode === "code") {
+    return new Set(["image", "pdf", "url"]);
+  }
+
+  return new Set(["image", "pdf", "url"]);
+};
+
+const filterAttachmentsForPromptMode = (
+  attachments: ConversationAttachment[],
+  promptMode: ConversationPromptMode,
+) => {
+  const allowedKinds = getAllowedAttachmentKindsForPromptMode(promptMode);
+  return attachments.filter((attachment) => allowedKinds.has(attachment.kind));
+};
+
+const getSupportedToolsForPromptMode = (promptMode: ConversationPromptMode): ConversationToolName[] => {
+  if (promptMode === "image-create") {
+    return [];
+  }
+
+  if (promptMode === "code") {
+    return ["google-search"];
+  }
+
+  return ["google-search", "url-context"];
+};
+
+const sanitizeEnabledToolsForPromptMode = (
+  enabledTools: ConversationToolName[] | undefined,
+  promptMode: ConversationPromptMode,
+) => {
+  const supportedTools = new Set(getSupportedToolsForPromptMode(promptMode));
+  return Array.from(new Set((enabledTools ?? []).filter((tool) => supportedTools.has(tool))));
+};
+
+const shouldIncludeNodeAsPromptInput = (
+  node: Node<ConversationNodeRecord>,
+  promptMode: ConversationPromptMode,
+) => {
+  const filteredAttachments = filterAttachmentsForPromptMode(node.data.attachments, promptMode);
+  const hasSupportedAttachments = filteredAttachments.length > 0;
+  const hasMeaningfulText = node.data.content.trim().length > 0;
+
+  if (node.data.kind === "file" || node.data.kind === "image") {
+    return hasSupportedAttachments;
+  }
+
+  return hasSupportedAttachments || hasMeaningfulText;
 };
 
 const getNodeSizeForRecord = (record: ConversationNodeRecord): PlacementOptions => getNodeDefaultSize(record.kind);
@@ -574,8 +641,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const lastHistorySnapshotRef = useRef<CanvasHistorySnapshot | null>(null);
   const suppressHistoryRef = useRef(false);
   const activeGenerationRunsRef = useRef<Map<string, string>>(new Map());
+  const activeGenerationEdgeIdsRef = useRef<Set<string>>(new Set());
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isMultiDragging, setIsMultiDragging] = useState(false);
+  const [activeGenerationEdgeIds, setActiveGenerationEdgeIds] = useState<string[]>([]);
   const nodeActionRefs = useRef<NodeActionRefs | null>(null);
   const defaultUserModel = getDefaultModelForPromptMode("auto", settings);
 
@@ -629,6 +698,27 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
     activeGenerationRunsRef.current.delete(nodeId);
     delete streamedTextRef.current[nodeId];
+  }, []);
+
+  const setActiveGenerationEdges = useCallback((edgeIds: Iterable<string>) => {
+    const nextIds = Array.from(new Set(edgeIds));
+    activeGenerationEdgeIdsRef.current = new Set(nextIds);
+    setActiveGenerationEdgeIds(nextIds);
+  }, []);
+
+  const clearActiveGenerationEdges = useCallback((edgeIds?: Iterable<string>) => {
+    if (!edgeIds) {
+      activeGenerationEdgeIdsRef.current.clear();
+      setActiveGenerationEdgeIds([]);
+      return;
+    }
+
+    const nextSet = new Set(activeGenerationEdgeIdsRef.current);
+    for (const edgeId of edgeIds) {
+      nextSet.delete(edgeId);
+    }
+    activeGenerationEdgeIdsRef.current = nextSet;
+    setActiveGenerationEdgeIds(Array.from(nextSet));
   }, []);
 
   const applyHistorySnapshot = useCallback(
@@ -744,6 +834,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     suppressHistoryRef.current = false;
     activeGenerationRunsRef.current.clear();
     streamedTextRef.current = {};
+    activeGenerationEdgeIdsRef.current.clear();
+    setActiveGenerationEdgeIds([]);
   }, [currentProjectId]);
 
   useEffect(() => () => {
@@ -1002,6 +1094,41 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       );
     }
   }, [currentProjectId, buildOptimisticAttachment]);
+
+  const addNodeUrlAttachment = useCallback(async (nodeId: string, url: string) => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return;
+
+    const response = await authFetch("/api/attachments/url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: trimmedUrl,
+        projectId: currentProjectId,
+      }),
+    });
+    const payload = (await response.json()) as
+      | { ok: true; attachment: ConversationAttachment }
+      | { ok: false; error?: { message?: string } };
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.ok ? "Failed to attach URL." : payload.error?.message ?? "Failed to attach URL.");
+    }
+
+    setNodes((current) =>
+      current.map((node) =>
+        node.id === nodeId
+          ? {
+            ...node,
+            data: {
+              ...node.data,
+              attachments: [...node.data.attachments, payload.attachment],
+            },
+          }
+          : node,
+      ),
+    );
+  }, [currentProjectId]);
 
   const createFileNodesFromFiles = useCallback(
     async (files: File[], origin: XYPosition) => {
@@ -1319,6 +1446,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             data: {
               ...node.data,
               promptMode,
+              enabledTools: sanitizeEnabledToolsForPromptMode(node.data.enabledTools, promptMode),
               modelConfig: {
                 provider: "gemini",
                 name: getDefaultModelForPromptMode(promptMode, settings),
@@ -1329,6 +1457,43 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ),
     );
   }, [settings]);
+
+  const toggleNodeTool = useCallback((nodeId: string, tool: ConversationToolName) => {
+    setNodes((current) =>
+      current.map((node) => {
+        if (node.id !== nodeId) {
+          return node;
+        }
+
+        const promptMode = node.data.promptMode ?? "auto";
+        const supportedTools = new Set(getSupportedToolsForPromptMode(promptMode));
+        if (!supportedTools.has(tool)) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              enabledTools: sanitizeEnabledToolsForPromptMode(node.data.enabledTools, promptMode),
+            },
+          };
+        }
+
+        const currentTools = new Set(sanitizeEnabledToolsForPromptMode(node.data.enabledTools, promptMode));
+        if (currentTools.has(tool)) {
+          currentTools.delete(tool);
+        } else {
+          currentTools.add(tool);
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            enabledTools: Array.from(currentTools),
+          },
+        };
+      }),
+    );
+  }, []);
 
   const navigateFocusedNode = useCallback(
     (direction: "parent" | "child") => {
@@ -1361,7 +1526,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   }, [edges, reactFlow]);
 
   const buildPromptRequestLineage = useCallback(
-    (targetNodeId: string, currentNodes: Array<Node<ConversationNodeRecord>>, currentEdges: Edge[]) => {
+    (
+      targetNodeId: string,
+      currentNodes: Array<Node<ConversationNodeRecord>>,
+      currentEdges: Edge[],
+      promptMode: ConversationPromptMode,
+    ): PromptRequestContext => {
       const lineage = buildLineageContext(currentNodes, targetNodeId);
       const incomingContext = currentEdges
         .filter((edge) => edge.target === targetNodeId)
@@ -1370,23 +1540,39 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         .filter((node) => node.id !== targetNodeId);
 
       if (incomingContext.length === 0) {
-        return lineage;
+        return {
+          lineage: lineage.map((entry) => ({
+            ...entry,
+            attachments: filterAttachmentsForPromptMode(entry.attachments, promptMode),
+          })),
+          inputNodeIds: [],
+        };
       }
 
       const existingIds = new Set(lineage.map((entry) => entry.id));
       const extraEntries = incomingContext
+        .filter((node) => shouldIncludeNodeAsPromptInput(node, promptMode))
         .filter((node) => !existingIds.has(node.id))
         .map((node) => ({
           id: node.id,
           parentId: node.data.parentId,
           kind: node.data.kind,
           content: node.data.content,
-          attachments: node.data.attachments,
+          attachments: filterAttachmentsForPromptMode(node.data.attachments, promptMode),
           status: node.data.status,
           createdAt: node.data.createdAt,
         }));
 
-      return [...extraEntries, ...lineage];
+      return {
+        lineage: [
+          ...extraEntries,
+          ...lineage.map((entry) => ({
+            ...entry,
+            attachments: filterAttachmentsForPromptMode(entry.attachments, promptMode),
+          })),
+        ],
+        inputNodeIds: extraEntries.map((entry) => entry.id),
+      };
     },
     [],
   );
@@ -1405,7 +1591,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         setEditingNodeId(latestParentNode.id);
         return;
       }
-      const lineage = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges);
+      const promptMode = latestParentNode.data.promptMode ?? "auto";
+      const enabledTools = sanitizeEnabledToolsForPromptMode(latestParentNode.data.enabledTools, promptMode);
+      const requestContext = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges, promptMode);
+      const lineage = requestContext.lineage;
       const nextNodeId = crypto.randomUUID();
       deletedNodeIdsRef.current.delete(nextNodeId);
       const generationRunId = beginGenerationRun(nextNodeId);
@@ -1436,6 +1625,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         }
         return latest.concat(buildEdge(latestParentNode.id, nextNodeId)).map(normalizeEdge);
       });
+      setActiveGenerationEdges(
+        requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`),
+      );
 
       try {
         const result = await requestGeminiText({
@@ -1443,7 +1635,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           lineage,
           model: { provider: "gemini", name: activeModelName },
           projectId: currentProjectId,
-          promptMode: latestParentNode.data.promptMode ?? "auto",
+          promptMode,
+          enabledTools,
           onTextDelta: (text) => {
             if (deletedNodeIdsRef.current.has(nextNodeId)) {
               return;
@@ -1455,6 +1648,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           return;
         }
         clearGenerationRun(nextNodeId, generationRunId);
+        clearActiveGenerationEdges(requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`));
         setNodes((latest) =>
           latest.map((node) =>
             node.id === nextNodeId
@@ -1481,6 +1675,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           return;
         }
         clearGenerationRun(nextNodeId, generationRunId);
+        clearActiveGenerationEdges(requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`));
         setNodes((latest) =>
           latest.map((node) =>
             node.id === nextNodeId
@@ -1497,7 +1692,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, getInsertedChildPosition, scheduleStreamedNodeContentUpdate, setEdges],
+    [beginGenerationRun, buildPromptRequestLineage, clearActiveGenerationEdges, clearGenerationRun, currentProjectId, getInsertedChildPosition, scheduleStreamedNodeContentUpdate, setActiveGenerationEdges, setEdges],
   );
 
   const runCodeGenerationForUserNode = useCallback(
@@ -1515,7 +1710,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         return;
       }
 
-      const lineage = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges);
+      const requestContext = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges, "code");
+      const lineage = requestContext.lineage;
+      const enabledTools = sanitizeEnabledToolsForPromptMode(latestParentNode.data.enabledTools, "code");
       const codeNodeId = crypto.randomUUID();
       const resultNodeId = crypto.randomUUID();
       deletedNodeIdsRef.current.delete(codeNodeId);
@@ -1572,6 +1769,11 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           .concat(buildEdge(latestParentNode.id, codeNodeId), buildEdge(codeNodeId, resultNodeId))
           .map(normalizeEdge);
       });
+      setActiveGenerationEdges([
+        ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`),
+        `${latestParentNode.id}->${codeNodeId}`,
+        `${codeNodeId}->${resultNodeId}`,
+      ]);
 
       try {
         const result = await requestGeminiCode({
@@ -1579,12 +1781,18 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           lineage,
           model: { provider: "gemini", name: activeModelName },
           projectId: currentProjectId,
+          enabledTools,
         });
 
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
           return;
         }
 
+        clearActiveGenerationEdges([
+          ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`),
+          `${latestParentNode.id}->${codeNodeId}`,
+          `${codeNodeId}->${resultNodeId}`,
+        ]);
         setNodes((latest) =>
           latest.map((node) =>
             node.id === codeNodeId
@@ -1626,6 +1834,11 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
           return;
         }
+        clearActiveGenerationEdges([
+          ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`),
+          `${latestParentNode.id}->${codeNodeId}`,
+          `${codeNodeId}->${resultNodeId}`,
+        ]);
         setNodes((latest) =>
           latest.map((node) =>
             node.id === codeNodeId
@@ -1652,7 +1865,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, currentProjectId, getInsertedChildPosition, setEdges],
+    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, getInsertedChildPosition, setActiveGenerationEdges, setEdges],
   );
 
   const runImageGenerationForUserNode = useCallback(
@@ -1702,11 +1915,16 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         return latest.concat(buildEdge(latestParentNode.id, nextNodeId)).map(normalizeEdge);
       });
 
+      let activeEdgeIds: string[] = [];
       try {
-        const lineage = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges);
+        const requestContext = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges, "image-create");
+        const lineage = requestContext.lineage;
+        const allowedInputAttachments = filterAttachmentsForPromptMode(latestParentNode.data.attachments, "image-create");
+        activeEdgeIds = requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${latestParentNode.id}`);
+        setActiveGenerationEdges(activeEdgeIds);
         const result = await requestGeminiImage({
           prompt,
-          attachments: latestParentNode.data.attachments,
+          attachments: allowedInputAttachments,
           lineage,
           modelName: activeImageModelName,
           projectId: currentProjectId,
@@ -1714,6 +1932,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
 
         setNodes((latest) =>
           latest.map((node) =>
@@ -1741,6 +1960,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(nextNodeId)) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
         setNodes((latest) =>
           latest.map((node) =>
             node.id === nextNodeId
@@ -1757,7 +1977,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, currentProjectId, getInsertedChildPosition, setEdges],
+    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, getInsertedChildPosition, setActiveGenerationEdges, setEdges],
   );
 
   const createEditableTextNode = useCallback(
@@ -1780,6 +2000,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         attachments: [],
         modelConfig: kind === "user" ? { provider: "gemini", name: defaultUserModel } : undefined,
         promptMode: kind === "user" ? "auto" : undefined,
+        enabledTools: kind === "user" ? [] : undefined,
         status: "idle",
         createdAt: timestampLabel(),
         isRoot: params.parentNodeId === null,
@@ -1835,8 +2056,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     const targetNode = latestNodes.find((node) => node.id === nodeId);
     if (!targetNode || targetNode.data.kind !== "ai" || !targetNode.data.parentId) return;
     const activeModelName = targetNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME;
-    const lineage = buildPromptRequestLineage(targetNode.data.parentId, latestNodes, latestEdges);
+    const promptMode = targetNode.data.promptMode ?? "auto";
+    const enabledTools = sanitizeEnabledToolsForPromptMode(targetNode.data.enabledTools, promptMode);
+    const requestContext = buildPromptRequestLineage(targetNode.data.parentId, latestNodes, latestEdges, promptMode);
+    const lineage = requestContext.lineage;
     const generationRunId = beginGenerationRun(nodeId);
+    setActiveGenerationEdges(requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${targetNode.data.parentId}`));
     setNodes((current) =>
       current.map((node) =>
         node.id === nodeId
@@ -1861,6 +2086,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         model: { provider: "gemini", name: activeModelName },
         projectId: currentProjectId,
         promptMode: targetNode.data.promptMode ?? "auto",
+        enabledTools,
         onTextDelta: (text) => {
           if (deletedNodeIdsRef.current.has(nodeId)) {
             return;
@@ -1872,6 +2098,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         return;
       }
       clearGenerationRun(nodeId, generationRunId);
+      clearActiveGenerationEdges(requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${targetNode.data.parentId}`));
       setNodes((current) =>
         current.map((node) =>
           node.id === nodeId
@@ -1899,6 +2126,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         return;
       }
       clearGenerationRun(nodeId, generationRunId);
+      clearActiveGenerationEdges(requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${targetNode.data.parentId}`));
       setNodes((current) =>
         current.map((node) =>
           node.id === nodeId
@@ -1915,7 +2143,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         ),
       );
     }
-  }, [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, scheduleStreamedNodeContentUpdate]);
+  }, [beginGenerationRun, buildPromptRequestLineage, clearActiveGenerationEdges, clearGenerationRun, currentProjectId, scheduleStreamedNodeContentUpdate, setActiveGenerationEdges]);
 
   const regenerateCodeNode = useCallback(
     async (nodeId: string) => {
@@ -1965,18 +2193,29 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         ),
       );
 
+      let activeEdgeIds: string[] = [];
       try {
-        const lineage = buildPromptRequestLineage(parentNode.id, nodesRef.current, edgesRef.current);
+        const requestContext = buildPromptRequestLineage(parentNode.id, nodesRef.current, edgesRef.current, "code");
+        const lineage = requestContext.lineage;
+        const enabledTools = sanitizeEnabledToolsForPromptMode(parentNode.data.enabledTools, "code");
+        activeEdgeIds = [
+          ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${parentNode.id}`),
+          `${parentNode.id}->${codeNode.id}`,
+          ...(resultNode ? [`${codeNode.id}->${resultNode.id}`] : []),
+        ];
+        setActiveGenerationEdges(activeEdgeIds);
         const result = await requestGeminiCode({
           targetNodeId: parentNode.id,
           lineage,
           model: { provider: "gemini", name: "gemini-3-flash-preview" },
           projectId: currentProjectId,
+          enabledTools,
         });
 
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
 
         setNodes((current) =>
           current.map((node) =>
@@ -2019,6 +2258,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
 
         setNodes((current) =>
           current.map((node) =>
@@ -2046,7 +2286,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, currentProjectId],
+    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, setActiveGenerationEdges],
   );
 
   const regenerateImageNode = useCallback(
@@ -2083,11 +2323,16 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         ),
       );
 
+      let activeEdgeIds: string[] = [];
       try {
-        const lineage = buildPromptRequestLineage(parentNode.id, latestNodes, latestEdges);
+        const requestContext = buildPromptRequestLineage(parentNode.id, latestNodes, latestEdges, "image-create");
+        const lineage = requestContext.lineage;
+        const allowedInputAttachments = filterAttachmentsForPromptMode(parentNode.data.attachments, "image-create");
+        activeEdgeIds = requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${parentNode.id}`);
+        setActiveGenerationEdges(activeEdgeIds);
         const result = await requestGeminiImage({
           prompt,
-          attachments: parentNode.data.attachments,
+          attachments: allowedInputAttachments,
           lineage,
           modelName: activeImageModelName,
           projectId: currentProjectId,
@@ -2095,6 +2340,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(nodeId)) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
         setNodes((current) =>
           current.map((node) =>
             node.id === nodeId
@@ -2118,6 +2364,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (deletedNodeIdsRef.current.has(nodeId)) {
           return;
         }
+        clearActiveGenerationEdges(activeEdgeIds);
         setNodes((current) =>
           current.map((node) =>
             node.id === nodeId
@@ -2136,15 +2383,17 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, currentProjectId],
+    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, setActiveGenerationEdges],
   );
 
   useEffect(() => {
     nodeActionRefs.current = {
       addNodeAttachments,
+      addNodeUrlAttachment,
       removeNodeAttachment,
       updateNodeModel,
       updatePromptMode,
+      toggleNodeTool,
       updateUserNodeContent,
       resizeNode,
       setEditingNodeId,
@@ -2158,6 +2407,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     };
   }, [
     addNodeAttachments,
+    addNodeUrlAttachment,
     focusNode,
     regenerateAiNode,
     regenerateCodeNode,
@@ -2167,6 +2417,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     runAiGenerationForUserNode,
     runCodeGenerationForUserNode,
     runImageGenerationForUserNode,
+    toggleNodeTool,
     updateNodeModel,
     updatePromptMode,
     updateUserNodeContent,
@@ -2182,6 +2433,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       isMultiDragging,
       onAddAttachments:
         kind === "user" ? (files: File[]) => void nodeActionRefs.current?.addNodeAttachments(nodeId, files) : undefined,
+      onAddUrlAttachment:
+        kind === "user" ? async (url: string) => await nodeActionRefs.current?.addNodeUrlAttachment(nodeId, url) : undefined,
       onRemoveAttachment:
         kind === "user"
           ? (attachmentId: string) => nodeActionRefs.current?.removeNodeAttachment(nodeId, attachmentId)
@@ -2194,6 +2447,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         kind === "user"
           ? (promptMode: ConversationPromptMode) => nodeActionRefs.current?.updatePromptMode(nodeId, promptMode)
           : undefined,
+      onToggleTool:
+        kind === "user" ? (tool: ConversationToolName) => nodeActionRefs.current?.toggleNodeTool(nodeId, tool) : undefined,
       onClearPromptMode:
         kind === "user" ? () => nodeActionRefs.current?.updatePromptMode(nodeId, "auto") : undefined,
       onUserContentChange:
@@ -2311,10 +2566,30 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const hasGeneratingNode = useMemo(() => nodes.some((node) => node.data.status === "generating"), [nodes]);
   // Never defer canvas rendering during dragging, as React Flow needs synchronous frame updates for smooth movement.
   const shouldDeferCanvasRender = hasGeneratingNode;
+  const decoratedEdges = useMemo(
+    () => {
+      const activeEdgeIdSet = new Set(activeGenerationEdgeIds);
+      return edges.map((edge) => {
+        const isGenerationActive = activeEdgeIdSet.has(edge.id);
+        return {
+          ...edge,
+          className: cn("mindmap-edge", isGenerationActive && "mindmap-edge--generating"),
+          animated: isGenerationActive,
+          style: {
+            ...(edge.style ?? {}),
+            stroke: isGenerationActive ? "#6b7280" : (edge.style?.stroke ?? "#9d9d9d"),
+            strokeWidth: isGenerationActive ? 3.6 : (edge.style?.strokeWidth ?? 3.2),
+            opacity: isGenerationActive ? 1 : (edge.style?.opacity ?? 1),
+          },
+        } satisfies Edge;
+      });
+    },
+    [activeGenerationEdgeIds, edges],
+  );
   const deferredVisibleNodes = useDeferredValue(visibleNodes);
-  const deferredEdges = useDeferredValue(edges);
+  const deferredEdges = useDeferredValue(decoratedEdges);
   const flowNodes = shouldDeferCanvasRender ? deferredVisibleNodes : visibleNodes;
-  const flowEdges = shouldDeferCanvasRender ? deferredEdges : edges;
+  const flowEdges = shouldDeferCanvasRender ? deferredEdges : decoratedEdges;
   const showHydrationIndicator = !isFreshCanvas && isHydratingCanvas && flowNodes.length === 0 && flowEdges.length === 0;
   const closeMenu = useCallback(() => setMenu(null), []);
 

@@ -20,6 +20,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  SlidersHorizontal,
   StickyNote,
   UserRound,
   X,
@@ -35,6 +36,7 @@ import type {
   ConversationAttachment,
   ConversationNodeData,
   ConversationPromptMode,
+  ConversationToolName,
 } from "@/lib/canvas-types";
 import {
   IMAGE_MODEL_OPTIONS,
@@ -85,6 +87,15 @@ const promptModeMeta: Record<
 };
 
 const PROMPT_MODES = Object.keys(promptModeMeta) as ConversationPromptMode[];
+const TOOL_OPTIONS: Array<{
+  value: ConversationToolName;
+  label: string;
+  description: string;
+  icon: typeof Search;
+}> = [
+  { value: "google-search", label: "Search", description: "Google Search grounding", icon: Search },
+  { value: "url-context", label: "URL", description: "Read linked web pages", icon: Link2 },
+];
 
 const resizeDirections: ResizeDirection[] = [
   "top",
@@ -259,16 +270,26 @@ function ConversationNodeComponent({
   const title = deriveTitle(data.content, data.kind);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const footerControlsRef = useRef<HTMLDivElement | null>(null);
-  const [openPanel, setOpenPanel] = useState<"mode" | "model" | null>(null);
+  const [openPanel, setOpenPanel] = useState<"mode" | "model" | "tools" | null>(null);
   const [resizePreview, setResizePreview] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
   const otherAttachments = data.attachments.filter((attachment) => attachment.kind !== "image");
+  const inlineImageAttachments = isResult ? imageAttachments : [];
+  const footerAttachments = isUser ? data.attachments : isResult ? otherAttachments : otherAttachments;
   const activePromptMode = data.promptMode ?? "auto";
   const modelOptions = activePromptMode === "image-create" ? IMAGE_MODEL_OPTIONS : TEXT_MODEL_OPTIONS;
   const activeModel = normalizeModelName(data.modelConfig?.name, activePromptMode);
   const activeModelOption = modelOptions.find((option) => option.value === activeModel) ?? modelOptions[0];
   const activePromptModeMeta = promptModeMeta[activePromptMode];
   const ActivePromptModeIcon = activePromptModeMeta.icon;
+  const enabledTools = data.enabledTools ?? [];
+  const supportedTools: ConversationToolName[] =
+    activePromptMode === "image-create"
+      ? []
+      : activePromptMode === "code"
+        ? ["google-search"]
+        : ["google-search", "url-context"];
+  const supportedToolSet = new Set<ConversationToolName>(supportedTools);
   const nodeLabel = isUser ? "Prompt" : isCode ? "Code" : isResult ? "Result" : isImage ? "Image" : isFile ? "File" : isNote ? "Note" : "Response";
   const NodeLabelIcon = isUser ? UserRound : isCode ? Braces : isResult ? TerminalSquare : isImage ? Camera : isFile ? FileText : isNote ? StickyNote : Bot;
   const tokenCountLabel = formatTokenCount(data.tokenCount);
@@ -547,6 +568,26 @@ function ConversationNodeComponent({
                 <ScrollArea className="mindmap-node-shell__content nodrag nowheel rounded-[22px]" onWheelCapture={handleScrollAreaWheelCapture}>
                   {isAi || isCode || isResult ? (
                     <div className="mindmap-node-shell__content-inner">
+                      {isResult && inlineImageAttachments.length > 0 ? (
+                        <div className="mb-6 space-y-3">
+                          <div className={cn("grid gap-3", inlineImageAttachments.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+                            {inlineImageAttachments.map((attachment) => (
+                              <button
+                                key={attachment.id}
+                                type="button"
+                                className="overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-sm"
+                                onClick={() => data.onOpenDetail?.(getAttachmentSrc(attachment))}
+                              >
+                                <LazyAttachmentImage
+                                  attachment={attachment}
+                                  alt={attachment.name}
+                                  className="aspect-[4/3] w-full"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                       {data.status === "generating" && !data.content ? (
                         <div className="flex flex-col gap-6 py-6 opacity-40">
                           <div className="h-4 w-[92%] rounded-full bg-neutral-100" />
@@ -567,9 +608,9 @@ function ConversationNodeComponent({
                 </ScrollArea>
               )}
 
-              {!isFile && (isUser ? data.attachments : otherAttachments).length > 0 && (
+              {!isFile && footerAttachments.length > 0 && (
                 <div className="mindmap-attachments-row">
-                  {(isUser ? data.attachments : otherAttachments).map((att, i) => {
+                  {footerAttachments.map((att, i) => {
                     const Icon = attachmentIcon(att.kind);
                     if (att.kind === "image") {
                       const isUploading = att.id.startsWith("temp-");
@@ -615,6 +656,18 @@ function ConversationNodeComponent({
                         <Plus className="size-4.5" />
                       </Button>
                       <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="nodrag mindmap-action-icon h-9 w-9 shrink-0 rounded-xl"
+                        onClick={async () => {
+                          const nextUrl = window.prompt("URL");
+                          if (!nextUrl) return;
+                          await data.onAddUrlAttachment?.(nextUrl);
+                        }}
+                      >
+                        <Link2 className="size-4.5" />
+                      </Button>
 
                       <div className="mindmap-pill-menu shrink-0">
                         <Button
@@ -679,6 +732,49 @@ function ConversationNodeComponent({
                                 </div>
                               </button>
                             ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mindmap-pill-menu shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn("nodrag px-3 h-9 gap-2 font-semibold rounded-xl border border-neutral-200/60 bg-white/50", openPanel === "tools" && "bg-neutral-100/80")}
+                          onClick={() => setOpenPanel(openPanel === "tools" ? null : "tools")}
+                        >
+                          <SlidersHorizontal className="size-4 text-neutral-400" />
+                          <span className="truncate">Tools</span>
+                          {enabledTools.length > 0 ? <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] text-white">{enabledTools.length}</span> : null}
+                          <ChevronDown className="size-3.5 opacity-40 shrink-0" />
+                        </Button>
+                        {openPanel === "tools" && (
+                          <div className="mindmap-pill-menu__panel nodrag">
+                            {TOOL_OPTIONS.map((tool) => {
+                              const Icon = tool.icon;
+                              const isSupported = supportedToolSet.has(tool.value);
+                              const isEnabled = enabledTools.includes(tool.value);
+                              return (
+                                <button
+                                  key={tool.value}
+                                  className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
+                                  onClick={() => {
+                                    if (!isSupported) return;
+                                    data.onToggleTool?.(tool.value);
+                                  }}
+                                  disabled={!isSupported}
+                                >
+                                  <Icon className="size-4.5" />
+                                  <div className="mindmap-pill-menu__item-copy text-left">
+                                    <strong>{tool.label}</strong>
+                                    <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                            <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
+                              Files are provided automatically from attachments.
+                            </div>
                           </div>
                         )}
                       </div>

@@ -4,7 +4,7 @@ import { requireSessionUser } from "@/lib/api-auth";
 import { serializeError, writeAuditLog } from "@/lib/audit-log";
 import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-ledger";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import type { ConversationPromptMode, ConversationTextModelName } from "@/lib/canvas-types";
+import type { ConversationPromptMode, ConversationTextModelName, ConversationToolName } from "@/lib/canvas-types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,11 +46,13 @@ type GenerateRequestBody = {
   };
   projectId?: string;
   promptMode?: ConversationPromptMode;
+  enabledTools?: ConversationToolName[];
   stream?: boolean;
 };
 
 type GeminiTool = {
   google_search?: Record<string, never>;
+  url_context?: Record<string, never>;
 };
 
 type UploadedGeminiFile = {
@@ -104,6 +106,28 @@ function shouldEnableGoogleSearch(lineage: LineageEntry[]) {
     /\b(official|source|citation|verify|proof|evidence|roadmap|availability)\b/;
 
   return currentInfoPattern.test(prompt) || japanesePattern.test(prompt) || requiresVerificationPattern.test(prompt);
+}
+
+function buildGeminiTools(params: {
+  promptMode: ConversationPromptMode;
+  enabledTools?: ConversationToolName[];
+  lineage: LineageEntry[];
+}) {
+  const requestedTools = new Set(params.enabledTools ?? []);
+  const tools: GeminiTool[] = [];
+
+  if (requestedTools.has("google-search") || shouldEnableGoogleSearch(params.lineage)) {
+    tools.push({ google_search: {} });
+  }
+
+  if (
+    (params.promptMode === "auto" || params.promptMode === "deep-research") &&
+    requestedTools.has("url-context")
+  ) {
+    tools.push({ url_context: {} });
+  }
+
+  return tools;
 }
 
 function didUseGoogleSearch(payload: GeminiGenerateResponse) {
@@ -520,7 +544,12 @@ export async function POST(request: Request) {
     const built = await buildGeminiParts(lineage, apiKey);
     const parts = built.parts;
     uploadedFiles = built.uploadedFiles;
-    const tools: GeminiTool[] | undefined = shouldEnableGoogleSearch(lineage) ? [{ google_search: {} }] : undefined;
+    const tools = buildGeminiTools({
+      promptMode,
+      enabledTools: body.enabledTools,
+      lineage,
+    });
+    const activeTools = tools.length > 0 ? tools : undefined;
 
     if (body.stream) {
       return streamGeminiResponse({
@@ -528,7 +557,7 @@ export async function POST(request: Request) {
         modelName,
         parts,
         uploadedFiles,
-        tools,
+        tools: activeTools,
         onDone: async ({ tokenCount, webSearchUsed }) => {
           await writeAuditLog({
             action: "generation.text",
@@ -585,7 +614,7 @@ export async function POST(request: Request) {
           parts: [{ text: MARKDOWN_SYSTEM_INSTRUCTION }],
         },
         contents: [{ role: "user", parts }],
-        ...(tools && tools.length > 0 ? { tools } : {}),
+        ...(activeTools ? { tools: activeTools } : {}),
       }),
     });
 

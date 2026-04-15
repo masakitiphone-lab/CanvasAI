@@ -6,6 +6,7 @@ import type {
   ConversationModelName,
   ConversationNodeRecord,
   ConversationPromptMode,
+  ConversationToolName,
 } from "@/lib/canvas-types";
 import { normalizeModelName } from "@/lib/model-options";
 
@@ -23,6 +24,7 @@ type CanvasNodeRow = {
   model_provider: string | null;
   model_name: string | null;
   prompt_mode: ConversationPromptMode | null;
+  enabled_tools: ConversationToolName[] | null;
   token_count: number | null;
   created_at: string;
 };
@@ -97,6 +99,7 @@ function buildNodeFromRow(row: CanvasNodeRow, attachments: ConversationAttachmen
             }
           : undefined,
       promptMode,
+      enabledTools: row.enabled_tools ?? [],
       tokenCount: row.token_count ?? undefined,
       status: row.status,
       createdAt: row.created_at,
@@ -218,6 +221,7 @@ export async function saveCanvasState(
     model_provider: node.data.modelConfig?.provider ?? null,
     model_name: node.data.modelConfig?.name ?? null,
     prompt_mode: node.data.kind === "user" ? node.data.promptMode ?? "auto" : null,
+    enabled_tools: node.data.kind === "user" ? node.data.enabledTools ?? [] : [],
     token_count: node.data.tokenCount ?? null,
     created_at: node.data.createdAt,
   }));
