@@ -1044,6 +1044,22 @@
   margin: 5px 8px;
 }
 
+.mindmap-prompt-actions--composer {
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mindmap-prompt-actions--composer > .mindmap-pill-menu,
+.mindmap-prompt-actions--composer > .rounded-xl,
+.mindmap-prompt-actions--composer > .flex-1 {
+  min-width: 0;
+}
+
+.mindmap-prompt-actions--composer > .flex-1 {
+  flex: 1 1 auto;
+}
+
 .mindmap-attachment-thumb__remove {
   opacity: 0;
   transition: opacity 0.2s ease;

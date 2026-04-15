@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Loader2,
   LogOut,
+  Menu,
   MoreHorizontal,
   PlusSquare,
   Search,
@@ -17,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CanvasPlaceholder } from "@/components/canvas-placeholder";
 import { DevAuthPanel } from "@/components/dev-auth-panel";
 import { FlowCanvas } from "@/components/flow-canvas";
 import { MagicImage } from "@/components/ui/magic-image";
@@ -236,6 +238,7 @@ export function AppShell({
   const [isCreateCanvasDialogOpen, setIsCreateCanvasDialogOpen] = useState(false);
   const [newCanvasTitle, setNewCanvasTitle] = useState("");
   const [isSubmittingNewCanvas, setIsSubmittingNewCanvas] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isBrowserAuthReady = useBrowserAuthReady();
 
   const router = useRouter();
@@ -269,14 +272,8 @@ export function AppShell({
     async function hydrateProjects() {
       setIsLoadingProjects(true);
       try {
-        const [projectList, credits] = await Promise.all([fetchProjects(), fetchCredits()]);
-        let projects = projectList;
+        const [projects, credits] = await Promise.all([fetchProjects(), fetchCredits()]);
         setCreditSummary(credits);
-
-        if (projects.length === 0) {
-          const project = await createProject("Canvas 1");
-          projects = [project];
-        }
 
         if (cancelled) {
           return;
@@ -393,6 +390,7 @@ export function AppShell({
 
   const handleSwitchCanvas = (canvasId: string | null) => {
     setActiveCanvasId(canvasId);
+    setIsMobileSidebarOpen(false);
     if (pathname === "/") {
       syncCanvasUrl(canvasId);
       return;
@@ -404,6 +402,7 @@ export function AppShell({
   const getDefaultCanvasTitle = () => `Canvas ${canvases.length + 1}`;
 
   const openCreateCanvasDialog = () => {
+    setIsMobileSidebarOpen(false);
     setNewCanvasTitle(getDefaultCanvasTitle());
     setIsCreateCanvasDialogOpen(true);
   };
@@ -489,18 +488,6 @@ export function AppShell({
       return;
     }
 
-    if (remainingCanvases.length === 0) {
-      const fallback = await createProject("Canvas 1");
-      setCanvases([fallback]);
-      setActiveCanvasId(fallback.id);
-      writeProjectCache(userId, [fallback]);
-      if (pathname === "/") {
-        syncCanvasUrl(fallback.id);
-      } else {
-        const target = `/?canvas=${encodeURIComponent(fallback.id)}`;
-        router.push(target);
-      }
-    }
   };
 
   const handleStartRename = (canvas: CanvasSummary) => {
@@ -541,10 +528,22 @@ export function AppShell({
     return () => window.removeEventListener("click", handleWindowClick);
   }, []);
 
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname, activeCanvasId]);
+
   return (
     <>
       <div className="app-shell">
-      <aside className="sidebar">
+      {isMobileSidebarOpen ? (
+        <button
+          type="button"
+          className="sidebar-mobile-overlay"
+          aria-label="Close sidebar"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      ) : null}
+      <aside className={cn("sidebar", isMobileSidebarOpen && "sidebar--mobile-open")}>
         <div className="sidebar__brand">
           <Link href="/" prefetch={false} className="sidebar__brand-copy" onClick={() => handleSwitchCanvas(activeCanvasId)}>
             <div className="sidebar__brand-icon">
@@ -552,6 +551,15 @@ export function AppShell({
             </div>
             <span>CanvasAI</span>
           </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="sidebar__mobile-close"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          >
+            <X className="size-4" />
+          </Button>
         </div>
 
         <div className="sidebar__nav">
@@ -705,9 +713,20 @@ export function AppShell({
       </aside>
 
       <div className="workspace">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="workspace__mobile-menu"
+          onClick={() => setIsMobileSidebarOpen(true)}
+        >
+          <Menu className="size-5" />
+        </Button>
         {isBrowserAuthReady
           ? pathname === "/"
-            ? <FlowCanvas userId={userId} initialProjectId={activeCanvasId ?? undefined} />
+            ? activeCanvasId
+              ? <FlowCanvas userId={userId} initialProjectId={activeCanvasId} />
+              : <CanvasPlaceholder />
             : <div className="workspace__content">{children}</div>
           : null}
       </div>

@@ -510,6 +510,61 @@ function buildResultNodeContent(params: PyodideRunResult) {
     .join("\n\n");
 }
 
+function looksLikePythonSource(source: string) {
+  const trimmed = source.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const pythonSignals = [
+    /^import\s+[a-zA-Z0-9_.]+/m,
+    /^from\s+[a-zA-Z0-9_.]+\s+import\s+/m,
+    /^def\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(/m,
+    /^class\s+[A-Z][A-Za-z0-9_]*\s*[:(]/m,
+    /print\s*\(/,
+    /plt\./,
+    /pd\./,
+    /np\./,
+    /if\s+__name__\s*==\s*["']__main__["']/,
+  ];
+
+  return pythonSignals.some((pattern) => pattern.test(trimmed));
+}
+
+function extractPythonCode(text: string) {
+  const fenced = text.match(/```(?:python|py)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    return fenced[1].trim();
+  }
+
+  return text.trim();
+}
+
+function buildCodeGenerationLineage(lineage: LineageEntry[]) {
+  const nextLineage = lineage.map((entry) => ({ ...entry, attachments: entry.attachments ? [...entry.attachments] : [] }));
+  const latestUserIndex = [...nextLineage].reverse().findIndex((entry) => entry.kind === "user");
+  if (latestUserIndex === -1) {
+    return nextLineage;
+  }
+
+  const targetIndex = nextLineage.length - 1 - latestUserIndex;
+  const originalPrompt = nextLineage[targetIndex].content.trim();
+  nextLineage[targetIndex] = {
+    ...nextLineage[targetIndex],
+    content: [
+      "Write Python code that solves the user's request.",
+      "Return only executable Python code.",
+      "Do not include markdown fences.",
+      "If plotting is useful, use matplotlib and call plt.show().",
+      "If input attachments matter, read them from /workspace/inputs or inspect /workspace/input_manifest.json.",
+      "",
+      `User request: ${originalPrompt}`,
+    ].join("\n"),
+  };
+
+  return nextLineage;
+}
+
 async function uploadFiles(files: File[], projectId?: string) {
   const uploaded = [];
   for (const file of files) {
@@ -1909,9 +1964,24 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ]);
 
       try {
+        const generatedCode =
+          looksLikePythonSource(prompt)
+            ? prompt
+            : extractPythonCode(
+              (
+                await requestGeminiText({
+                  targetNodeId: latestParentNode.id,
+                  lineage: buildCodeGenerationLineage(requestContext.lineage),
+                  model: { provider: "gemini", name: latestParentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
+                  projectId: currentProjectId,
+                  promptMode: "auto",
+                  enabledTools: [],
+                })
+              ).text,
+            );
         const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
         const result = await executePyodideCode({
-          code: prompt,
+          code: generatedCode,
           attachments: inputAttachments,
           contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
@@ -1934,7 +2004,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 style: {
                   ...node.style,
                   ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                    code: prompt,
+                    code: generatedCode,
                     packages: result.detectedPackages,
                     stagedInputs: result.stagedInputs,
                   })),
@@ -1942,7 +2012,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 data: {
                   ...node.data,
                   content: buildCodeNodeContent({
-                    code: prompt,
+                    code: generatedCode,
                     packages: result.detectedPackages,
                     stagedInputs: result.stagedInputs,
                   }),
@@ -2339,8 +2409,23 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ...(resultNode ? [`${codeNode.id}->${resultNode.id}`] : []),
         ];
         setActiveGenerationEdges(activeEdgeIds);
+        const generatedCode =
+          looksLikePythonSource(parentNode.data.content)
+            ? parentNode.data.content
+            : extractPythonCode(
+              (
+                await requestGeminiText({
+                  targetNodeId: parentNode.id,
+                  lineage: buildCodeGenerationLineage(requestContext.lineage),
+                  model: { provider: "gemini", name: parentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
+                  projectId: currentProjectId,
+                  promptMode: "auto",
+                  enabledTools: [],
+                })
+              ).text,
+            );
         const result = await executePyodideCode({
-          code: parentNode.data.content,
+          code: generatedCode,
           attachments: requestContext.lineage.flatMap((entry) => entry.attachments),
           contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
@@ -2359,7 +2444,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 style: {
                   ...node.style,
                   ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                    code: parentNode.data.content,
+                    code: generatedCode,
                     packages: result.detectedPackages,
                     stagedInputs: result.stagedInputs,
                   })),
@@ -2367,7 +2452,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 data: {
                   ...node.data,
                   content: buildCodeNodeContent({
-                    code: parentNode.data.content,
+                    code: generatedCode,
                     packages: result.detectedPackages,
                     stagedInputs: result.stagedInputs,
                   }),
@@ -3128,13 +3213,11 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       <div
         className={cn("flow-wrapper", focusedNodeId !== null && "flow-wrapper--focus-mode")}
         ref={wrapperRef}
-        tabIndex={0}
         onContextMenu={handleWrapperContextMenu}
         onDrop={handleWrapperDrop}
         onDragOver={handleWrapperDragOver}
         onMouseMove={handleWrapperMouseMove}
         onPasteCapture={handleWrapperPasteCapture}
-        onPointerDown={(event) => event.currentTarget.focus()}
       >
         <input
           ref={paneFileInputRef}

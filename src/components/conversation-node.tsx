@@ -8,6 +8,7 @@ import {
   BarChart,
   Bot,
   Camera,
+  Check,
   ChevronDown,
   Clock,
   FileImage,
@@ -382,6 +383,7 @@ function ConversationNodeComponent({
         startY,
       });
       setResizePreview(latestBounds);
+      data.onResizeNode?.(latestBounds);
     };
 
     const clearListeners = () => {
@@ -393,7 +395,6 @@ function ConversationNodeComponent({
     };
 
     const onPointerUp = () => {
-      data.onResizeNode?.(latestBounds);
       clearListeners();
     };
 
@@ -658,7 +659,7 @@ function ConversationNodeComponent({
               <div className="mindmap-node-shell__footer node-drag-handle !pt-0" ref={footerControlsRef}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {isUser ? (
-                    <div className="mindmap-prompt-actions !gap-2.5">
+                    <div className="mindmap-prompt-actions mindmap-prompt-actions--composer !gap-2.5">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -668,19 +669,6 @@ function ConversationNodeComponent({
                         <Plus className="size-4.5" />
                       </Button>
                       <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="nodrag mindmap-action-icon h-9 w-9 shrink-0 rounded-xl"
-                        onClick={async () => {
-                          const nextUrl = window.prompt("URL");
-                          if (!nextUrl) return;
-                          await data.onAddUrlAttachment?.(nextUrl);
-                        }}
-                      >
-                        <Link2 className="size-4.5" />
-                      </Button>
-
                       <div className="mindmap-pill-menu shrink-0">
                         <Button
                           variant="ghost"
@@ -772,20 +760,25 @@ function ConversationNodeComponent({
                                     <button
                                       key={tool.value}
                                       className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
-                                      onClick={() => {
-                                        if (!isSupported) return;
-                                        data.onToggleTool?.(tool.value);
-                                      }}
-                                      disabled={!isSupported}
-                                    >
-                                      <Icon className="size-4.5" />
-                                      <div className="mindmap-pill-menu__item-copy text-left">
-                                        <strong>{tool.label}</strong>
-                                        <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
+                                  onClick={() => {
+                                    if (!isSupported) return;
+                                    data.onToggleTool?.(tool.value);
+                                  }}
+                                  disabled={!isSupported}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Icon className="size-4.5" />
+                                    <div className="mindmap-pill-menu__item-copy text-left">
+                                      <strong>{tool.label}</strong>
+                                      <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
+                                    </div>
+                                  </div>
+                                  <span className="flex size-5 items-center justify-center">
+                                    {isEnabled ? <Check className="size-4 text-neutral-900" /> : null}
+                                  </span>
+                                </button>
+                              );
+                            })}
                                 <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
                                   Files are provided automatically from attachments.
                                 </div>

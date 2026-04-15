@@ -68,7 +68,6 @@ export function MagicImage({
             imageClassName
           )}
           decoding="async"
-          referrerPolicy="no-referrer"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-neutral-50 text-neutral-400">
