@@ -28,6 +28,9 @@ import {
 } from "@xyflow/react";
 import {
   Clipboard,
+  ClipboardCopy,
+  FilePenLine,
+  MessageCircleMore,
   MessageSquare,
   StickyNote,
   FileUp,
@@ -56,6 +59,7 @@ import type {
 } from "@/lib/canvas-types";
 import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
 import { CANVAS_COPY } from "@/lib/workspace-copy";
+import { pyodideClient, type PyodideRunResult } from "@/lib/pyodide-client";
 import { cn } from "@/lib/utils";
 
 type PaneMenu = { kind: "pane"; flowPosition: XYPosition; top: number; left: number };
@@ -140,6 +144,14 @@ const timestampLabel = () =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+const TEXT_SELECTION_BLOCKER_SELECTOR = [
+  "textarea",
+  "input",
+  "[contenteditable='true']",
+  ".mindmap-markdown",
+  ".mindmap-node-shell__body",
+].join(", ");
 
 function getNewCanvasKey(userId?: string) {
   return `${NEW_CANVAS_KEY_PREFIX}.${userId ?? "anonymous"}`;
@@ -380,55 +392,122 @@ async function requestGeminiImage(requestPayload: {
   }
 }
 
-async function requestGeminiCode(requestPayload: {
-  targetNodeId: string;
-  lineage: LineageEntry[];
-  model: { provider: "gemini"; name: string };
-  projectId?: string;
-  enabledTools?: ConversationToolName[];
-}): Promise<{
-  ok: true;
-  model: string;
-  explanation: string;
-  code: string;
-  codeLanguage: string;
-  codeContent: string;
-  resultContent: string;
-  resultAttachments: ConversationAttachment[];
-  executionOutput: string;
-  executionOutcome: string;
-  tokenCount?: number | null;
-}> {
-  try {
-    const response = await authFetch("/api/gemini/generate-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestPayload),
-    });
-    const payload = (await response.json()) as
-      | {
-        ok: true;
-        model: string;
-        explanation: string;
-        code: string;
-        codeLanguage: string;
-        codeContent: string;
-        resultContent: string;
-        resultAttachments: ConversationAttachment[];
-        executionOutput: string;
-        executionOutcome: string;
-        tokenCount?: number | null;
-      }
-      | { ok: false; error?: { message?: string } };
+function shouldPreserveNativeContextMenu(event: MouseEvent | ReactMouseEvent<Element, MouseEvent>) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
 
-    if (!response.ok || !payload.ok) {
-      throw new Error(payload.ok ? CANVAS_COPY.geminiCodeRequestFailed : payload.error?.message ?? CANVAS_COPY.geminiCodeRequestFailed);
+  if (target.closest(TEXT_SELECTION_BLOCKER_SELECTOR)) {
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+      return true;
     }
 
-    return payload;
-  } finally {
-    window.dispatchEvent(new CustomEvent("credits:refresh"));
+    if (target.closest("textarea, input, [contenteditable='true']")) {
+      return true;
+    }
   }
+
+  return false;
+}
+
+function base64ToFile(params: { bytesBase64: string; fileName: string; mimeType: string }) {
+  const binary = atob(params.bytesBase64);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new File([bytes], params.fileName, { type: params.mimeType });
+}
+
+function buildPyodideContextText(lineage: LineageEntry[]) {
+  if (lineage.length === 0) {
+    return "";
+  }
+
+  return lineage
+    .map((entry) => {
+      const heading =
+        entry.kind === "user"
+          ? "Prompt"
+          : entry.kind === "note"
+            ? "Note"
+            : entry.kind === "ai"
+              ? "AI Response"
+              : entry.kind === "file"
+                ? "File"
+                : entry.kind === "image"
+                  ? "Image"
+                  : entry.kind === "result"
+                    ? "Execution Result"
+                    : "Code";
+
+      const attachmentLines = entry.attachments.map((attachment) => `- ${attachment.kind}: ${attachment.name} (${attachment.url})`);
+      return [
+        `## ${heading}`,
+        entry.content.trim() || "_No text_",
+        attachmentLines.length > 0 ? "### Attachments" : "",
+        ...attachmentLines,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildCodeNodeContent(params: {
+  code: string;
+  packages: string[];
+  stagedInputs: Array<{ name: string; path: string | null; kind: ConversationAttachment["kind"]; url: string }>;
+}) {
+  const packageSection =
+    params.packages.length > 0
+      ? `## Packages\n${params.packages.map((pkg) => `- \`${pkg}\``).join("\n")}`
+      : "## Packages\n- _No external packages detected_";
+  const inputSection =
+    params.stagedInputs.length > 0
+      ? `## Inputs\n${params.stagedInputs
+        .map((input) => `- \`${input.name}\`${input.path ? ` -> \`${input.path}\`` : ""}${input.kind === "url" ? ` (${input.url})` : ""}`)
+        .join("\n")}`
+      : "## Inputs\n- _No staged inputs_";
+
+  return [
+    "## Python",
+    "```python",
+    params.code || "# Empty code",
+    "```",
+    packageSection,
+    inputSection,
+  ].join("\n\n");
+}
+
+function buildResultNodeContent(params: PyodideRunResult) {
+  const statusLine = params.success ? "Success" : "Failed";
+  const stdoutSection = params.stdout ? `## Stdout\n\`\`\`text\n${params.stdout}\n\`\`\`` : "## Stdout\n- _No stdout_";
+  const stderrSection = params.stderr ? `## Stderr\n\`\`\`text\n${params.stderr}\n\`\`\`` : "## Stderr\n- _No stderr_";
+  const packageSection = [
+    "## Packages",
+    params.detectedPackages.length > 0 ? `Detected: ${params.detectedPackages.map((pkg) => `\`${pkg}\``).join(", ")}` : "Detected: _None_",
+    params.installedPackages.length > 0 ? `Installed: ${params.installedPackages.map((pkg) => `\`${pkg}\``).join(", ")}` : "Installed: _None_",
+    params.failedPackages.length > 0
+      ? `Failed: ${params.failedPackages.map((pkg) => `\`${pkg.name}\` (${pkg.error})`).join(", ")}`
+      : "Failed: _None_",
+  ].join("\n");
+  const fileSection =
+    params.files.length > 0
+      ? `## Files\n${params.files.map((file) => `- \`${file.name}\``).join("\n")}`
+      : "## Files\n- _No generated files_";
+  const errorSection = params.errorMessage ? `## Error\n\`\`\`text\n${params.errorMessage}\n\`\`\`` : "";
+
+  return [
+    "## Pyodide Execution",
+    `Status: **${statusLine}**`,
+    packageSection,
+    stdoutSection,
+    stderrSection,
+    fileSection,
+    errorSection,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 async function uploadFiles(files: File[], projectId?: string) {
@@ -456,6 +535,40 @@ async function uploadSingleFile(file: File, projectId?: string) {
   return uploaded[0];
 }
 
+async function executePyodideCode(params: {
+  code: string;
+  attachments: ConversationAttachment[];
+  contextText: string;
+  projectId?: string;
+}) {
+  await pyodideClient.ensureReady().catch((error) => {
+    throw new Error(error instanceof Error ? error.message : CANVAS_COPY.pyodideInitFailed);
+  });
+
+  const result = await pyodideClient.runCode({
+    code: params.code,
+    attachments: params.attachments,
+    contextText: params.contextText,
+  }).catch((error) => {
+    throw new Error(error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed);
+  });
+
+  const uploadedArtifacts =
+    result.files.length > 0
+      ? await uploadFiles(
+        result.files.map((file) =>
+          base64ToFile({
+            bytesBase64: file.bytesBase64,
+            fileName: file.name,
+            mimeType: file.mimeType,
+          })),
+        params.projectId,
+      )
+      : [];
+
+  return { ...result, attachments: uploadedArtifacts };
+}
+
 const getNodeSize = (kind: ConversationNodeRecord["kind"]): PlacementOptions => {
   return getNodeDefaultSize(kind);
 };
@@ -466,7 +579,7 @@ const getAllowedAttachmentKindsForPromptMode = (promptMode: ConversationPromptMo
   }
 
   if (promptMode === "code") {
-    return new Set(["image", "pdf", "url"]);
+    return new Set(["image", "pdf", "url", "file"]);
   }
 
   return new Set(["image", "pdf", "url"]);
@@ -486,7 +599,7 @@ const getSupportedToolsForPromptMode = (promptMode: ConversationPromptMode): Con
   }
 
   if (promptMode === "code") {
-    return ["google-search"];
+    return [];
   }
 
   return ["google-search", "url-context"];
@@ -1042,6 +1155,31 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ),
     );
   }, []);
+
+  const convertNodeKind = useCallback((nodeId: string, nextKind: "user" | "note") => {
+    setNodes((current) =>
+      current.map((node) => {
+        if (node.id !== nodeId) return node;
+        if (node.data.kind !== "user" && node.data.kind !== "note") return node;
+        if (node.data.kind === nextKind) return node;
+
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            ...getContentAwareNodeSize(nextKind, node.data.content),
+          },
+          data: {
+            ...node.data,
+            kind: nextKind,
+            modelConfig: nextKind === "user" ? { provider: "gemini", name: defaultUserModel } : undefined,
+            promptMode: nextKind === "user" ? "auto" : undefined,
+            enabledTools: nextKind === "user" ? [] : undefined,
+          },
+        };
+      }),
+    );
+  }, [defaultUserModel]);
 
   const buildOptimisticAttachment = useCallback((file: File): ConversationAttachment => ({
     id: `temp-${crypto.randomUUID()}`,
@@ -1711,19 +1849,15 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       }
 
       const requestContext = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges, "code");
-      const lineage = requestContext.lineage;
-      const enabledTools = sanitizeEnabledToolsForPromptMode(latestParentNode.data.enabledTools, "code");
       const codeNodeId = crypto.randomUUID();
       const resultNodeId = crypto.randomUUID();
       deletedNodeIdsRef.current.delete(codeNodeId);
       deletedNodeIdsRef.current.delete(resultNodeId);
-      const activeModelName: ConversationModelName = "gemini-3-flash-preview";
       const draftCodeNode = buildNode(codeNodeId, latestParentNode.position, {
         parentId: latestParentNode.id,
         kind: "code",
         content: "",
         attachments: [],
-        modelConfig: { provider: "gemini", name: activeModelName },
         promptMode: "code",
         status: "generating",
         createdAt: timestampLabel(),
@@ -1736,7 +1870,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         kind: "result",
         content: "",
         attachments: [],
-        modelConfig: { provider: "gemini", name: activeModelName },
         status: "generating",
         createdAt: timestampLabel(),
         isRoot: false,
@@ -1776,12 +1909,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ]);
 
       try {
-        const result = await requestGeminiCode({
-          targetNodeId: latestParentNode.id,
-          lineage,
-          model: { provider: "gemini", name: activeModelName },
+        const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
+        const result = await executePyodideCode({
+          code: prompt,
+          attachments: inputAttachments,
+          contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
-          enabledTools,
         });
 
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
@@ -1800,13 +1933,19 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 ...node,
                 style: {
                   ...node.style,
-                  ...getContentAwareNodeSize("code", result.codeContent),
+                  ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                    code: prompt,
+                    packages: result.detectedPackages,
+                    stagedInputs: result.stagedInputs,
+                  })),
                 },
                 data: {
                   ...node.data,
-                  content: result.codeContent,
-                  modelConfig: { provider: "gemini", name: activeModelName },
-                  tokenCount: result.tokenCount ?? undefined,
+                  content: buildCodeNodeContent({
+                    code: prompt,
+                    packages: result.detectedPackages,
+                    stagedInputs: result.stagedInputs,
+                  }),
                   status: "idle",
                 },
               }
@@ -1815,14 +1954,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   ...node,
                   style: {
                     ...node.style,
-                    ...getContentAwareNodeSize("result", result.resultContent),
+                    ...getContentAwareNodeSize("result", buildResultNodeContent(result)),
                   },
                 data: {
                   ...node.data,
-                  content: result.resultContent,
-                  attachments: result.resultAttachments,
-                  modelConfig: { provider: "gemini", name: activeModelName },
-                  tokenCount: result.tokenCount ?? undefined,
+                  content: buildResultNodeContent(result),
+                  attachments: result.attachments,
                   status: "idle",
                   },
                 }
@@ -1830,7 +1967,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : CANVAS_COPY.geminiCodeRequestFailed;
+        const message = error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed;
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
           return;
         }
@@ -2196,20 +2333,17 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       let activeEdgeIds: string[] = [];
       try {
         const requestContext = buildPromptRequestLineage(parentNode.id, nodesRef.current, edgesRef.current, "code");
-        const lineage = requestContext.lineage;
-        const enabledTools = sanitizeEnabledToolsForPromptMode(parentNode.data.enabledTools, "code");
         activeEdgeIds = [
           ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${parentNode.id}`),
           `${parentNode.id}->${codeNode.id}`,
           ...(resultNode ? [`${codeNode.id}->${resultNode.id}`] : []),
         ];
         setActiveGenerationEdges(activeEdgeIds);
-        const result = await requestGeminiCode({
-          targetNodeId: parentNode.id,
-          lineage,
-          model: { provider: "gemini", name: "gemini-3-flash-preview" },
+        const result = await executePyodideCode({
+          code: parentNode.data.content,
+          attachments: requestContext.lineage.flatMap((entry) => entry.attachments),
+          contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
-          enabledTools,
         });
 
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
@@ -2224,13 +2358,19 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 ...node,
                 style: {
                   ...node.style,
-                  ...getContentAwareNodeSize("code", result.codeContent),
+                  ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                    code: parentNode.data.content,
+                    packages: result.detectedPackages,
+                    stagedInputs: result.stagedInputs,
+                  })),
                 },
                 data: {
                   ...node.data,
-                  content: result.codeContent,
-                  modelConfig: { provider: "gemini", name: "gemini-3-flash-preview" },
-                  tokenCount: result.tokenCount ?? undefined,
+                  content: buildCodeNodeContent({
+                    code: parentNode.data.content,
+                    packages: result.detectedPackages,
+                    stagedInputs: result.stagedInputs,
+                  }),
                   status: "idle",
                 },
               }
@@ -2239,14 +2379,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   ...node,
                   style: {
                     ...node.style,
-                    ...getContentAwareNodeSize("result", result.resultContent),
+                    ...getContentAwareNodeSize("result", buildResultNodeContent(result)),
                   },
                   data: {
                     ...node.data,
-                    content: result.resultContent,
-                    attachments: result.resultAttachments,
-                    modelConfig: { provider: "gemini", name: "gemini-3-flash-preview" },
-                    tokenCount: result.tokenCount ?? undefined,
+                    content: buildResultNodeContent(result),
+                    attachments: result.attachments,
                     status: "idle",
                   },
                 }
@@ -2254,7 +2392,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : CANVAS_COPY.geminiCodeRequestFailed;
+        const message = error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed;
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
           return;
         }
@@ -2606,6 +2744,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const clearEditing = useCallback(() => setEditingNodeId(null), []);
 
   const handlePaneContextMenu = useCallback((event: MouseEvent | ReactMouseEvent<Element, MouseEvent>) => {
+    if (shouldPreserveNativeContextMenu(event)) return;
     event.preventDefault();
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
@@ -2619,6 +2758,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   }, [reactFlow]);
 
   const handleWrapperContextMenu = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    if (shouldPreserveNativeContextMenu(event)) return;
     const target = event.target;
     if (!(target instanceof Element) || !target.closest(".react-flow__pane")) return;
     handlePaneContextMenu(event);
@@ -2638,6 +2778,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   );
 
   const handleNodeContextMenu = useCallback((event: ReactMouseEvent<Element, MouseEvent>, node: Node<ConversationNodeData>) => {
+    if (shouldPreserveNativeContextMenu(event)) return;
     event.preventDefault();
     event.stopPropagation();
     const wrapper = wrapperRef.current;
@@ -3021,6 +3162,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
           nodes={flowNodes}
           edges={flowEdges}
+          proOptions={{ hideAttribution: true }}
           nodeTypes={stableNodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -3103,6 +3245,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           >
             {menu.kind === "pane" ? (
               <div className="mindmap-context-menu__section">
+                <div className="mindmap-context-menu__label">Canvas</div>
                 <button
                   className="mindmap-context-menu__item"
                   onClick={async () => {
@@ -3144,6 +3287,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <MessageSquare className="size-3.5" />
                     <span>Add Chat</span>
                   </div>
+                  <span className="mindmap-context-menu__shortcut">Prompt</span>
                 </button>
                 <button
                   className="mindmap-context-menu__item"
@@ -3156,6 +3300,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     <StickyNote className="size-3.5" />
                     <span>Add Memo</span>
                   </div>
+                  <span className="mindmap-context-menu__shortcut">Note</span>
                 </button>
                 <button
                   className="mindmap-context-menu__item"
@@ -3173,38 +3318,107 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                 </button>
               </div>
             ) : (
-              <div className="mindmap-context-menu__section">
-                <button
-                  className="mindmap-context-menu__item"
-                  onClick={() => {
-                    const targetNode = nodes.find((n) => n.id === menu.nodeId);
-                    if (targetNode) {
-                      void navigator.clipboard.writeText(targetNode.data.content);
-                    }
-                    closeMenu();
-                  }}
-                >
-                  <div className="mindmap-context-menu__item-left">
-                    <Copy className="size-3.5" />
-                    <span>Copy Content</span>
+              (() => {
+                const targetNode = nodes.find((n) => n.id === menu.nodeId) ?? null;
+                const canConvertToPrompt = targetNode?.data.kind === "note";
+                const canConvertToNote = targetNode?.data.kind === "user";
+
+                return (
+                  <div className="mindmap-context-menu__section">
+                    <div className="mindmap-context-menu__label">Node</div>
+                    <button
+                      className="mindmap-context-menu__item"
+                      onClick={() => {
+                        if (targetNode) {
+                          void navigator.clipboard.writeText(targetNode.data.content);
+                        }
+                        closeMenu();
+                      }}
+                    >
+                      <div className="mindmap-context-menu__item-left">
+                        <Copy className="size-3.5" />
+                        <span>Copy Content</span>
+                      </div>
+                      <span className="mindmap-context-menu__shortcut">Ctrl+C</span>
+                    </button>
+                    <button
+                      className="mindmap-context-menu__item"
+                      onClick={() => {
+                        if (!targetNode) return;
+                        const cloneRecord: ConversationNodeRecord = {
+                          ...targetNode.data,
+                          createdAt: timestampLabel(),
+                          isRoot: false,
+                          isPositionPinned: false,
+                        };
+                        const duplicateNode = buildNode(
+                          crypto.randomUUID(),
+                          findAvailablePosition(
+                            { x: targetNode.position.x + 56, y: targetNode.position.y + 56 },
+                            getNodeDefaultSize(targetNode.data.kind),
+                            nodesRef.current,
+                          ),
+                          cloneRecord,
+                        );
+                        setNodes((latest) => [...latest.map((node) => ({ ...node, selected: false })), { ...duplicateNode, selected: true }]);
+                        closeMenu();
+                      }}
+                    >
+                      <div className="mindmap-context-menu__item-left">
+                        <ClipboardCopy className="size-3.5" />
+                        <span>Duplicate Node</span>
+                      </div>
+                      <span className="mindmap-context-menu__shortcut">Clone</span>
+                    </button>
+                    <div className="mindmap-context-menu__divider" />
+                    <div className="mindmap-context-menu__label">Transform</div>
+                    <button
+                      className="mindmap-context-menu__item"
+                      disabled={!canConvertToPrompt}
+                      onClick={() => {
+                        if (!canConvertToPrompt) return;
+                        convertNodeKind(menu.nodeId, "user");
+                        closeMenu();
+                      }}
+                    >
+                      <div className="mindmap-context-menu__item-left">
+                        <MessageCircleMore className="size-3.5" />
+                        <span>Turn Into Prompt</span>
+                      </div>
+                      <span className="mindmap-context-menu__shortcut">AI</span>
+                    </button>
+                    <button
+                      className="mindmap-context-menu__item"
+                      disabled={!canConvertToNote}
+                      onClick={() => {
+                        if (!canConvertToNote) return;
+                        convertNodeKind(menu.nodeId, "note");
+                        closeMenu();
+                      }}
+                    >
+                      <div className="mindmap-context-menu__item-left">
+                        <FilePenLine className="size-3.5" />
+                        <span>Turn Into Note</span>
+                      </div>
+                      <span className="mindmap-context-menu__shortcut">Memo</span>
+                    </button>
+                    <div className="mindmap-context-menu__divider" />
+                    <button
+                      className="mindmap-context-menu__item mindmap-context-menu__item--danger"
+                      onClick={() => {
+                        deleteNodesById([menu.nodeId]);
+                        closeMenu();
+                      }}
+                    >
+                      <div className="mindmap-context-menu__item-left">
+                        <Trash2 className="size-3.5" />
+                        <span>Delete</span>
+                      </div>
+                      <span className="mindmap-context-menu__shortcut">Del</span>
+                    </button>
                   </div>
-                  <span className="mindmap-context-menu__shortcut">Ctrl+C</span>
-                </button>
-                <div className="mindmap-context-menu__divider" />
-                <button
-                  className="mindmap-context-menu__item mindmap-context-menu__item--danger"
-                  onClick={() => {
-                    deleteNodesById([menu.nodeId]);
-                    closeMenu();
-                  }}
-                >
-                  <div className="mindmap-context-menu__item-left">
-                    <Trash2 className="size-3.5" />
-                    <span>Delete</span>
-                  </div>
-                  <span className="mindmap-context-menu__shortcut">Del</span>
-                </button>
-              </div>
+                );
+              })()
             )}
           </div>
         ) : null}

@@ -4,6 +4,8 @@ export const CANVAS_COPY = {
   geminiRequestFailed: "Gemini request failed.",
   geminiCodeRequestFailed: "Gemini code execution request failed.",
   geminiStreamFailed: "Gemini stream ended unexpectedly.",
+  pyodideInitFailed: "Pyodide runtime failed to initialize.",
+  pyodideRunFailed: "Pyodide execution failed.",
   imageRequestFailed: "Image generation request failed.",
   attachmentUploadFailed: "Failed to upload attachment.",
   deepResearchUnavailable: "Deep Research is not available for the selected model.",

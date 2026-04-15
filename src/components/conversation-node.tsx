@@ -70,7 +70,7 @@ const promptModeMeta: Record<
     label: "Code",
     icon: Braces,
     dismissible: true,
-    description: "Python execution",
+    description: "Run Python in browser",
   },
   "image-create": {
     label: "Create Image",
@@ -206,30 +206,41 @@ function formatTokenCount(tokenCount?: number) {
 
 function computeResizedBounds(params: {
   direction: ResizeDirection;
-  dx: number;
-  dy: number;
+  clientX: number;
+  clientY: number;
+  startRect: DOMRect;
+  zoom: number;
   minWidth: number;
   minHeight: number;
-  startWidth: number;
-  startHeight: number;
   startX: number;
   startY: number;
 }) {
-  const { direction, dx, dy, minWidth, minHeight, startWidth, startHeight, startX, startY } = params;
-  let width = startWidth;
-  let height = startHeight;
+  const { direction, clientX, clientY, startRect, zoom, minWidth, minHeight, startX, startY } = params;
+  let width = startRect.width / zoom;
+  let height = startRect.height / zoom;
   let x = startX;
   let y = startY;
 
-  if (direction.includes("right")) width = Math.max(minWidth, startWidth + dx);
-  if (direction.includes("left")) {
-    width = Math.max(minWidth, startWidth - dx);
-    x = startX + (startWidth - width);
+  if (direction.includes("right")) {
+    const nextRight = Math.max(clientX, startRect.left + minWidth * zoom);
+    width = Math.max(minWidth, (nextRight - startRect.left) / zoom);
   }
-  if (direction.includes("bottom")) height = Math.max(minHeight, startHeight + dy);
+
+  if (direction.includes("left")) {
+    const nextLeft = Math.min(clientX, startRect.right - minWidth * zoom);
+    width = Math.max(minWidth, (startRect.right - nextLeft) / zoom);
+    x = startX + (nextLeft - startRect.left) / zoom;
+  }
+
+  if (direction.includes("bottom")) {
+    const nextBottom = Math.max(clientY, startRect.top + minHeight * zoom);
+    height = Math.max(minHeight, (nextBottom - startRect.top) / zoom);
+  }
+
   if (direction.includes("top")) {
-    height = Math.max(minHeight, startHeight - dy);
-    y = startY + (startHeight - height);
+    const nextTop = Math.min(clientY, startRect.bottom - minHeight * zoom);
+    height = Math.max(minHeight, (startRect.bottom - nextTop) / zoom);
+    y = startY + (nextTop - startRect.top) / zoom;
   }
 
   return { width, height, x, y };
@@ -270,6 +281,7 @@ function ConversationNodeComponent({
   const title = deriveTitle(data.content, data.kind);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const footerControlsRef = useRef<HTMLDivElement | null>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<"mode" | "model" | "tools" | null>(null);
   const [resizePreview, setResizePreview] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
@@ -277,6 +289,7 @@ function ConversationNodeComponent({
   const inlineImageAttachments = isResult ? imageAttachments : [];
   const footerAttachments = isUser ? data.attachments : isResult ? otherAttachments : otherAttachments;
   const activePromptMode = data.promptMode ?? "auto";
+  const isCodePromptMode = activePromptMode === "code";
   const modelOptions = activePromptMode === "image-create" ? IMAGE_MODEL_OPTIONS : TEXT_MODEL_OPTIONS;
   const activeModel = normalizeModelName(data.modelConfig?.name, activePromptMode);
   const activeModelOption = modelOptions.find((option) => option.value === activeModel) ?? modelOptions[0];
@@ -287,7 +300,7 @@ function ConversationNodeComponent({
     activePromptMode === "image-create"
       ? []
       : activePromptMode === "code"
-        ? ["google-search"]
+        ? []
         : ["google-search", "url-context"];
   const supportedToolSet = new Set<ConversationToolName>(supportedTools);
   const nodeLabel = isUser ? "Prompt" : isCode ? "Code" : isResult ? "Result" : isImage ? "Image" : isFile ? "File" : isNote ? "Note" : "Response";
@@ -342,31 +355,29 @@ function ConversationNodeComponent({
     if (!data.onResizeNode) return;
     event.preventDefault();
     event.stopPropagation();
+    const shell = shellRef.current;
+    if (!shell) return;
     const pointerId = event.pointerId;
     const target = event.currentTarget;
     target.setPointerCapture(pointerId);
-
-    const startPointer = { x: event.clientX, y: event.clientY };
-    const startWidth = nodeWidth;
-    const startHeight = nodeHeight;
+    const startRect = shell.getBoundingClientRect();
     const startX = positionAbsoluteX;
     const startY = positionAbsoluteY;
-
+    const startWidth = startRect.width / getViewport().zoom;
+    const startHeight = startRect.height / getViewport().zoom;
     let latestBounds = { width: startWidth, height: startHeight, x: startX, y: startY };
 
     const onPointerMove = (moveEvent: PointerEvent) => {
       const currentZoom = getViewport().zoom;
-      const dx = (moveEvent.clientX - startPointer.x) / currentZoom;
-      const dy = (moveEvent.clientY - startPointer.y) / currentZoom;
 
       latestBounds = computeResizedBounds({
         direction,
-        dx,
-        dy,
+        clientX: moveEvent.clientX,
+        clientY: moveEvent.clientY,
+        startRect,
+        zoom: currentZoom,
         minWidth,
         minHeight,
-        startWidth,
-        startHeight,
         startX,
         startY,
       });
@@ -432,6 +443,7 @@ function ConversationNodeComponent({
           isDragging && "mindmap-node-shell--dragging"
         )}
         data-kind={data.kind}
+        ref={shellRef}
         style={{ width: nodeWidth, height: nodeHeight }}
       >
         {data.status === "generating" && (
@@ -562,7 +574,7 @@ function ConversationNodeComponent({
                   onWheelCapture={handleTextareaWheelCapture}
                   autoFocus={isEditing}
                   className="mindmap-node-shell__textarea nodrag nowheel resize-none rounded-[22px] border-neutral-200 bg-white text-[15px] leading-7 shadow-none focus-visible:ring-0 focus-visible:border-neutral-300 transition-all duration-200"
-                  placeholder={isUser ? "Write your prompt here" : "Write your memo here"}
+                  placeholder={isUser ? (isCodePromptMode ? "Write your Python code here" : "Write your prompt here") : "Write your memo here"}
                 />
               ) : (
                 <ScrollArea className="mindmap-node-shell__content nodrag nowheel rounded-[22px]" onWheelCapture={handleScrollAreaWheelCapture}>
@@ -705,79 +717,87 @@ function ConversationNodeComponent({
                         )}
                       </div>
 
-                      <div className="mindmap-pill-menu shrink-0 max-w-[220px] min-w-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("nodrag px-3 h-9 gap-2 font-semibold rounded-xl border border-neutral-200/60 bg-white/50 w-full justify-between", openPanel === "model" && "bg-neutral-100/80")}
-                          onClick={() => setOpenPanel(openPanel === "model" ? null : "model")}
-                        >
-                          <span className="truncate text-neutral-500 font-bold tracking-tight">{activeModelOption.label}</span>
-                          <ChevronDown className="size-3.5 opacity-40 shrink-0" />
-                        </Button>
-                        {openPanel === "model" && (
-                          <div className="mindmap-pill-menu__panel nodrag">
-                            {modelOptions.map((opt) => (
-                              <button
-                                key={opt.value}
-                                className={cn("mindmap-pill-menu__item", opt.value === activeModel && "mindmap-pill-menu__item--active")}
-                                onClick={() => {
-                                  data.onChangeModel?.(opt.value);
-                                  setOpenPanel(null);
-                                }}
-                              >
-                                <div className="mindmap-pill-menu__item-copy text-left">
-                                  <strong className="text-[13px]">{opt.label}</strong>
-                                  <small className="opacity-60 text-[11px]">{opt.description}</small>
-                                </div>
-                              </button>
-                            ))}
+                      {!isCodePromptMode ? (
+                        <>
+                          <div className="mindmap-pill-menu shrink-0 max-w-[220px] min-w-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn("nodrag px-3 h-9 gap-2 font-semibold rounded-xl border border-neutral-200/60 bg-white/50 w-full justify-between", openPanel === "model" && "bg-neutral-100/80")}
+                              onClick={() => setOpenPanel(openPanel === "model" ? null : "model")}
+                            >
+                              <span className="truncate text-neutral-500 font-bold tracking-tight">{activeModelOption.label}</span>
+                              <ChevronDown className="size-3.5 opacity-40 shrink-0" />
+                            </Button>
+                            {openPanel === "model" && (
+                              <div className="mindmap-pill-menu__panel nodrag">
+                                {modelOptions.map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    className={cn("mindmap-pill-menu__item", opt.value === activeModel && "mindmap-pill-menu__item--active")}
+                                    onClick={() => {
+                                      data.onChangeModel?.(opt.value);
+                                      setOpenPanel(null);
+                                    }}
+                                  >
+                                    <div className="mindmap-pill-menu__item-copy text-left">
+                                      <strong className="text-[13px]">{opt.label}</strong>
+                                      <small className="opacity-60 text-[11px]">{opt.description}</small>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      <div className="mindmap-pill-menu shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("nodrag px-3 h-9 gap-2 font-semibold rounded-xl border border-neutral-200/60 bg-white/50", openPanel === "tools" && "bg-neutral-100/80")}
-                          onClick={() => setOpenPanel(openPanel === "tools" ? null : "tools")}
-                        >
-                          <SlidersHorizontal className="size-4 text-neutral-400" />
-                          <span className="truncate">Tools</span>
-                          {enabledTools.length > 0 ? <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] text-white">{enabledTools.length}</span> : null}
-                          <ChevronDown className="size-3.5 opacity-40 shrink-0" />
-                        </Button>
-                        {openPanel === "tools" && (
-                          <div className="mindmap-pill-menu__panel nodrag">
-                            {TOOL_OPTIONS.map((tool) => {
-                              const Icon = tool.icon;
-                              const isSupported = supportedToolSet.has(tool.value);
-                              const isEnabled = enabledTools.includes(tool.value);
-                              return (
-                                <button
-                                  key={tool.value}
-                                  className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
-                                  onClick={() => {
-                                    if (!isSupported) return;
-                                    data.onToggleTool?.(tool.value);
-                                  }}
-                                  disabled={!isSupported}
-                                >
-                                  <Icon className="size-4.5" />
-                                  <div className="mindmap-pill-menu__item-copy text-left">
-                                    <strong>{tool.label}</strong>
-                                    <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                            <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
-                              Files are provided automatically from attachments.
-                            </div>
+                          <div className="mindmap-pill-menu shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn("nodrag px-3 h-9 gap-2 font-semibold rounded-xl border border-neutral-200/60 bg-white/50", openPanel === "tools" && "bg-neutral-100/80")}
+                              onClick={() => setOpenPanel(openPanel === "tools" ? null : "tools")}
+                            >
+                              <SlidersHorizontal className="size-4 text-neutral-400" />
+                              <span className="truncate">Tools</span>
+                              {enabledTools.length > 0 ? <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] text-white">{enabledTools.length}</span> : null}
+                              <ChevronDown className="size-3.5 opacity-40 shrink-0" />
+                            </Button>
+                            {openPanel === "tools" && (
+                              <div className="mindmap-pill-menu__panel nodrag">
+                                {TOOL_OPTIONS.map((tool) => {
+                                  const Icon = tool.icon;
+                                  const isSupported = supportedToolSet.has(tool.value);
+                                  const isEnabled = enabledTools.includes(tool.value);
+                                  return (
+                                    <button
+                                      key={tool.value}
+                                      className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
+                                      onClick={() => {
+                                        if (!isSupported) return;
+                                        data.onToggleTool?.(tool.value);
+                                      }}
+                                      disabled={!isSupported}
+                                    >
+                                      <Icon className="size-4.5" />
+                                      <div className="mindmap-pill-menu__item-copy text-left">
+                                        <strong>{tool.label}</strong>
+                                        <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                                <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
+                                  Files are provided automatically from attachments.
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </>
+                      ) : (
+                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
+                          Pyodide installs imported packages when possible. Add `# pip: package-name` if auto-detection is not enough.
+                        </div>
+                      )}
 
                       <div className="flex-1" />
 

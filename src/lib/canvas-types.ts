@@ -1,6 +1,6 @@
 export type NodeKind = "user" | "ai" | "code" | "result" | "image" | "file" | "note";
 export type NodeStatus = "idle" | "generating" | "error" | "outdated" | "orphan";
-export type AttachmentKind = "image" | "pdf" | "url";
+export type AttachmentKind = "image" | "pdf" | "url" | "file";
 export type ConversationPromptMode = "auto" | "code" | "image-create" | "deep-research";
 export type ConversationToolName = "google-search" | "url-context";
 export type ConversationTextModelName =

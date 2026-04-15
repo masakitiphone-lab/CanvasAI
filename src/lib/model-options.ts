@@ -6,7 +6,7 @@ import type {
 } from "@/lib/canvas-types";
 
 export const TEXT_MODEL_OPTIONS: Array<{ value: ConversationTextModelName; label: string; description: string }> = [
-  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Required choice for code execution mode" },
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Fast preview model for general generation" },
   { value: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview", description: "Preview flagship reasoning model" },
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Stable default for general production use" },
   { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Balanced stable reasoning for long context" },

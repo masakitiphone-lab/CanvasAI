@@ -47,7 +47,7 @@ function detectAttachmentKind(file: File): AttachmentKind | null {
     return "pdf";
   }
 
-  return null;
+  return "file";
 }
 
 function validateUploadedFile(file: File, kind: AttachmentKind) {
@@ -279,7 +279,7 @@ export async function storeUploadedAttachment(params: {
 }): Promise<ConversationAttachment> {
   const kind = detectAttachmentKind(params.file);
   if (!kind) {
-    throw new Error("Only image and PDF uploads are supported.");
+    throw new Error("Unsupported attachment type.");
   }
 
   validateUploadedFile(params.file, kind);
