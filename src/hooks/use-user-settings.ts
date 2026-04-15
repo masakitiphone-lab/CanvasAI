@@ -12,7 +12,7 @@ export type UserSettings = {
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
-  defaultTextModel: "gemini-2.5-flash",
+  defaultTextModel: "gemini-3-flash-preview",
   defaultImageModel: "gemini-2.5-flash-image",
   theme: "light",
 };

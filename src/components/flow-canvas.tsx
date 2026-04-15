@@ -510,27 +510,6 @@ function buildResultNodeContent(params: PyodideRunResult) {
     .join("\n\n");
 }
 
-function looksLikePythonSource(source: string) {
-  const trimmed = source.trim();
-  if (!trimmed) {
-    return false;
-  }
-
-  const pythonSignals = [
-    /^import\s+[a-zA-Z0-9_.]+/m,
-    /^from\s+[a-zA-Z0-9_.]+\s+import\s+/m,
-    /^def\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(/m,
-    /^class\s+[A-Z][A-Za-z0-9_]*\s*[:(]/m,
-    /print\s*\(/,
-    /plt\./,
-    /pd\./,
-    /np\./,
-    /if\s+__name__\s*==\s*["']__main__["']/,
-  ];
-
-  return pythonSignals.some((pattern) => pattern.test(trimmed));
-}
-
 function extractPythonCode(text: string) {
   const fenced = text.match(/```(?:python|py)?\s*([\s\S]*?)```/i);
   if (fenced?.[1]) {
@@ -1964,21 +1943,18 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ]);
 
       try {
-        const generatedCode =
-          looksLikePythonSource(prompt)
-            ? prompt
-            : extractPythonCode(
-              (
-                await requestGeminiText({
-                  targetNodeId: latestParentNode.id,
-                  lineage: buildCodeGenerationLineage(requestContext.lineage),
-                  model: { provider: "gemini", name: latestParentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
-                  projectId: currentProjectId,
-                  promptMode: "auto",
-                  enabledTools: [],
-                })
-              ).text,
-            );
+        const generatedCode = extractPythonCode(
+          (
+            await requestGeminiText({
+              targetNodeId: latestParentNode.id,
+              lineage: buildCodeGenerationLineage(requestContext.lineage),
+              model: { provider: "gemini", name: latestParentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
+              projectId: currentProjectId,
+              promptMode: "auto",
+              enabledTools: [],
+            })
+          ).text,
+        );
         const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
         const result = await executePyodideCode({
           code: generatedCode,
@@ -2409,21 +2385,18 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ...(resultNode ? [`${codeNode.id}->${resultNode.id}`] : []),
         ];
         setActiveGenerationEdges(activeEdgeIds);
-        const generatedCode =
-          looksLikePythonSource(parentNode.data.content)
-            ? parentNode.data.content
-            : extractPythonCode(
-              (
-                await requestGeminiText({
-                  targetNodeId: parentNode.id,
-                  lineage: buildCodeGenerationLineage(requestContext.lineage),
-                  model: { provider: "gemini", name: parentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
-                  projectId: currentProjectId,
-                  promptMode: "auto",
-                  enabledTools: [],
-                })
-              ).text,
-            );
+        const generatedCode = extractPythonCode(
+          (
+            await requestGeminiText({
+              targetNodeId: parentNode.id,
+              lineage: buildCodeGenerationLineage(requestContext.lineage),
+              model: { provider: "gemini", name: parentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
+              projectId: currentProjectId,
+              promptMode: "auto",
+              enabledTools: [],
+            })
+          ).text,
+        );
         const result = await executePyodideCode({
           code: generatedCode,
           attachments: requestContext.lineage.flatMap((entry) => entry.attachments),

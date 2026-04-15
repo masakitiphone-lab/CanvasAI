@@ -8,7 +8,6 @@ import {
   BarChart,
   Bot,
   Camera,
-  Check,
   ChevronDown,
   Clock,
   FileImage,
@@ -760,25 +759,29 @@ function ConversationNodeComponent({
                                     <button
                                       key={tool.value}
                                       className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
-                                  onClick={() => {
-                                    if (!isSupported) return;
-                                    data.onToggleTool?.(tool.value);
-                                  }}
-                                  disabled={!isSupported}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Icon className="size-4.5" />
-                                    <div className="mindmap-pill-menu__item-copy text-left">
-                                      <strong>{tool.label}</strong>
-                                      <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
-                                    </div>
-                                  </div>
-                                  <span className="flex size-5 items-center justify-center">
-                                    {isEnabled ? <Check className="size-4 text-neutral-900" /> : null}
-                                  </span>
-                                </button>
-                              );
-                            })}
+                                      onClick={() => {
+                                        if (!isSupported) return;
+                                        data.onToggleTool?.(tool.value);
+                                      }}
+                                      disabled={!isSupported}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <input
+                                          type="checkbox"
+                                          checked={isEnabled}
+                                          readOnly
+                                          tabIndex={-1}
+                                          className="size-4 rounded border-neutral-300 text-neutral-900 accent-neutral-900 pointer-events-none"
+                                        />
+                                        <Icon className="size-4.5" />
+                                        <div className="mindmap-pill-menu__item-copy text-left">
+                                          <strong>{tool.label}</strong>
+                                          <small className="opacity-60">{isSupported ? tool.description : "Unavailable in this mode"}</small>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
                                 <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
                                   Files are provided automatically from attachments.
                                 </div>
@@ -786,11 +789,7 @@ function ConversationNodeComponent({
                             )}
                           </div>
                         </>
-                      ) : (
-                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
-                          Pyodide installs imported packages when possible. Add `# pip: package-name` if auto-detection is not enough.
-                        </div>
-                      )}
+                      ) : null}
 
                       <div className="flex-1" />
 
