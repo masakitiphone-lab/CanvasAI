@@ -15,6 +15,8 @@ import {
   Globe,
   ImagePlus,
   Link2,
+  Braces,
+  TerminalSquare,
   Plus,
   RotateCcw,
   Search,
@@ -61,6 +63,12 @@ const promptModeMeta: Record<
     icon: Search,
     dismissible: false,
     description: "Conversation",
+  },
+  code: {
+    label: "Code",
+    icon: Braces,
+    dismissible: true,
+    description: "Python execution",
   },
   "image-create": {
     label: "Create Image",
@@ -242,6 +250,8 @@ function ConversationNodeComponent({
   const { getViewport } = useReactFlow();
   const isUser = data.kind === "user";
   const isAi = data.kind === "ai";
+  const isCode = data.kind === "code";
+  const isResult = data.kind === "result";
   const isImage = data.kind === "image";
   const isFile = data.kind === "file";
   const isNote = data.kind === "note";
@@ -250,6 +260,7 @@ function ConversationNodeComponent({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const footerControlsRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<"mode" | "model" | null>(null);
+  const [resizePreview, setResizePreview] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
   const otherAttachments = data.attachments.filter((attachment) => attachment.kind !== "image");
   const activePromptMode = data.promptMode ?? "auto";
@@ -258,8 +269,8 @@ function ConversationNodeComponent({
   const activeModelOption = modelOptions.find((option) => option.value === activeModel) ?? modelOptions[0];
   const activePromptModeMeta = promptModeMeta[activePromptMode];
   const ActivePromptModeIcon = activePromptModeMeta.icon;
-  const nodeLabel = isUser ? "Prompt" : isImage ? "Image" : isFile ? "File" : isNote ? "Note" : "Response";
-  const NodeLabelIcon = isUser ? UserRound : isImage ? Camera : isFile ? FileText : isNote ? StickyNote : Bot;
+  const nodeLabel = isUser ? "Prompt" : isCode ? "Code" : isResult ? "Result" : isImage ? "Image" : isFile ? "File" : isNote ? "Note" : "Response";
+  const NodeLabelIcon = isUser ? UserRound : isCode ? Braces : isResult ? TerminalSquare : isImage ? Camera : isFile ? FileText : isNote ? StickyNote : Bot;
   const tokenCountLabel = formatTokenCount(data.tokenCount);
   const defaultSize = getNodeDefaultSize(data.kind);
   const minSize = getNodeMinSize(data.kind);
@@ -267,10 +278,10 @@ function ConversationNodeComponent({
   const preferredHeight = defaultSize.height;
   const minWidth = minSize.width;
   const minHeight = minSize.height;
-  const nodeWidth = Math.max(Number(width ?? defaultWidth), minWidth);
-  const nodeHeight = Math.max(Number(height ?? preferredHeight), minHeight);
+  const nodeWidth = Math.max(Number(resizePreview?.width ?? width ?? defaultWidth), minWidth);
+  const nodeHeight = Math.max(Number(resizePreview?.height ?? height ?? preferredHeight), minHeight);
   const isTargetHandleVisible = isUser || isNote;
-  const isSourceHandleVisible = isAi || isImage || isFile || isNote;
+  const isSourceHandleVisible = isAi || isCode || isImage || isFile || isNote;
 
   useEffect(() => {
     if (!openPanel) return;
@@ -320,12 +331,14 @@ function ConversationNodeComponent({
     const startX = positionAbsoluteX;
     const startY = positionAbsoluteY;
 
+    let latestBounds = { width: startWidth, height: startHeight, x: startX, y: startY };
+
     const onPointerMove = (moveEvent: PointerEvent) => {
       const currentZoom = getViewport().zoom;
       const dx = (moveEvent.clientX - startPointer.x) / currentZoom;
       const dy = (moveEvent.clientY - startPointer.y) / currentZoom;
 
-      const nextBounds = computeResizedBounds({
+      latestBounds = computeResizedBounds({
         direction,
         dx,
         dy,
@@ -336,7 +349,7 @@ function ConversationNodeComponent({
         startX,
         startY,
       });
-      data.onResizeNode?.(nextBounds);
+      setResizePreview(latestBounds);
     };
 
     const clearListeners = () => {
@@ -344,9 +357,13 @@ function ConversationNodeComponent({
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
       if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
+      setResizePreview(null);
     };
 
-    const onPointerUp = () => clearListeners();
+    const onPointerUp = () => {
+      data.onResizeNode?.(latestBounds);
+      clearListeners();
+    };
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
@@ -381,6 +398,8 @@ function ConversationNodeComponent({
           "mindmap-node-shell",
           isUser && "mindmap-node-shell--user",
           isAi && "mindmap-node-shell--ai",
+          isCode && "mindmap-node-shell--code",
+          isResult && "mindmap-node-shell--result",
           isImage && "mindmap-node-shell--image",
           isFile && "mindmap-node-shell--file",
           isNote && "mindmap-node-shell--note",
@@ -526,7 +545,7 @@ function ConversationNodeComponent({
                 />
               ) : (
                 <ScrollArea className="mindmap-node-shell__content nodrag nowheel rounded-[22px]" onWheelCapture={handleScrollAreaWheelCapture}>
-                  {isAi ? (
+                  {isAi || isCode || isResult ? (
                     <div className="mindmap-node-shell__content-inner">
                       {data.status === "generating" && !data.content ? (
                         <div className="flex flex-col gap-6 py-6 opacity-40">
@@ -706,7 +725,7 @@ function ConversationNodeComponent({
                         variant="ghost"
                         size="icon"
                         className="nodrag mindmap-action-icon size-9 rounded-xl"
-                        onClick={() => (isImage ? data.onRegenerateImage?.() : data.onRegenerateAi?.())}
+                        onClick={() => (isImage ? data.onRegenerateImage?.() : isCode ? data.onRegenerateCode?.() : isResult ? data.onRegenerateResult?.() : data.onRegenerateAi?.())}
                       >
                         <RotateCcw className="size-4.5" />
                       </Button>
@@ -724,7 +743,7 @@ function ConversationNodeComponent({
         type="source"
         position={Position.Right}
         id="mindmap-source"
-        className={cn("mindmap-handle", (isAi || isImage || isFile || isNote) ? "mindmap-handle--source-visible" : "mindmap-handle--ghost")}
+        className={cn("mindmap-handle", (isAi || isCode || isImage || isFile || isNote) ? "mindmap-handle--source-visible" : "mindmap-handle--ghost")}
         style={isSourceHandleVisible ? sourceHandleStyle : hiddenHandleStyle}
       />
     </AnimatePresence>

@@ -25,7 +25,7 @@ const MARKDOWN_SYSTEM_INSTRUCTION = [
 
 type LineageEntry = {
   id: string;
-  kind: "user" | "ai" | "image" | "file" | "note";
+  kind: "user" | "ai" | "code" | "result" | "image" | "file" | "note";
   content: string;
   attachments?: Array<{
     id: string;
@@ -223,6 +223,10 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
         ? "User"
         : entry.kind === "ai"
           ? "Assistant"
+          : entry.kind === "code"
+            ? "Generated Code"
+          : entry.kind === "result"
+            ? "Execution Result"
           : entry.kind === "note"
             ? "Note"
             : entry.kind === "file"

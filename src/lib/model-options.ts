@@ -6,11 +6,11 @@ import type {
 } from "@/lib/canvas-types";
 
 export const TEXT_MODEL_OPTIONS: Array<{ value: ConversationTextModelName; label: string; description: string }> = [
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Required choice for code execution mode" },
+  { value: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview", description: "Preview flagship reasoning model" },
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Stable default for general production use" },
   { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Balanced stable reasoning for long context" },
   { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", description: "Fastest low-cost option for short replies" },
-  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Preview frontier-speed model" },
-  { value: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview", description: "Preview flagship reasoning model" },
 ];
 
 export const IMAGE_MODEL_OPTIONS: Array<{
@@ -72,6 +72,10 @@ export function getDefaultModelForPromptMode(
       return normalizedImageModel;
     }
     return "gemini-2.5-flash-image";
+  }
+
+  if (promptMode === "code") {
+    return "gemini-3-flash-preview";
   }
   
   const normalizedTextModel = (settings?.defaultTextModel && LEGACY_MODEL_ALIASES[settings.defaultTextModel]) || settings?.defaultTextModel;

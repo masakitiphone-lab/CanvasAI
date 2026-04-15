@@ -1,7 +1,7 @@
-export type NodeKind = "user" | "ai" | "image" | "file" | "note";
+export type NodeKind = "user" | "ai" | "code" | "result" | "image" | "file" | "note";
 export type NodeStatus = "idle" | "generating" | "error" | "outdated" | "orphan";
 export type AttachmentKind = "image" | "pdf" | "url";
-export type ConversationPromptMode = "auto" | "image-create" | "deep-research";
+export type ConversationPromptMode = "auto" | "code" | "image-create" | "deep-research";
 export type ConversationTextModelName =
   | "gemini-3-pro-preview"
   | "gemini-3-flash-preview"
@@ -73,5 +73,7 @@ export type ConversationNodeData = ConversationNodeRecord & {
   onGenerateImage?: () => void;
   onReplyToAi?: () => void;
   onRegenerateAi?: () => void;
+  onRegenerateCode?: () => void;
+  onRegenerateResult?: () => void;
   onRegenerateImage?: () => void;
 };

@@ -2,6 +2,7 @@ export const CANVAS_COPY = {
   syncIndicator: "Synchronizing with cloud...",
   fileUploadFailed: "Failed to upload file.",
   geminiRequestFailed: "Gemini request failed.",
+  geminiCodeRequestFailed: "Gemini code execution request failed.",
   geminiStreamFailed: "Gemini stream ended unexpectedly.",
   imageRequestFailed: "Image generation request failed.",
   attachmentUploadFailed: "Failed to upload attachment.",

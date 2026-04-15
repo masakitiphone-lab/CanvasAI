@@ -150,6 +150,8 @@ function modelCost(modelName: ConversationModelName) {
 
 function promptModeCost(promptMode: ConversationPromptMode) {
   switch (promptMode) {
+    case "code":
+      return 6;
     case "image-create":
       return 8;
     case "deep-research":

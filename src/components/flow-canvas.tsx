@@ -73,6 +73,8 @@ type NodeHandlerSet = Pick<
   | "onStopEdit"
   | "onGenerateAiReply"
   | "onRegenerateAi"
+  | "onRegenerateCode"
+  | "onRegenerateResult"
   | "onRegenerateImage"
   | "onOpenDetail"
 > & { isMultiDragging?: boolean };
@@ -103,8 +105,10 @@ type NodeActionRefs = {
   resizeNode: (nodeId: string, nextBounds: { width: number; height: number; x: number; y: number }) => void;
   setEditingNodeId: (nodeId: string | null) => void;
   runAiGenerationForUserNode: (parentNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => Promise<void>;
+  runCodeGenerationForUserNode: (parentNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => Promise<void>;
   runImageGenerationForUserNode: (parentNode: Node<ConversationNodeRecord>) => Promise<void>;
   regenerateAiNode: (nodeId: string) => Promise<void>;
+  regenerateCodeNode: (nodeId: string) => Promise<void>;
   regenerateImageNode: (nodeId: string) => Promise<void>;
   focusNode: (nodeId: string, options?: { preserveViewport?: boolean }) => void;
 };
@@ -365,6 +369,56 @@ async function requestGeminiImage(requestPayload: {
   }
 }
 
+async function requestGeminiCode(requestPayload: {
+  targetNodeId: string;
+  lineage: LineageEntry[];
+  model: { provider: "gemini"; name: string };
+  projectId?: string;
+}): Promise<{
+  ok: true;
+  model: string;
+  explanation: string;
+  code: string;
+  codeLanguage: string;
+  codeContent: string;
+  resultContent: string;
+  resultAttachments: ConversationAttachment[];
+  executionOutput: string;
+  executionOutcome: string;
+  tokenCount?: number | null;
+}> {
+  try {
+    const response = await authFetch("/api/gemini/generate-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestPayload),
+    });
+    const payload = (await response.json()) as
+      | {
+        ok: true;
+        model: string;
+        explanation: string;
+        code: string;
+        codeLanguage: string;
+        codeContent: string;
+        resultContent: string;
+        resultAttachments: ConversationAttachment[];
+        executionOutput: string;
+        executionOutcome: string;
+        tokenCount?: number | null;
+      }
+      | { ok: false; error?: { message?: string } };
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.ok ? CANVAS_COPY.geminiCodeRequestFailed : payload.error?.message ?? CANVAS_COPY.geminiCodeRequestFailed);
+    }
+
+    return payload;
+  } finally {
+    window.dispatchEvent(new CustomEvent("credits:refresh"));
+  }
+}
+
 async function uploadFiles(files: File[], projectId?: string) {
   const uploaded = [];
   for (const file of files) {
@@ -417,6 +471,7 @@ const buildEdge = (source: string, target: string): Edge => ({
   source,
   target,
   type: "simplebezier",
+  className: "mindmap-edge",
   selectable: true,
   focusable: true,
   reconnectable: false,
@@ -1445,6 +1500,161 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, getInsertedChildPosition, scheduleStreamedNodeContentUpdate, setEdges],
   );
 
+  const runCodeGenerationForUserNode = useCallback(
+    async (parentNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => {
+      const latestNodes = nodesRef.current;
+      const latestEdges = edgesRef.current;
+      const latestParentNode = latestNodes.find((node) => node.id === parentNode.id);
+      if (!latestParentNode) {
+        return;
+      }
+
+      const prompt = latestParentNode.data.content.trim();
+      if (!prompt) {
+        setEditingNodeId(latestParentNode.id);
+        return;
+      }
+
+      const lineage = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges);
+      const codeNodeId = crypto.randomUUID();
+      const resultNodeId = crypto.randomUUID();
+      deletedNodeIdsRef.current.delete(codeNodeId);
+      deletedNodeIdsRef.current.delete(resultNodeId);
+      const activeModelName: ConversationModelName = "gemini-3-flash-preview";
+      const draftCodeNode = buildNode(codeNodeId, latestParentNode.position, {
+        parentId: latestParentNode.id,
+        kind: "code",
+        content: "",
+        attachments: [],
+        modelConfig: { provider: "gemini", name: activeModelName },
+        promptMode: "code",
+        status: "generating",
+        createdAt: timestampLabel(),
+        isRoot: false,
+        isPositionPinned: false,
+      });
+      const codePosition = getInsertedChildPosition(latestParentNode, latestNodes, latestEdges, draftCodeNode, preferredPosition);
+      const draftResultNode = buildNode(resultNodeId, codePosition, {
+        parentId: codeNodeId,
+        kind: "result",
+        content: "",
+        attachments: [],
+        modelConfig: { provider: "gemini", name: activeModelName },
+        status: "generating",
+        createdAt: timestampLabel(),
+        isRoot: false,
+        isPositionPinned: false,
+      });
+      const resultPosition = findAvailablePosition(
+        {
+          x: codePosition.x + Number(draftCodeNode.style?.width ?? getNodeDefaultSize("code").width) + 56,
+          y: codePosition.y,
+        },
+        getNodeDefaultSize("result"),
+        latestNodes.concat([{ ...draftCodeNode, position: codePosition }]),
+      );
+      setEditingNodeId(null);
+      setNodes((latest) => {
+        if (!latest.some((node) => node.id === latestParentNode.id)) {
+          return latest;
+        }
+        return [
+          ...latest.map((node) => ({ ...node, selected: false })),
+          { ...draftCodeNode, position: codePosition, selected: false },
+          { ...draftResultNode, position: resultPosition, selected: false },
+        ];
+      });
+      setEdges((latest) => {
+        if (!nodesRef.current.some((node) => node.id === latestParentNode.id)) {
+          return latest;
+        }
+        return latest
+          .concat(buildEdge(latestParentNode.id, codeNodeId), buildEdge(codeNodeId, resultNodeId))
+          .map(normalizeEdge);
+      });
+
+      try {
+        const result = await requestGeminiCode({
+          targetNodeId: latestParentNode.id,
+          lineage,
+          model: { provider: "gemini", name: activeModelName },
+          projectId: currentProjectId,
+        });
+
+        if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
+          return;
+        }
+
+        setNodes((latest) =>
+          latest.map((node) =>
+            node.id === codeNodeId
+              ? {
+                ...node,
+                style: {
+                  ...node.style,
+                  ...getContentAwareNodeSize("code", result.codeContent),
+                },
+                data: {
+                  ...node.data,
+                  content: result.codeContent,
+                  modelConfig: { provider: "gemini", name: activeModelName },
+                  tokenCount: result.tokenCount ?? undefined,
+                  status: "idle",
+                },
+              }
+              : node.id === resultNodeId
+                ? {
+                  ...node,
+                  style: {
+                    ...node.style,
+                    ...getContentAwareNodeSize("result", result.resultContent),
+                  },
+                data: {
+                  ...node.data,
+                  content: result.resultContent,
+                  attachments: result.resultAttachments,
+                  modelConfig: { provider: "gemini", name: activeModelName },
+                  tokenCount: result.tokenCount ?? undefined,
+                  status: "idle",
+                  },
+                }
+              : node,
+          ),
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : CANVAS_COPY.geminiCodeRequestFailed;
+        if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
+          return;
+        }
+        setNodes((latest) =>
+          latest.map((node) =>
+            node.id === codeNodeId
+              ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  content: `## Code Generation Failed\n\n${message}`,
+                  status: "error",
+                },
+              }
+              : node.id === resultNodeId
+                ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    content: `## Execution Failed\n\n${message}`,
+                    attachments: [],
+                    status: "error",
+                  },
+                }
+              : node,
+          ),
+        );
+      }
+    },
+    [buildPromptRequestLineage, currentProjectId, getInsertedChildPosition, setEdges],
+  );
+
   const runImageGenerationForUserNode = useCallback(
     async (parentNode: Node<ConversationNodeRecord>) => {
       const latestNodes = nodesRef.current;
@@ -1707,6 +1917,138 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     }
   }, [beginGenerationRun, buildPromptRequestLineage, clearGenerationRun, currentProjectId, scheduleStreamedNodeContentUpdate]);
 
+  const regenerateCodeNode = useCallback(
+    async (nodeId: string) => {
+      const latestNodes = nodesRef.current;
+      const targetNode = latestNodes.find((node) => node.id === nodeId);
+      if (!targetNode) return;
+
+      const codeNode =
+        targetNode.data.kind === "code"
+          ? targetNode
+          : targetNode.data.kind === "result" && targetNode.data.parentId
+            ? latestNodes.find((node) => node.id === targetNode.data.parentId && node.data.kind === "code")
+            : null;
+      if (!codeNode || !codeNode.data.parentId) return;
+
+      const parentNode = latestNodes.find((node) => node.id === codeNode.data.parentId);
+      if (!parentNode || parentNode.data.kind !== "user") return;
+      const resultNode = latestNodes.find((node) => node.data.kind === "result" && node.data.parentId === codeNode.id);
+
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === codeNode.id
+            ? {
+              ...node,
+              data: {
+                ...node.data,
+                content: "",
+                attachments: [],
+                tokenCount: undefined,
+                status: "generating",
+                createdAt: timestampLabel(),
+              },
+            }
+            : resultNode && node.id === resultNode.id
+              ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  content: "",
+                  attachments: [],
+                  tokenCount: undefined,
+                  status: "generating",
+                  createdAt: timestampLabel(),
+                },
+              }
+            : node,
+        ),
+      );
+
+      try {
+        const lineage = buildPromptRequestLineage(parentNode.id, nodesRef.current, edgesRef.current);
+        const result = await requestGeminiCode({
+          targetNodeId: parentNode.id,
+          lineage,
+          model: { provider: "gemini", name: "gemini-3-flash-preview" },
+          projectId: currentProjectId,
+        });
+
+        if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
+          return;
+        }
+
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === codeNode.id
+              ? {
+                ...node,
+                style: {
+                  ...node.style,
+                  ...getContentAwareNodeSize("code", result.codeContent),
+                },
+                data: {
+                  ...node.data,
+                  content: result.codeContent,
+                  modelConfig: { provider: "gemini", name: "gemini-3-flash-preview" },
+                  tokenCount: result.tokenCount ?? undefined,
+                  status: "idle",
+                },
+              }
+              : resultNode && node.id === resultNode.id
+                ? {
+                  ...node,
+                  style: {
+                    ...node.style,
+                    ...getContentAwareNodeSize("result", result.resultContent),
+                  },
+                  data: {
+                    ...node.data,
+                    content: result.resultContent,
+                    attachments: result.resultAttachments,
+                    modelConfig: { provider: "gemini", name: "gemini-3-flash-preview" },
+                    tokenCount: result.tokenCount ?? undefined,
+                    status: "idle",
+                  },
+                }
+              : node,
+          ),
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : CANVAS_COPY.geminiCodeRequestFailed;
+        if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
+          return;
+        }
+
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === codeNode.id
+              ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  content: `## Code Generation Failed\n\n${message}`,
+                  status: "error",
+                },
+              }
+              : resultNode && node.id === resultNode.id
+                ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    content: `## Execution Failed\n\n${message}`,
+                    attachments: [],
+                    status: "error",
+                  },
+                }
+              : node,
+          ),
+        );
+      }
+    },
+    [buildPromptRequestLineage, currentProjectId],
+  );
+
   const regenerateImageNode = useCallback(
     async (nodeId: string) => {
       const latestNodes = nodesRef.current;
@@ -1807,8 +2149,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       resizeNode,
       setEditingNodeId,
       runAiGenerationForUserNode,
+      runCodeGenerationForUserNode,
       runImageGenerationForUserNode,
       regenerateAiNode,
+      regenerateCodeNode,
       regenerateImageNode,
       focusNode,
     };
@@ -1816,10 +2160,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     addNodeAttachments,
     focusNode,
     regenerateAiNode,
+    regenerateCodeNode,
     regenerateImageNode,
     removeNodeAttachment,
     resizeNode,
     runAiGenerationForUserNode,
+    runCodeGenerationForUserNode,
     runImageGenerationForUserNode,
     updateNodeModel,
     updatePromptMode,
@@ -1872,10 +2218,16 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
               void nodeActionRefs.current?.runImageGenerationForUserNode(latest);
               return;
             }
+            if (latest.data.promptMode === "code") {
+              void nodeActionRefs.current?.runCodeGenerationForUserNode(latest);
+              return;
+            }
             void nodeActionRefs.current?.runAiGenerationForUserNode(latest);
           }
           : undefined,
       onRegenerateAi: kind === "ai" ? () => void nodeActionRefs.current?.regenerateAiNode(nodeId) : undefined,
+      onRegenerateCode: kind === "code" ? () => void nodeActionRefs.current?.regenerateCodeNode(nodeId) : undefined,
+      onRegenerateResult: kind === "result" ? () => void nodeActionRefs.current?.regenerateCodeNode(nodeId) : undefined,
       onRegenerateImage: kind === "image" ? () => void nodeActionRefs.current?.regenerateImageNode(nodeId) : undefined,
       onOpenDetail: (imageUrl?: string) => {
         if (imageUrl) {
@@ -2425,6 +2777,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           onNodeDragStop={onNodeDragStop}
           defaultEdgeOptions={{
             type: "simplebezier",
+            className: "mindmap-edge",
             selectable: true,
             focusable: true,
             reconnectable: false,
