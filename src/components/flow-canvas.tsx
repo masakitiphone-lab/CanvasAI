@@ -2002,20 +2002,20 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   status: "idle",
                 },
               }
-              : node.id === resultNodeId
+: node.id === resultNodeId
                 ? {
-                  ...node,
-                  style: {
-                    ...node.style,
-                    ...getContentAwareNodeSize("result", buildResultNodeContent(result)),
-                  },
-                data: {
-                  ...node.data,
-                  content: buildResultNodeContent(result),
-                  attachments: result.attachments,
-                  status: "idle",
-                  },
-                }
+                    ...node,
+                    style: {
+                      ...node.style,
+                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.attachments),
+                    },
+                  data: {
+                    ...node.data,
+                    content: buildResultNodeContent(result),
+                    attachments: result.attachments,
+                    status: "idle",
+                    },
+                  }
               : node,
           ),
         );
@@ -2439,20 +2439,20 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   status: "idle",
                 },
               }
-              : resultNode && node.id === resultNode.id
+: resultNode && node.id === resultNode.id
                 ? {
-                  ...node,
-                  style: {
-                    ...node.style,
-                    ...getContentAwareNodeSize("result", buildResultNodeContent(result)),
-                  },
-                  data: {
-                    ...node.data,
-                    content: buildResultNodeContent(result),
-                    attachments: result.attachments,
-                    status: "idle",
-                  },
-                }
+                    ...node,
+                    style: {
+                      ...node.style,
+                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.attachments),
+                    },
+                    data: {
+                      ...node.data,
+                      content: buildResultNodeContent(result),
+                      attachments: result.attachments,
+                      status: "idle",
+                    },
+                  }
               : node,
           ),
         );

@@ -145,7 +145,7 @@ export async function PUT(request: Request) {
       edges: body.edges,
     },
     {
-      title: body.nodes.find((node) => node.data.isRoot)?.data.content.trim() || existingProject?.title || "Untitled canvas",
+      title: existingProject?.title || "Untitled canvas",
     },
   );
 
