@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const supabase = await getSupabaseServerClient();
 
   if (supabase) {
-    await supabase.auth.signOut();
+    supabase.auth.signOut();
   }
 
   return NextResponse.redirect(new URL("/login", request.url));
