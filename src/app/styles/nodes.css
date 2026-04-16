@@ -193,8 +193,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-start;
-  flex-wrap: nowrap;
-  gap: 16px;
+  flex-wrap: nowrap !important;
+  gap: 12px;
   padding-top: 0;
   min-width: 0;
 }

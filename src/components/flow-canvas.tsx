@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, MouseEvent as ReactMouseEvent } from "react";
@@ -130,8 +130,8 @@ const nodeTypes: NodeTypes = { conversation: ConversationNode };
 const MIN_HORIZONTAL_GAP = 56;
 const MIN_VERTICAL_GAP = 48;
 const OVERLAP_GAP = 24;
-const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-2.5-flash";
-const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-2.5-flash-image";
+const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3-flash-preview";
+const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3.1-flash-image-preview";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
 const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";

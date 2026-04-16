@@ -10,7 +10,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const GEMINI_IMAGE_MODEL: ConversationImageModelName = "gemini-2.5-flash-image";
+const GEMINI_IMAGE_MODEL: ConversationImageModelName = "gemini-3.1-flash-image-preview";
 
 type GenerateImageRequestBody = {
   prompt?: string;

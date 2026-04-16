@@ -9,7 +9,7 @@ import type { ConversationPromptMode, ConversationTextModelName, ConversationToo
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const GEMINI_MODEL: ConversationTextModelName = "gemini-2.5-flash";
+const GEMINI_MODEL: ConversationTextModelName = "gemini-3-flash-preview";
 const MARKDOWN_SYSTEM_INSTRUCTION = [
   "Respond as a normal helpful AI assistant.",
   "Match the user's language unless they ask for a different language.",

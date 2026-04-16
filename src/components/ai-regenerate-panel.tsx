@@ -12,19 +12,14 @@ import type { ConversationAttachment, ConversationModelName } from "@/lib/canvas
 
 const MODEL_OPTIONS: Array<{ name: ConversationModelName; label: string; description: string }> = [
   {
-    name: "gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
-    description: "最新の高速・マルチモーダル対応。普段使いに最適です。",
-  },
-  {
-    name: "gemini-2.5-pro",
-    label: "Gemini 2.5 Pro",
-    description: "最上位の推論能力。複雑な思考回路での書き直しに向いています。",
-  },
-  {
     name: "gemini-3-flash-preview",
     label: "Gemini 3 Flash Preview",
-    description: "安定した高精度推論。コーディングや長文の整理に。",
+    description: "Fast preview model for general generation",
+  },
+  {
+    name: "gemini-3-pro-preview",
+    label: "Gemini 3 Pro Preview",
+    description: "Preview flagship reasoning model",
   },
 ];
 

@@ -759,10 +759,6 @@ function ConversationNodeComponent({
                                     <button
                                       key={tool.value}
                                       className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
-                                      onClick={() => {
-                                        if (!isSupported) return;
-                                        data.onToggleTool?.(tool.value);
-                                      }}
                                       disabled={!isSupported}
                                     >
                                       <div className="flex items-center gap-3">
@@ -884,5 +880,6 @@ export const ConversationNode = memo(
     prevProps.data.isEditing === nextProps.data.isEditing &&
     prevProps.data.isFocusMode === nextProps.data.isFocusMode &&
     prevProps.data.isFocused === nextProps.data.isFocused &&
-    areAttachmentsEqual(prevProps.data.attachments, nextProps.data.attachments),
+    areAttachmentsEqual(prevProps.data.attachments, nextProps.data.attachments) &&
+    JSON.stringify(prevProps.data.enabledTools) === JSON.stringify(nextProps.data.enabledTools),
 );

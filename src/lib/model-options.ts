@@ -8,9 +8,6 @@ import type {
 export const TEXT_MODEL_OPTIONS: Array<{ value: ConversationTextModelName; label: string; description: string }> = [
   { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview", description: "Fast preview model for general generation" },
   { value: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview", description: "Preview flagship reasoning model" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Stable default for general production use" },
-  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Balanced stable reasoning for long context" },
-  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", description: "Fastest low-cost option for short replies" },
 ];
 
 export const IMAGE_MODEL_OPTIONS: Array<{
@@ -27,8 +24,10 @@ export const IMAGE_MODEL_OPTIONS: Array<{
 const LEGACY_MODEL_ALIASES: Partial<Record<string, ConversationModelName>> = {
   "gemini-3.1-pro": "gemini-3-pro-preview",
   "gemini-3.1-flash": "gemini-3-flash-preview",
-  "gemini-3.1-flash-lite": "gemini-2.5-flash-lite",
   "gemini-3-flash": "gemini-3-flash-preview",
+  "gemini-2.5-flash": "gemini-3-flash-preview",
+  "gemini-2.5-pro": "gemini-3-pro-preview",
+  "gemini-2.5-flash-lite": "gemini-3-flash-preview",
   "gemini-3.1-flash-image": "gemini-3.1-flash-image-preview",
   "gemini-3-pro-image": "gemini-3-pro-image-preview",
 };
@@ -71,7 +70,7 @@ export function getDefaultModelForPromptMode(
     if (isSupportedImageModelName(normalizedImageModel)) {
       return normalizedImageModel;
     }
-    return "gemini-2.5-flash-image";
+    return "gemini-3.1-flash-image-preview";
   }
 
   if (promptMode === "code") {
@@ -83,6 +82,6 @@ export function getDefaultModelForPromptMode(
     return normalizedTextModel;
   }
 
-  if (promptMode === "deep-research") return "gemini-2.5-pro";
-  return "gemini-2.5-flash";
+  if (promptMode === "deep-research") return "gemini-3-pro-preview";
+  return "gemini-3-flash-preview";
 }
