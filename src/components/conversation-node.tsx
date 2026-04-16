@@ -771,7 +771,13 @@ function ConversationNodeComponent({
                                           checked={isEnabled}
                                           readOnly
                                           tabIndex={-1}
-                                          className="size-4 rounded border-neutral-300 text-neutral-900 accent-neutral-900 pointer-events-none"
+                                          className="size-4 rounded border-neutral-300 text-neutral-900 accent-neutral-900 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (isSupported) {
+                                              data.onToggleTool?.(tool.value);
+                                            }
+                                          }}
                                         />
                                         <Icon className="size-4.5" />
                                         <div className="mindmap-pill-menu__item-copy text-left">
