@@ -863,9 +863,38 @@ function ConversationNodeComponent({
   );
 }
 
-export const ConversationNode = memo(
-  ConversationNodeComponent,
-  (prevProps, nextProps) =>
+const areNodePropsEqual = (
+  prevProps: NodeProps<Node<ConversationNodeData>>,
+  nextProps: NodeProps<Node<ConversationNodeData>>
+): boolean => {
+  const prevStatus = prevProps.data.status;
+  const nextStatus = nextProps.data.status;
+  const prevContent = prevProps.data.content;
+  const nextContent = nextProps.data.content;
+  const prevEditing = prevProps.data.isEditing;
+  const nextEditing = nextProps.data.isEditing;
+
+  if (prevStatus === "generating" || nextStatus === "generating") {
+    return (
+      prevStatus === nextStatus &&
+      prevContent === nextContent &&
+      prevProps.selected === nextProps.selected
+    );
+  }
+
+  if (prevEditing || nextEditing) {
+    return (
+      prevProps.selected === nextProps.selected &&
+      prevProps.width === nextProps.width &&
+      prevProps.height === nextProps.height &&
+      prevEditing === nextEditing &&
+      prevContent === nextContent &&
+      prevProps.data.status === nextProps.data.status &&
+      prevProps.data.kind === nextProps.data.kind
+    );
+  }
+
+  return (
     prevProps.selected === nextProps.selected &&
     prevProps.width === nextProps.width &&
     prevProps.height === nextProps.height &&
@@ -874,15 +903,18 @@ export const ConversationNode = memo(
     !!prevProps.dragging === !!nextProps.dragging &&
     prevProps.data.isMultiDragging === nextProps.data.isMultiDragging &&
     prevProps.data.kind === nextProps.data.kind &&
-    prevProps.data.content === nextProps.data.content &&
-    prevProps.data.status === nextProps.data.status &&
+    prevContent === nextContent &&
+    prevStatus === nextStatus &&
     prevProps.data.createdAt === nextProps.data.createdAt &&
     prevProps.data.promptMode === nextProps.data.promptMode &&
     prevProps.data.modelConfig?.name === nextProps.data.modelConfig?.name &&
     prevProps.data.isRoot === nextProps.data.isRoot &&
-    prevProps.data.isEditing === nextProps.data.isEditing &&
+    prevEditing === nextEditing &&
     prevProps.data.isFocusMode === nextProps.data.isFocusMode &&
     prevProps.data.isFocused === nextProps.data.isFocused &&
     areAttachmentsEqual(prevProps.data.attachments, nextProps.data.attachments) &&
-    JSON.stringify(prevProps.data.enabledTools) === JSON.stringify(nextProps.data.enabledTools),
-);
+    JSON.stringify(prevProps.data.enabledTools) === JSON.stringify(nextProps.data.enabledTools)
+  );
+};
+
+export const ConversationNode = memo(ConversationNodeComponent, areNodePropsEqual);
