@@ -27,6 +27,10 @@ const PACKAGE_NAME_MAP = {
   yaml: "PyYAML",
 };
 
+function normalizePackageName(name) {
+  return PACKAGE_NAME_MAP[name] || name;
+}
+
 function postResponse(id, ok, payload) {
   self.postMessage(ok ? { id, ok: true, data: payload } : { id, ok: false, error: payload });
 }
@@ -79,7 +83,7 @@ function detectPackages(code) {
     if (importMatch[1]) {
       const root = importMatch[1].split(".")[0];
       if (!STDLIB_MODULES.has(root)) {
-        detected.add(PACKAGE_NAME_MAP[root] || root);
+        detected.add(normalizePackageName(root));
       }
       continue;
     }
@@ -91,13 +95,22 @@ function detectPackages(code) {
         .filter(Boolean)
         .forEach((root) => {
           if (!STDLIB_MODULES.has(root)) {
-            detected.add(PACKAGE_NAME_MAP[root] || root);
+            detected.add(normalizePackageName(root));
           }
         });
     }
   }
 
   return Array.from(detected);
+}
+
+function extractMissingModuleName(message) {
+  const match = message.match(/No module named ['"]([^'"]+)['"]/i);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  return normalizePackageName(match[1].split(".")[0]);
 }
 
 async function resetWorkspace(pyodide) {
@@ -169,22 +182,28 @@ async function stageAttachments(pyodide, attachments, contextText) {
 async function installPackages(pyodide, packageNames) {
   const installed = [];
   const failed = [];
+  const seen = new Set();
 
   for (const name of packageNames) {
+    const normalizedName = normalizePackageName(name);
+    if (seen.has(normalizedName)) {
+      continue;
+    }
+    seen.add(normalizedName);
     try {
-      await pyodide.loadPackage(name);
-      installed.push(name);
+      await pyodide.loadPackage(normalizedName);
+      installed.push(normalizedName);
       continue;
     } catch {
       try {
         await pyodide.runPythonAsync(`
 import micropip
-await micropip.install(${JSON.stringify(name)})
+await micropip.install(${JSON.stringify(normalizedName)})
 `);
-        installed.push(name);
+        installed.push(normalizedName);
       } catch (installError) {
         failed.push({
-          name,
+          name: normalizedName,
           error: installError instanceof Error ? installError.message : String(installError),
         });
       }
@@ -270,11 +289,43 @@ except Exception:
   let success = true;
   let errorMessage = null;
 
-  try {
-    await pyodide.runPythonAsync(payload.code);
-  } catch (error) {
-    success = false;
-    errorMessage = error instanceof Error ? error.message : String(error);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      await pyodide.runPythonAsync(payload.code);
+      success = true;
+      errorMessage = null;
+      break;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const missingModule = extractMissingModuleName(message);
+
+      if (!missingModule) {
+        success = false;
+        errorMessage = message;
+        break;
+      }
+
+      const installResult = await installPackages(pyodide, [missingModule]);
+      installResult.installed.forEach((name) => {
+        if (!packageResult.installed.includes(name)) {
+          packageResult.installed.push(name);
+        }
+      });
+      installResult.failed.forEach((entry) => {
+        if (!packageResult.failed.some((failedEntry) => failedEntry.name === entry.name && failedEntry.error === entry.error)) {
+          packageResult.failed.push(entry);
+        }
+      });
+      if (!detectedPackages.includes(missingModule)) {
+        detectedPackages.push(missingModule);
+      }
+
+      if (installResult.installed.length === 0) {
+        success = false;
+        errorMessage = message;
+        break;
+      }
+    }
   }
 
   const files = await collectArtifacts(pyodide);
