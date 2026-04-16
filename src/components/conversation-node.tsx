@@ -737,7 +737,7 @@ function ConversationNodeComponent({
                             )}
                           </div>
 
-                          <div className="mindmap-pill-menu shrink-0">
+                          <div className="mindmap-pill-menu shrink-0 flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -746,7 +746,16 @@ function ConversationNodeComponent({
                             >
                               <SlidersHorizontal className="size-4 text-neutral-400" />
                               <span className="truncate">Tools</span>
-                              {enabledTools.length > 0 ? <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] text-white">{enabledTools.length}</span> : null}
+                              {enabledTools.length > 0 && (
+                                <div className="flex items-center gap-0.5">
+                                  {enabledTools.slice(0, 2).map((toolName) => {
+                                    const tool = TOOL_OPTIONS.find((t) => t.value === toolName);
+                                    const Icon = tool?.icon;
+                                    return Icon ? <Icon key={toolName} className="size-3 -mx-0.5" /> : null;
+                                  })}
+                                  {enabledTools.length > 2 && <span className="text-[10px]">+{enabledTools.length - 2}</span>}
+                                </div>
+                              )}
                               <ChevronDown className="size-3.5 opacity-40 shrink-0" />
                             </Button>
                             {openPanel === "tools" && (
@@ -759,22 +768,16 @@ function ConversationNodeComponent({
                                     <button
                                       key={tool.value}
                                       className={cn("mindmap-pill-menu__item", isEnabled && "mindmap-pill-menu__item--active", !isSupported && "opacity-40")}
+                                      onClick={() => {
+                                        if (!isSupported) return;
+                                        data.onToggleTool?.(tool.value);
+                                      }}
                                       disabled={!isSupported}
                                     >
                                       <div className="flex items-center gap-3">
-                                        <input
-                                          type="checkbox"
-                                          checked={isEnabled}
-                                          readOnly
-                                          tabIndex={-1}
-                                          className="size-4 rounded border-neutral-300 text-neutral-900 accent-neutral-900 cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (isSupported) {
-                                              data.onToggleTool?.(tool.value);
-                                            }
-                                          }}
-                                        />
+                                        <div className={cn("size-4 rounded border border-neutral-300 flex items-center justify-center", isEnabled && "bg-neutral-900 border-neutral-900")}>
+                                          {isEnabled && <X className="size-2.5 text-white" />}
+                                        </div>
                                         <Icon className="size-4.5" />
                                         <div className="mindmap-pill-menu__item-copy text-left">
                                           <strong>{tool.label}</strong>
