@@ -158,7 +158,8 @@ async function stageAttachments(pyodide, attachments, contextText) {
     }
 
     const buffer = await response.arrayBuffer();
-    const filePath = `/workspace/inputs/${sanitizeFilename(attachment.name, attachment.kind === "image" ? "image.bin" : "input.bin")}`;
+    const ext = attachment.name.split('.').pop() || 'bin';
+    const filePath = `/workspace/inputs/${sanitizeFilename(attachment.name, attachment.kind === "image" ? `image.${ext}` : `input.${ext}`)}`;
     pyodide.FS.writeFile(filePath, new Uint8Array(buffer), { canOwn: true });
     staged.push({
       name: attachment.name,

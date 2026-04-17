@@ -468,9 +468,9 @@ function buildCodeNodeContent(params: {
   const inputSection =
     params.stagedInputs.length > 0
       ? `## Inputs\n${params.stagedInputs
-        .map((input) => `- \`${input.name}\`${input.path ? ` -> \`${input.path}\`` : ""}${input.kind === "url" ? ` (${input.url})` : ""}`)
-        .join("\n")}`
-      : "## Inputs\n- _No staged inputs_";
+        .map((input) => `- \`${input.name}\` -> \`${input.path || "N/A"}\``)
+        .join("\n")}\n\n> Files are stored in \`/workspace/inputs/\` directory`
+      : "## Inputs\n- _No staged inputs_\n\n> Add files to this node to use them in Python code";
 
   return [
     "## Python",
