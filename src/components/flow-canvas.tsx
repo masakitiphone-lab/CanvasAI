@@ -2800,11 +2800,11 @@ setNodes((latest) =>
     const handlers: NodeHandlerSet = {
       isMultiDragging,
       onAddAttachments:
-        kind === "user" ? (files: File[]) => void nodeActionRefs.current?.addNodeAttachments(nodeId, files) : undefined,
+        kind === "user" || kind === "code" ? (files: File[]) => void nodeActionRefs.current?.addNodeAttachments(nodeId, files) : undefined,
       onAddUrlAttachment:
-        kind === "user" ? async (url: string) => await nodeActionRefs.current?.addNodeUrlAttachment(nodeId, url) : undefined,
+        kind === "user" || kind === "code" ? async (url: string) => await nodeActionRefs.current?.addNodeUrlAttachment(nodeId, url) : undefined,
       onRemoveAttachment:
-        kind === "user"
+        kind === "user" || kind === "code"
           ? (attachmentId: string) => nodeActionRefs.current?.removeNodeAttachment(nodeId, attachmentId)
           : undefined,
       onChangeModel:

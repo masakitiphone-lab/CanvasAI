@@ -317,7 +317,7 @@ function ConversationNodeComponent({
   const minHeight = minSize.height;
   const nodeWidth = Math.max(Number(resizePreview?.width ?? width ?? defaultWidth), minWidth);
   const nodeHeight = Math.max(Number(resizePreview?.height ?? height ?? preferredHeight), minHeight);
-  const isTargetHandleVisible = isUser || isNote;
+  const isTargetHandleVisible = isUser || isNote || isCode;
   const isSourceHandleVisible = isAi || isCode || isImage || isFile || isNote;
 
   useEffect(() => {
