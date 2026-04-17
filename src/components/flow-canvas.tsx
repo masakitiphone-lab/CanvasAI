@@ -2712,15 +2712,27 @@ print("================================")
           const contextText = parentNode.data.content;
           const codeNodeAttachments = codeNode.data.attachments;
           const parentAttachments = parentNode.data.attachments;
-          const allAttachments = [...codeNodeAttachments, ...parentAttachments];
+
+          // Filter out failed uploads (temp- attachments without valid URLs)
+          const validCodeNodeAttachments = codeNodeAttachments.filter(
+            (att) => att.id.startsWith("temp-") ? false : (att.url && att.storagePath)
+          );
+          const validParentAttachments = parentAttachments.filter(
+            (att) => att.id.startsWith("temp-") ? false : (att.url && att.storagePath)
+          );
+          const allAttachments = [...validCodeNodeAttachments, ...validParentAttachments];
 
           console.log("=== Code Node Execution Debug ===");
-          console.log("Code node ID:", codeNode.id);
-          console.log("Code node attachments:", codeNodeAttachments);
-          console.log("Parent node ID:", parentNode.id);
-          console.log("Parent attachments:", parentAttachments);
-          console.log("All attachments:", allAttachments);
+          console.log("Code node attachments (raw):", codeNodeAttachments);
+          console.log("Code node attachments (valid):", validCodeNodeAttachments);
+          console.log("Parent attachments (valid):", validParentAttachments);
+          console.log("All attachments (valid):", allAttachments);
           console.log("===================================");
+
+          if (allAttachments.length === 0 && (codeNodeAttachments.length > 0 || parentAttachments.length > 0)) {
+            // Some attachments failed to upload
+            console.warn("Some attachments failed to upload, proceeding with available ones");
+          }
 
           const result = await executePyodideCode({
             code: generatedCode,
