@@ -3077,11 +3077,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     localStorage.setItem(getProjectCacheKey(currentProjectId), JSON.stringify(snapshot));
 
     saveTimerRef.current = setTimeout(() => {
-      const currentTitle =
-        nodes.find((node) => node.data.isRoot)?.data.content.trim() ||
-        nodes.find((node) => node.data.kind === "user")?.data.content.trim() ||
-        "Untitled canvas";
-
       void authFetch("/api/canvas", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -3093,7 +3088,6 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           new CustomEvent("canvas:project-updated", {
             detail: {
               projectId: currentProjectId,
-              title: currentTitle,
             },
           }),
         );
