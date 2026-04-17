@@ -255,27 +255,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
         continue;
       }
 
-      const binary = await readAttachmentBinary(attachment);
-
-      if (attachment.kind === "pdf") {
-        const uploadedFile = await uploadGeminiFile({
-          apiKey,
-          mimeType: binary.mimeType,
-          displayName: attachment.name,
-          data: binary.data,
-        });
-
-        uploadedFiles.push(uploadedFile);
-        parts.push({
-          file_data: {
-            mime_type: uploadedFile.mimeType,
-            file_uri: uploadedFile.uri,
-          },
-        });
-        continue;
-      }
-
-      if (attachment.kind === "file" || attachment.kind === "image") {
+      if (attachment.kind === "pdf" || attachment.kind === "file" || attachment.kind === "image") {
         parts.push({
           text: `Attachment: ${attachment.name}`,
         });
@@ -283,10 +263,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
       }
 
       parts.push({
-        inlineData: {
-          mimeType: binary.mimeType,
-          data: binary.data.toString("base64"),
-        },
+        text: `Attachment: ${attachment.name}`,
       });
     }
   }
