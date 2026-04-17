@@ -2711,15 +2711,17 @@ setNodes((latest) =>
           const resultContent = buildResultNodeContent(result);
           const uploadedArtifacts: ConversationAttachment[] = [];
           if (result.files.length > 0) {
-            for (const file of result.files) {
-              const attachment = await storeArtifactAsAttachment({
-                buffer: Buffer.from(file.bytesBase64, "base64"),
-                mimeType: file.mimeType,
-                fileName: file.name,
-                projectId: currentProjectId,
-              });
-              uploadedArtifacts.push(attachment);
-            }
+            const artifacts = await uploadFiles(
+              result.files.map((file) =>
+                base64ToFile({
+                  bytesBase64: file.bytesBase64,
+                  fileName: file.name,
+                  mimeType: file.mimeType,
+                }),
+              ),
+              currentProjectId,
+            );
+            uploadedArtifacts.push(...artifacts);
           }
 
           setNodes((current) =>
