@@ -606,6 +606,14 @@ function ConversationNodeComponent({
                           </div>
                         </div>
                       ) : null}
+                      {isCode && data.taskGoal && (
+                        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Braces className="size-4 text-blue-500" />
+                            <span className="text-sm font-medium text-blue-700">{data.taskGoal}</span>
+                          </div>
+                        </div>
+                      )}
                       {isCode && data.content && (
                         <div className="mb-3 flex items-center gap-2">
                           <button
