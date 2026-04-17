@@ -737,7 +737,10 @@ function ConversationNodeComponent({
                             )}
                           </div>
 
-                          <div className="mindmap-pill-menu shrink-0 flex items-center gap-1">
+                          <div className="mindmap-pill-menu shrink-0 flex items-center gap-1.5">
+                            <div className="size-6 rounded border border-neutral-200 flex items-center justify-center bg-white shadow-sm">
+                              <ActivePromptModeIcon className="size-3.5 text-neutral-600" />
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"

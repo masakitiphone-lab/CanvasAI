@@ -19,7 +19,7 @@ type NodeLayoutConfig = {
 export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
   user: {
     defaultSize: { width: 560, height: 340 },
-    minSize: { width: 560, height: 360 },
+    minSize: { width: 640, height: 360 },
     focusedSize: { width: 760, height: 520 },
   },
   ai: {
