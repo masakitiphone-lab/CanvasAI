@@ -25,7 +25,18 @@ function getUserAvatarUrl(user: NonNullable<Awaited<ReturnType<typeof getSession
     ]),
   ];
 
-  return avatarCandidates.find((value): value is string => typeof value === "string" && value.trim().length > 0) ?? null;
+  const foundAvatar = avatarCandidates.find((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+  if (foundAvatar) {
+    return foundAvatar;
+  }
+
+  if (user.email) {
+    const emailHash = Buffer.from(user.email.toLowerCase()).toString("base64").replace(/=/g, "");
+    return `https://www.gravatar.com/avatar/${emailHash}?d=mp&s=200`;
+  }
+
+  return null;
 }
 
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
