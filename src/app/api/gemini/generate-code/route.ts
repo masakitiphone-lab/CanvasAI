@@ -11,14 +11,45 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const CODE_EXECUTION_MODEL: ConversationTextModelName = "gemini-3-flash-preview";
-const CODE_SYSTEM_INSTRUCTION = [
-  "You are executing coding tasks for a canvas app.",
-  "Always decide whether Python code execution is useful.",
-  "When code execution is used, return a concise explanation, the generated code, and the execution result.",
-  "Keep the explanation brief and grounded in the actual execution result.",
-  "If execution fails, say what failed and include the failed output.",
-  "Today's date is 2026-04-15.",
-].join(" ");
+const CODE_SYSTEM_INSTRUCTION = `## Role
+You are a code generation and execution agent for CanvasAI canvas application.
+
+## Task Definition
+Analyze the user's request to understand what processing is required, then generate and execute the most appropriate code to achieve the desired output.
+
+## Required Context
+- Understand the flow of information from conversation history
+- Always reference attached files when present
+- Base your explanation on actual execution results
+
+## Output Format
+Return the following structure:
+
+### Summary
+Brief explanation (1-3 sentences) of what was done and the result.
+
+### Generated Code
+\`\`\`python
+[your code here]
+\`\`\`
+
+### Execution Result
+- Outcome: [SUCCESS/FAILURE/ERROR]
+- Output: [actual output from execution]
+- Analysis: [what the result means based on actual output]
+
+## Constraints
+- Execute Python code when execution is useful for producing correct results
+- If execution fails, clearly state what failed and include the failed output
+- Explanation must be grounded in actual execution results, not assumptions
+
+## Chart/Graph Guidelines
+When generating matplotlib plots:
+- Always set figure size: plt.figure(figsize=(10, 6), dpi=100)
+- Use plt.tight_layout() before plt.show() to prevent clipping
+- For saving: plt.savefig('output.png', bbox_inches='tight', dpi=150)
+
+- Today's date is 2026-04-15.`;
 
 type LineageEntry = {
   id: string;
@@ -48,6 +79,7 @@ type GenerateCodeRequestBody = {
 type GenerateCodeSuccessResponse = {
   ok: true;
   model: string;
+  taskGoal: string;
   explanation: string;
   code: string;
   codeLanguage: string;
@@ -260,15 +292,19 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
 
 function extractCodeParts(payload: GeminiGenerateResponse) {
   const parts = payload.candidates?.[0]?.content?.parts ?? [];
-  const explanation = parts
+  const allText = parts
     .map((part) => part.text ?? "")
     .join("\n")
     .trim();
   const executableCode = parts.find((part) => part.executableCode?.code)?.executableCode;
   const executionResult = parts.find((part) => part.codeExecutionResult)?.codeExecutionResult;
 
+  const taskGoalMatch = allText.match(/###\s*Summary\n([\s\S]*?)(?=\n###\s*Generated\s+Code|$)/i);
+  const taskGoal = taskGoalMatch ? taskGoalMatch[1].trim() : "";
+
   return {
-    explanation,
+    taskGoal,
+    explanation: allText,
     code: executableCode?.code?.trim() ?? "",
     language: executableCode?.language?.trim() ?? "PYTHON",
     outcome: executionResult?.outcome?.trim() ?? "OUTCOME_UNSPECIFIED",
@@ -508,6 +544,7 @@ export async function POST(request: Request) {
     return NextResponse.json<GenerateCodeSuccessResponse>({
       ok: true,
       model: CODE_EXECUTION_MODEL,
+      taskGoal: result.taskGoal,
       explanation: result.explanation,
       code: result.code,
       codeLanguage: result.language,

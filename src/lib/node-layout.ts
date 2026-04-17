@@ -74,7 +74,7 @@ function estimateWrappedLineCount(content: string, charsPerLine: number) {
   }, 0);
 }
 
-const RESULT_NODE_IMAGE_HEIGHT = 360;
+const RESULT_NODE_IMAGE_HEIGHT = 480;
 const RESULT_NODE_IMAGE_GAP = 20;
 const RESULT_NODE_TEXT_BASE_HEIGHT = 280;
 const RESULT_NODE_HEADER_HEIGHT = 200;

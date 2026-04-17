@@ -45,6 +45,7 @@ export type ConversationNodeRecord = {
   createdAt: string;
   isRoot: boolean;
   isPositionPinned: boolean;
+  taskGoal?: string;
 };
 
 export type ConversationNodeData = ConversationNodeRecord & {

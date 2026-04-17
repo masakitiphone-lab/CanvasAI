@@ -455,6 +455,7 @@ function buildPyodideContextText(lineage: LineageEntry[]) {
 
 function buildCodeNodeContent(params: {
   code: string;
+  taskGoal?: string;
   packages: string[];
   stagedInputs: Array<{ name: string; path: string | null; kind: ConversationAttachment["kind"]; url: string }>;
 }) {
@@ -568,7 +569,11 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "Only use packages that are commonly available in Pyodide when they are truly necessary.",
       "Minimize dependencies. Do not import scipy, pandas, sklearn, or any other heavy package unless the task genuinely requires it.",
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
-      "If plotting is useful, use matplotlib and call plt.show().",
+      "If plotting is useful, use matplotlib with plt.show().",
+      "When using matplotlib for charts/graphs:",
+      "  - Always set figure size: plt.figure(figsize=(10, 6), dpi=100)",
+      "  - Use plt.tight_layout() before plt.show() to prevent clipping",
+      "  - For saving: plt.savefig('output.png', bbox_inches='tight', dpi=150)",
       fileInstructions,
       "If the user asks for a simple calculation, write the shortest correct Python needed and print the answer clearly.",
       "",
@@ -2007,30 +2012,33 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           `${latestParentNode.id}->${codeNodeId}`,
           `${codeNodeId}->${resultNodeId}`,
         ]);
-        setNodes((latest) =>
+setNodes((latest) =>
           latest.map((node) =>
             node.id === codeNodeId
               ? {
-                ...node,
-                style: {
-                  ...node.style,
-                  ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                    code: generatedCode,
-                    packages: result.detectedPackages,
-                    stagedInputs: result.stagedInputs,
-                  })),
-                },
-                data: {
-                  ...node.data,
-                  content: buildCodeNodeContent({
-                    code: generatedCode,
-                    packages: result.detectedPackages,
-                    stagedInputs: result.stagedInputs,
-                  }),
-                  status: "idle",
-                },
-              }
-: node.id === resultNodeId
+                  ...node,
+                  style: {
+                    ...node.style,
+                    ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                      code: generatedCode,
+                      taskGoal: prompt,
+                      packages: result.detectedPackages,
+                      stagedInputs: result.stagedInputs,
+                    })),
+                  },
+                  data: {
+                    ...node.data,
+                    content: buildCodeNodeContent({
+                      code: generatedCode,
+                      taskGoal: prompt,
+                      packages: result.detectedPackages,
+                      stagedInputs: result.stagedInputs,
+                    }),
+                    taskGoal: prompt,
+                    status: "idle",
+                  },
+                }
+              : node.id === resultNodeId
                 ? {
                     ...node,
                     style: {
@@ -2379,6 +2387,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
       const parentNode = latestNodes.find((node) => node.id === codeNode.data.parentId);
       if (!parentNode || parentNode.data.kind !== "user") return;
+      const parentPrompt = parentNode.data.content.trim();
       const resultNode = latestNodes.find((node) => node.data.kind === "result" && node.data.parentId === codeNode.id);
 
       setNodes((current) =>
@@ -2448,25 +2457,28 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           current.map((node) =>
             node.id === codeNode.id
               ? {
-                ...node,
-                style: {
-                  ...node.style,
-                  ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                    code: generatedCode,
-                    packages: result.detectedPackages,
-                    stagedInputs: result.stagedInputs,
-                  })),
-                },
-                data: {
-                  ...node.data,
-                  content: buildCodeNodeContent({
-                    code: generatedCode,
-                    packages: result.detectedPackages,
-                    stagedInputs: result.stagedInputs,
-                  }),
-                  status: "idle",
-                },
-              }
+                  ...node,
+                  style: {
+                    ...node.style,
+                    ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                      code: generatedCode,
+                      taskGoal: parentPrompt,
+                      packages: result.detectedPackages,
+                      stagedInputs: result.stagedInputs,
+                    })),
+                  },
+                  data: {
+                    ...node.data,
+                    content: buildCodeNodeContent({
+                      code: generatedCode,
+                      taskGoal: parentPrompt,
+                      packages: result.detectedPackages,
+                      stagedInputs: result.stagedInputs,
+                    }),
+                    taskGoal: parentPrompt,
+                    status: "idle",
+                  },
+                }
 : resultNode && node.id === resultNode.id
                 ? {
                     ...node,
