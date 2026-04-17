@@ -166,16 +166,16 @@ const visibleHandleBaseStyle = {
 
 const targetHandleStyle = {
   ...visibleHandleBaseStyle,
-  left: 0,
+  left: -9,
   right: "auto",
-  transform: "translate(-50%, -50%)",
+  transform: "translate(0, -50%)",
 };
 
 const sourceHandleStyle = {
   ...visibleHandleBaseStyle,
   left: "auto",
-  right: 0,
-  transform: "translate(50%, -50%)",
+  right: -9,
+  transform: "translate(0, -50%)",
 };
 
 function deriveTitle(content: string, kind: ConversationNodeData["kind"]) {
@@ -473,6 +473,9 @@ function ConversationNodeComponent({
           <div className="mindmap-node-shell__header-row">
             <div className="mindmap-node-shell__meta">
               <h3 className="mindmap-node-shell__title">{title}</h3>
+              {isCode && data.taskGoal && (
+                <p className="text-[11px] text-neutral-400 mt-0.5 line-clamp-1">{data.taskGoal}</p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {data.isRoot ? (
