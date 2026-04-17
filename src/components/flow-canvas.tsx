@@ -2723,8 +2723,13 @@ print("================================")
           const allAttachments = [...validCodeNodeAttachments, ...validParentAttachments];
 
           console.log("=== Code Node Execution Debug ===");
+          console.log("Parent node found:", !!parentNode);
+          console.log("Parent node ID:", parentNode?.id);
+          console.log("Parent node kind:", parentNode?.data.kind);
+          console.log("Parent node content:", parentNode?.data.content?.substring(0, 50));
           console.log("Code node attachments (raw):", codeNodeAttachments);
           console.log("Code node attachments (valid):", validCodeNodeAttachments);
+          console.log("Parent attachments (raw):", parentAttachments);
           console.log("Parent attachments (valid):", validParentAttachments);
           console.log("All attachments (valid):", allAttachments);
           console.log("===================================");
