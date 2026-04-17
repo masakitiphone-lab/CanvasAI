@@ -223,6 +223,8 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
         "Conversation history follows.",
         "Focus on the latest user prompt.",
         "Use Python code execution when it helps produce a correct result.",
+        "Input files are stored in /workspace/inputs/ directory with their original file names.",
+        "Use os.listdir('/workspace/inputs/') or provide the exact file path to access them.",
       ].join("\n"),
     },
   ];
