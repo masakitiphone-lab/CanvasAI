@@ -2654,7 +2654,23 @@ setNodes((latest) =>
 
         const codeNode = targetNode;
         const parentNode = nodesRef.current.find((n) => n.id === codeNode.data.parentId);
-        if (!parentNode || parentNode.data.kind !== "user") return;
+        
+        console.log("=== Code Node Parent Check ===");
+        console.log("targetNode ID:", targetNode?.id);
+        console.log("codeNode ID:", codeNode?.id);
+        console.log("codeNode.parentId:", codeNode?.data?.parentId);
+        console.log("parentNode:", parentNode);
+        console.log("parentNode exists:", !!parentNode);
+        if (parentNode) {
+          console.log("parentNode kind:", parentNode.data.kind);
+          console.log("parentNode attachments:", parentNode.data.attachments);
+        }
+        console.log("================================");
+        
+        if (!parentNode || parentNode.data.kind !== "user") {
+          console.log("Early return: parentNode check failed");
+          return;
+        }
 
         const generatedCodeMatch = codeNode.data.content.match(/```python\n([\s\S]*?)```/);
         const originalCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
@@ -2709,9 +2725,12 @@ print("================================")
         setActiveGenerationEdges(activeEdgeIds);
 
         try {
+          console.log("=== Entered try block ===");
           const contextText = parentNode.data.content;
           const codeNodeAttachments = codeNode.data.attachments;
           const parentAttachments = parentNode.data.attachments;
+
+          console.log("parentNode.data.attachments direct:", parentAttachments);
 
           // Filter out failed uploads (temp- attachments without valid URLs)
           const validCodeNodeAttachments = codeNodeAttachments.filter(
