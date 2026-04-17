@@ -2657,8 +2657,24 @@ setNodes((latest) =>
         if (!parentNode || parentNode.data.kind !== "user") return;
 
         const generatedCodeMatch = codeNode.data.content.match(/```python\n([\s\S]*?)```/);
-        const generatedCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
-        if (!generatedCode) return;
+        const originalCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
+        if (!originalCode) return;
+
+        // Inject file detection code at the beginning
+        const fileDetectionCode = `
+import os
+
+# Available input files in /workspace/inputs/
+_input_files = os.listdir('/workspace/inputs/')
+print("=== Available Input Files ===")
+for f in _input_files:
+    print(f"  - {f}")
+print("================================")
+
+# Your code starts below:
+`;
+
+        const generatedCode = fileDetectionCode + originalCode;
 
         const resultNode = nodesRef.current.find((n) => n.data.kind === "result" && n.data.parentId === codeNode.id);
         if (!resultNode) return;
