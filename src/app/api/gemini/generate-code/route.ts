@@ -275,7 +275,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
         continue;
       }
 
-      if (attachment.kind === "file") {
+      if (attachment.kind === "file" || attachment.kind === "image") {
         parts.push({
           text: `Attachment: ${attachment.name}`,
         });
