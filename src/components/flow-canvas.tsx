@@ -753,8 +753,8 @@ const overlaps = (a: ReturnType<typeof getNodeRect>, b: ReturnType<typeof getNod
   !(a.right + OVERLAP_GAP <= b.left || a.left >= b.right + OVERLAP_GAP || a.bottom + OVERLAP_GAP <= b.top || a.top >= b.bottom + OVERLAP_GAP);
 
 function findAvailablePosition(desired: XYPosition, size: PlacementOptions, nodes: Array<Node<ConversationNodeRecord>>) {
-  const xOffsets = [0, 84, 168, -84, 252, -168, 336, -252];
-  const yOffsets = [0, MIN_VERTICAL_GAP, -MIN_VERTICAL_GAP, MIN_VERTICAL_GAP * 2, -MIN_VERTICAL_GAP * 2, MIN_VERTICAL_GAP * 3, -MIN_VERTICAL_GAP * 3];
+  const xOffsets = [0, 84, 168, 252, 336, 420, 504, -84, -168, -252, -336, -420, -504];
+  const yOffsets = [0, MIN_VERTICAL_GAP, MIN_VERTICAL_GAP * 2, MIN_VERTICAL_GAP * 3, MIN_VERTICAL_GAP * 4, -MIN_VERTICAL_GAP, -MIN_VERTICAL_GAP * 2, -MIN_VERTICAL_GAP * 3];
   const candidates = xOffsets.flatMap((xOffset) =>
     yOffsets.map((yOffset) => ({
       x: desired.x + xOffset,
