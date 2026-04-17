@@ -737,10 +737,7 @@ function ConversationNodeComponent({
                             )}
                           </div>
 
-                          <div className="mindmap-pill-menu shrink-0 flex items-center gap-1.5">
-                            <div className="size-6 rounded border border-neutral-200 flex items-center justify-center bg-white shadow-sm">
-                              <ActivePromptModeIcon className="size-3.5 text-neutral-600" />
-                            </div>
+                          <div className="mindmap-pill-menu shrink-0 flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -761,6 +758,9 @@ function ConversationNodeComponent({
                               )}
                               <ChevronDown className="size-3.5 opacity-40 shrink-0" />
                             </Button>
+                            <div className="size-6 rounded border border-neutral-200 flex items-center justify-center bg-white shadow-sm shrink-0">
+                              <ActivePromptModeIcon className="size-3.5 text-neutral-600" />
+                            </div>
                             {openPanel === "tools" && (
                               <div className="mindmap-pill-menu__panel nodrag">
                                 {TOOL_OPTIONS.map((tool) => {
