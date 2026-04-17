@@ -2714,6 +2714,14 @@ print("================================")
           const parentAttachments = parentNode.data.attachments;
           const allAttachments = [...codeNodeAttachments, ...parentAttachments];
 
+          console.log("=== Code Node Execution Debug ===");
+          console.log("Code node ID:", codeNode.id);
+          console.log("Code node attachments:", codeNodeAttachments);
+          console.log("Parent node ID:", parentNode.id);
+          console.log("Parent attachments:", parentAttachments);
+          console.log("All attachments:", allAttachments);
+          console.log("===================================");
+
           const result = await executePyodideCode({
             code: generatedCode,
             attachments: allAttachments,
