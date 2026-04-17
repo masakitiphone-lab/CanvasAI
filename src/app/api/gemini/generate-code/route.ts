@@ -57,7 +57,7 @@ type LineageEntry = {
   content: string;
   attachments?: Array<{
     id: string;
-    kind: "image" | "pdf" | "url";
+    kind: "image" | "pdf" | "url" | "file";
     name: string;
     url: string;
     mimeType?: string;
@@ -250,7 +250,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
     for (const attachment of entry.attachments ?? []) {
       if (attachment.kind === "url") {
         parts.push({
-          text: `Related URL: ${attachment.name} (${attachment.url})`,
+          text: `Attachment: ${attachment.name} (${attachment.url}) (file not shown due to unsupported format)`,
         });
         continue;
       }
@@ -271,6 +271,13 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
             mime_type: uploadedFile.mimeType,
             file_uri: uploadedFile.uri,
           },
+        });
+        continue;
+      }
+
+      if (attachment.kind === "file") {
+        parts.push({
+          text: `Attachment: ${attachment.name} (file not shown due to unsupported format)`,
         });
         continue;
       }
