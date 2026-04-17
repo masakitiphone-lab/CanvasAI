@@ -264,7 +264,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
     for (const attachment of entry.attachments ?? []) {
       if (attachment.kind === "url") {
         parts.push({
-          text: `Attachment: ${attachment.name} (${attachment.url}) (file not shown due to unsupported format)`,
+          text: `Attachment: ${attachment.name} (${attachment.url})`,
         });
         continue;
       }
@@ -291,7 +291,7 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
 
       if (attachment.kind === "file") {
         parts.push({
-          text: `Attachment: ${attachment.name} (file not shown due to unsupported format)`,
+          text: `Attachment: ${attachment.name}`,
         });
         continue;
       }
