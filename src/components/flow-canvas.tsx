@@ -480,31 +480,41 @@ function buildCodeNodeContent(params: {
 }
 
 function buildResultNodeContent(params: PyodideRunResult) {
-  const statusLine = params.success ? "Success" : "Failed";
-  const stdoutSection = params.stdout ? `## Stdout\n\`\`\`text\n${params.stdout}\n\`\`\`` : "## Stdout\n- _No stdout_";
-  const stderrSection = params.stderr ? `## Stderr\n\`\`\`text\n${params.stderr}\n\`\`\`` : "## Stderr\n- _No stderr_";
-  const packageSection = [
-    "## Packages",
-    params.detectedPackages.length > 0 ? `Detected: ${params.detectedPackages.map((pkg) => `\`${pkg}\``).join(", ")}` : "Detected: _None_",
-    params.installedPackages.length > 0 ? `Installed: ${params.installedPackages.map((pkg) => `\`${pkg}\``).join(", ")}` : "Installed: _None_",
-    params.failedPackages.length > 0
-      ? `Failed: ${params.failedPackages.map((pkg) => `\`${pkg.name}\` (${pkg.error})`).join(", ")}`
-      : "Failed: _None_",
-  ].join("\n");
-  const fileSection =
-    params.files.length > 0
-      ? `## Files\n${params.files.map((file) => `- \`${file.name}\``).join("\n")}`
-      : "## Files\n- _No generated files_";
-  const errorSection = params.errorMessage ? `## Error\n\`\`\`text\n${params.errorMessage}\n\`\`\`` : "";
+  const statusEmoji = params.success ? "✅" : "❌";
+  const statusLabel = params.success ? "Success" : "Failed";
+  
+  const fileSection = params.files.length > 0
+    ? `## Generated Files\n\n${params.files.map((file) => `- **${file.name}**`).join("\n")}`
+    : "";
+
+  const stdoutSection = params.stdout
+    ? `### Standard Output\n\n\`\`\`text\n${params.stdout}\n\`\`\``
+    : "";
+
+  const errorSection = params.errorMessage
+    ? `### Error\n\n\`\`\`text\n${params.errorMessage}\n\`\`\``
+    : "";
+
+  const packageSection = params.detectedPackages.length > 0
+    ? `### Packages Used\n\n${params.detectedPackages.map((pkg) => `\`${pkg}\``).join(", ")}`
+    : "";
+
+  const stderrSection = params.stderr
+    ? `### Standard Error\n\n\`\`\`text\n${params.stderr}\n\`\`\``
+    : "";
 
   return [
-    "## Pyodide Execution",
-    `Status: **${statusLine}**`,
-    packageSection,
-    stdoutSection,
-    stderrSection,
+    `## Execution ${statusEmoji} ${statusLabel}`,
     fileSection,
+    "",
+    "<details>",
+    "<summary><strong>Show Details</strong></summary>",
+    "",
+    stdoutSection,
     errorSection,
+    packageSection,
+    stderrSection,
+    "</details>",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -528,6 +538,24 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
 
   const targetIndex = nextLineage.length - 1 - latestUserIndex;
   const originalPrompt = nextLineage[targetIndex].content.trim();
+  const inputAttachments = nextLineage[targetIndex].attachments ?? [];
+  const hasInputFiles = inputAttachments.length > 0;
+  
+  const fileInstructions = hasInputFiles
+    ? [
+        "",
+        "## Input Files",
+        `You have ${inputAttachments.length} input file(s) available:`,
+        inputAttachments.map((att) => `- ${att.name} (${att.kind})`).join("\n"),
+        "IMPORTANT: Read input files from `/workspace/inputs/` directory.",
+        "Check `/workspace/input_manifest.json` for file metadata.",
+        "Process these files as needed to fulfill the user's request.",
+        "For CSV/JSON: use pandas or json to read and process.",
+        "For images: use PIL or matplotlib to read and process.",
+        "Save output files to `/workspace/artifacts/` directory.",
+      ].join("\n")
+    : "";
+
   nextLineage[targetIndex] = {
     ...nextLineage[targetIndex],
     content: [
@@ -541,7 +569,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "Minimize dependencies. Do not import scipy, pandas, sklearn, or any other heavy package unless the task genuinely requires it.",
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib and call plt.show().",
-      "If input attachments matter, read them from /workspace/inputs or inspect /workspace/input_manifest.json.",
+      fileInstructions,
       "If the user asks for a simple calculation, write the shortest correct Python needed and print the answer clearly.",
       "",
       `User request: ${originalPrompt}`,
