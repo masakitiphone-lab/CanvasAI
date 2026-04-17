@@ -2694,11 +2694,13 @@ setNodes((latest) =>
 
         try {
           const contextText = parentNode.data.content;
+          const codeNodeAttachments = codeNode.data.attachments;
           const parentAttachments = parentNode.data.attachments;
+          const allAttachments = [...codeNodeAttachments, ...parentAttachments];
 
           const result = await executePyodideCode({
             code: generatedCode,
-            attachments: parentAttachments,
+            attachments: allAttachments,
             contextText,
           });
 
