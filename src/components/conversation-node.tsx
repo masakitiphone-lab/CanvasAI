@@ -9,6 +9,7 @@ import {
   Bot,
   Camera,
   ChevronDown,
+  ChevronRight,
   Clock,
   FileImage,
   FileText,
@@ -18,6 +19,7 @@ import {
   Braces,
   TerminalSquare,
   Plus,
+  Play,
   RotateCcw,
   Search,
   SlidersHorizontal,
@@ -284,6 +286,7 @@ function ConversationNodeComponent({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<"mode" | "model" | "tools" | null>(null);
   const [resizePreview, setResizePreview] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
+  const [codeCollapsed, setCodeCollapsed] = useState(data.codeCollapsed ?? false);
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
   const otherAttachments = data.attachments.filter((attachment) => attachment.kind !== "image");
   const inlineImageAttachments = isResult ? imageAttachments : [];
@@ -603,6 +606,18 @@ function ConversationNodeComponent({
                           </div>
                         </div>
                       ) : null}
+                      {isCode && data.content && (
+                        <div className="mb-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-700"
+                            onClick={() => setCodeCollapsed(!codeCollapsed)}
+                          >
+                            {codeCollapsed ? <ChevronRight className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                            <span>Python Code</span>
+                          </button>
+                        </div>
+                      )}
                       {data.status === "generating" && !data.content ? (
                         <div className="flex flex-col gap-6 py-6 opacity-40">
                           <div className="h-4 w-[92%] rounded-full bg-neutral-100" />
@@ -610,7 +625,9 @@ function ConversationNodeComponent({
                           <div className="h-4 w-[82%] rounded-full bg-neutral-100" />
                         </div>
                       ) : data.content ? (
-                        <MarkdownRenderer content={data.content} />
+                        <div className={cn(codeCollapsed && "hidden")}>
+                          <MarkdownRenderer content={data.content} />
+                        </div>
                       ) : (
                         <MarkdownRenderer content="" />
                       )}
@@ -840,14 +857,26 @@ function ConversationNodeComponent({
                     </Button>
                     <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
                     {!isNote && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="nodrag mindmap-action-icon size-9 rounded-xl"
-                        onClick={() => (isImage ? data.onRegenerateImage?.() : isCode ? data.onRegenerateCode?.() : isResult ? data.onRegenerateResult?.() : data.onRegenerateAi?.())}
-                      >
-                        <RotateCcw className="size-4.5" />
-                      </Button>
+                      <>
+                        {isCode && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="nodrag mindmap-action-icon size-9 rounded-xl !bg-green-600 !text-white hover:!bg-green-700"
+                            onClick={() => data.onRunCode?.()}
+                          >
+                            <Play className="size-4.5" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="nodrag mindmap-action-icon size-9 rounded-xl"
+                          onClick={() => (isImage ? data.onRegenerateImage?.() : isCode ? data.onRegenerateCode?.() : isResult ? data.onRegenerateResult?.() : data.onRegenerateAi?.())}
+                        >
+                          <RotateCcw className="size-4.5" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 )}

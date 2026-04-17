@@ -83,6 +83,7 @@ type NodeHandlerSet = Pick<
   | "onRegenerateCode"
   | "onRegenerateResult"
   | "onRegenerateImage"
+  | "onRunCode"
   | "onOpenDetail"
 > & { isMultiDragging?: boolean };
 type VisibleNodeCacheEntry = {
@@ -123,6 +124,7 @@ type NodeActionRefs = {
   regenerateAiNode: (nodeId: string) => Promise<void>;
   regenerateCodeNode: (nodeId: string) => Promise<void>;
   regenerateImageNode: (nodeId: string) => Promise<void>;
+  runCodeNode: (nodeId: string) => Promise<void>;
   focusNode: (nodeId: string, options?: { preserveViewport?: boolean }) => void;
 };
 
@@ -2646,6 +2648,126 @@ setNodes((latest) =>
       regenerateAiNode,
       regenerateCodeNode,
       regenerateImageNode,
+      runCodeNode: async (nodeId: string) => {
+        const targetNode = nodesRef.current.find((n) => n.id === nodeId);
+        if (!targetNode || targetNode.data.kind !== "code" || !targetNode.data.parentId) return;
+
+        const codeNode = targetNode;
+        const parentNode = nodesRef.current.find((n) => n.id === codeNode.data.parentId);
+        if (!parentNode || parentNode.data.kind !== "user") return;
+
+        const generatedCodeMatch = codeNode.data.content.match(/```python\n([\s\S]*?)```/);
+        const generatedCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
+        if (!generatedCode) return;
+
+        const resultNode = nodesRef.current.find((n) => n.data.kind === "result" && n.data.parentId === codeNode.id);
+        if (!resultNode) return;
+
+        const timestampLabel = () => {
+          const now = new Date();
+          return now.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        };
+
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === resultNode.id
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    content: "",
+                    attachments: [],
+                    tokenCount: undefined,
+                    status: "generating",
+                    createdAt: timestampLabel(),
+                  },
+                }
+              : node,
+          ),
+        );
+
+        const activeEdgeIds = [
+          `${parentNode.id}->${codeNode.id}`,
+          `${codeNode.id}->${resultNode.id}`,
+        ];
+        setActiveGenerationEdges(activeEdgeIds);
+
+        try {
+          const contextText = parentNode.data.content;
+          const parentAttachments = parentNode.data.attachments;
+
+          const result = await executePyodideCode({
+            code: generatedCode,
+            attachments: parentAttachments,
+            contextText,
+          });
+
+          setActiveGenerationEdges([]);
+
+          if (deletedNodeIdsRef.current.has(codeNode.id) || deletedNodeIdsRef.current.has(resultNode.id)) {
+            return;
+          }
+
+          const resultContent = buildResultNodeContent(result);
+          const uploadedArtifacts: ConversationAttachment[] = [];
+          if (result.files.length > 0) {
+            for (const file of result.files) {
+              const attachment = await storeArtifactAsAttachment({
+                buffer: Buffer.from(file.bytesBase64, "base64"),
+                mimeType: file.mimeType,
+                fileName: file.name,
+                projectId: currentProjectId,
+              });
+              uploadedArtifacts.push(attachment);
+            }
+          }
+
+          setNodes((current) =>
+            current.map((node) =>
+              node.id === codeNode.id
+                ? {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      content: buildCodeNodeContent({
+                        code: generatedCode,
+                        packages: result.detectedPackages,
+                        stagedInputs: result.stagedInputs,
+                      }),
+                    },
+                  }
+                : node.id === resultNode.id
+                  ? {
+                      ...node,
+                      data: {
+                        ...node.data,
+                        content: resultContent,
+                        attachments: uploadedArtifacts,
+                        status: result.success ? "idle" : "error",
+                      },
+                    }
+                  : node,
+            ),
+          );
+        } catch (error) {
+          setActiveGenerationEdges([]);
+          console.error("Code execution failed:", error);
+          setNodes((current) =>
+            current.map((node) =>
+              node.id === resultNode.id
+                ? {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      content: `## Execution Failed\n\n\`\`\`\n${error instanceof Error ? error.message : "Unknown error"}\n\`\`\``,
+                      status: "error",
+                    },
+                  }
+                : node,
+            ),
+          );
+        }
+      },
       focusNode,
     };
   }, [
@@ -2664,6 +2786,7 @@ setNodes((latest) =>
     updateNodeModel,
     updatePromptMode,
     updateUserNodeContent,
+    setActiveGenerationEdges,
   ]);
 
   const getNodeHandlers = useCallback((nodeId: string, kind: ConversationNodeRecord["kind"]): NodeHandlerSet => {
@@ -2727,6 +2850,7 @@ setNodes((latest) =>
       onRegenerateCode: kind === "code" ? () => void nodeActionRefs.current?.regenerateCodeNode(nodeId) : undefined,
       onRegenerateResult: kind === "result" ? () => void nodeActionRefs.current?.regenerateCodeNode(nodeId) : undefined,
       onRegenerateImage: kind === "image" ? () => void nodeActionRefs.current?.regenerateImageNode(nodeId) : undefined,
+      onRunCode: kind === "code" ? () => void nodeActionRefs.current?.runCodeNode(nodeId) : undefined,
       onOpenDetail: (imageUrl?: string) => {
         if (imageUrl) {
           setPreviewImageUrl(imageUrl);

@@ -78,4 +78,7 @@ export type ConversationNodeData = ConversationNodeRecord & {
   onRegenerateCode?: () => void;
   onRegenerateResult?: () => void;
   onRegenerateImage?: () => void;
+  onRunCode?: () => void;
+  codeCollapsed?: boolean;
+  onToggleCodeCollapse?: () => void;
 };
