@@ -262,7 +262,12 @@ async function storeAttachmentBuffer(params: {
     };
 
     await appendMetadataRecord(attachment);
-    await persistSupabaseAttachmentRecord(attachment);
+    try {
+      await persistSupabaseAttachmentRecord(attachment);
+    } catch (error) {
+      console.warn("Failed to persist Supabase attachment metadata; keeping local record.", error);
+      await appendMetadataRecord(attachment);
+    }
     return attachment;
   }
 

@@ -759,31 +759,31 @@ const getNodeRect = (position: XYPosition, size: PlacementOptions) => ({
 const overlaps = (a: ReturnType<typeof getNodeRect>, b: ReturnType<typeof getNodeRect>) =>
   !(a.right + OVERLAP_GAP <= b.left || a.left >= b.right + OVERLAP_GAP || a.bottom + OVERLAP_GAP <= b.top || a.top >= b.bottom + OVERLAP_GAP);
 
-function findAvailablePosition(desired: XYPosition, size: PlacementOptions, nodes: Array<Node<ConversationNodeRecord>>) {
-  const xOffsets = [0, 84, 168, 252, 336, 420, 504, -84, -168, -252, -336, -420, -504];
-  const yOffsets = [0, MIN_VERTICAL_GAP, MIN_VERTICAL_GAP * 2, MIN_VERTICAL_GAP * 3, MIN_VERTICAL_GAP * 4, -MIN_VERTICAL_GAP, -MIN_VERTICAL_GAP * 2, -MIN_VERTICAL_GAP * 3];
-  const candidates = xOffsets.flatMap((xOffset) =>
-    yOffsets.map((yOffset) => ({
-      x: desired.x + xOffset,
-      y: desired.y + yOffset,
-      score: Math.abs(xOffset) + Math.abs(yOffset),
-    })),
-  )
-    .sort((left, right) => left.score - right.score);
+function hasCollisionAt(position: XYPosition, size: PlacementOptions, nodes: Array<Node<ConversationNodeRecord>>) {
+  const rect = getNodeRect(position, size);
+  return nodes.some((node) =>
+    overlaps(
+      rect,
+      getNodeRect(node.position, {
+        width: Number(node.style?.width ?? getNodeSize(node.data.kind).width),
+        height: Number(node.style?.height ?? getNodeSize(node.data.kind).height),
+      }),
+    ),
+  );
+}
 
-  for (const candidatePosition of candidates) {
-    const candidate = { x: candidatePosition.x, y: candidatePosition.y };
-    const candidateRect = getNodeRect(candidate, size);
-    const hasOverlap = nodes.some((node) =>
-      overlaps(
-        candidateRect,
-        getNodeRect(node.position, {
-          width: Number(node.style?.width ?? getNodeSize(node.data.kind).width),
-          height: Number(node.style?.height ?? getNodeSize(node.data.kind).height),
-        }),
-      ),
-    );
-    if (!hasOverlap) return candidate;
+function findAvailablePosition(desired: XYPosition, size: PlacementOptions, nodes: Array<Node<ConversationNodeRecord>>) {
+  const stepX = Math.max(56, Math.round(size.width + MIN_HORIZONTAL_GAP));
+  const xCandidates = [0, stepX, stepX * 2, stepX * 3, -stepX, -stepX * 2, -stepX * 3];
+  const yCandidates = [0, MIN_VERTICAL_GAP, -MIN_VERTICAL_GAP, MIN_VERTICAL_GAP * 2, -MIN_VERTICAL_GAP * 2];
+
+  for (const xOffset of xCandidates) {
+    for (const yOffset of yCandidates) {
+      const candidate = { x: desired.x + xOffset, y: desired.y + yOffset };
+      if (!hasCollisionAt(candidate, size, nodes)) {
+        return candidate;
+      }
+    }
   }
   return desired;
 }
@@ -1618,34 +1618,37 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
   const getInsertedChildPosition = useCallback(
     (parentNode: Node<ConversationNodeRecord>, currentNodes: Array<Node<ConversationNodeRecord>>, currentEdges: Edge[], nextNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => {
-      const siblingCount = currentNodes.filter((node) => node.data.parentId === parentNode.id).length;
       const nextWidth = Number(nextNode.style?.width ?? getNodeSize(nextNode.data.kind).width);
       const nextHeight = Number(nextNode.style?.height ?? getNodeSize(nextNode.data.kind).height);
-      const suggested = getSuggestedChildPosition({
-        nodes: currentNodes,
-        edges: currentEdges,
-        newNode: nextNode,
-        newEdge: buildEdge(parentNode.id, nextNode.id),
-        options: { nodeWidth: nextWidth, nodeHeight: nextHeight, rankSep: 48, nodeSep: 32 },
-      });
       const parentWidth = Number(parentNode.style?.width ?? getNodeSize(parentNode.data.kind).width);
       const minimumX = parentNode.position.x + parentWidth + MIN_HORIZONTAL_GAP;
       const alignedTopY = parentNode.position.y;
-      if (preferredPosition) {
-        return findAvailablePosition(
-          { x: Math.max(preferredPosition.x, minimumX), y: preferredPosition.y },
-          { width: nextWidth, height: nextHeight },
-          currentNodes,
-        );
+      const basePosition = {
+        x: Math.max(preferredPosition?.x ?? minimumX, minimumX),
+        y: preferredPosition?.y ?? alignedTopY,
+      };
+      if (!hasCollisionAt(basePosition, { width: nextWidth, height: nextHeight }, currentNodes)) {
+        return basePosition;
       }
-      return findAvailablePosition(
-        {
-          x: Math.max(minimumX, suggested.x),
-          y: siblingCount === 0 ? alignedTopY : alignedTopY + siblingCount * (nextHeight + 16),
-        },
-        { width: nextWidth, height: nextHeight },
-        currentNodes,
-      );
+
+      const stepX = Math.max(56, nextWidth + MIN_HORIZONTAL_GAP);
+      const stepY = Math.max(MIN_VERTICAL_GAP, nextHeight + 16);
+      const candidates = [
+        { x: minimumX, y: alignedTopY },
+        { x: minimumX, y: alignedTopY + stepY },
+        { x: minimumX, y: alignedTopY - stepY },
+        { x: minimumX + stepX, y: alignedTopY },
+        { x: minimumX + stepX, y: alignedTopY + stepY },
+        { x: minimumX + stepX, y: alignedTopY - stepY },
+      ];
+
+      for (const candidate of candidates) {
+        if (!hasCollisionAt(candidate, { width: nextWidth, height: nextHeight }, currentNodes)) {
+          return candidate;
+        }
+      }
+
+      return basePosition;
     },
     [],
   );
