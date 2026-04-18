@@ -532,6 +532,45 @@ function extractPythonCode(text: string) {
   return text.trim();
 }
 
+function inferRequestedDocumentFormats(prompt: string) {
+  const lowered = prompt.toLowerCase();
+  const formats = new Set<string>();
+
+  if (/\bpdf\b/.test(lowered) || /pdf/.test(lowered)) formats.add("pdf");
+  if (/\bdocx?\b/.test(lowered) || /word/.test(lowered)) formats.add("docx");
+  if (/\bxlsx?\b/.test(lowered) || /\bexcel\b/.test(lowered)) formats.add("xlsx");
+  if (/\bcsv\b/.test(lowered)) formats.add("csv");
+  if (/\bpptx?\b/.test(lowered) || /\bpowerpoint\b/.test(lowered)) formats.add("pptx");
+  return Array.from(formats);
+}
+
+function inferAttachmentFormat(attachment: { name: string; mimeType?: string; kind?: string }) {
+  const name = attachment.name.toLowerCase();
+  const mimeType = attachment.mimeType?.toLowerCase() ?? "";
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+  if (
+    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    name.endsWith(".docx")
+  ) {
+    return "docx";
+  }
+  if (
+    mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    name.endsWith(".xlsx")
+  ) {
+    return "xlsx";
+  }
+  if (mimeType === "text/csv" || name.endsWith(".csv")) return "csv";
+  if (
+    mimeType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    name.endsWith(".pptx")
+  ) {
+    return "pptx";
+  }
+  return attachment.kind ?? "file";
+}
+
 function buildCodeGenerationLineage(lineage: LineageEntry[]) {
   const nextLineage = lineage.map((entry) => ({ ...entry, attachments: entry.attachments ? [...entry.attachments] : [] }));
   const latestUserIndex = [...nextLineage].reverse().findIndex((entry) => entry.kind === "user");
@@ -543,18 +582,45 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
   const originalPrompt = nextLineage[targetIndex].content.trim();
   const inputAttachments = nextLineage[targetIndex].attachments ?? [];
   const hasInputFiles = inputAttachments.length > 0;
+  const requestedFormats = inferRequestedDocumentFormats(originalPrompt);
+  const attachmentNotes = inputAttachments.map((att) => {
+    const actualFormat = inferAttachmentFormat(att);
+    const requestedFormat = requestedFormats[0] ?? null;
+    const mismatch =
+      requestedFormat && requestedFormat !== actualFormat
+        ? ` (user asked for ${requestedFormat.toUpperCase()}, actual file is ${actualFormat.toUpperCase()})`
+        : "";
+    return `- ${att.name}: ${actualFormat}${mismatch}`;
+  });
+  const formatGuidance =
+    requestedFormats.length > 0
+      ? [
+          "",
+          "## Format Handling",
+          `The user request mentions: ${requestedFormats.map((format) => format.toUpperCase()).join(", ")}`,
+          "Prefer the actual attached file format when it differs from the request wording.",
+          "If the user asks for PDF but the real file is DOCX, use python-docx or a DOCX-to-PDF conversion flow.",
+          "If the user asks for DOCX but the real file is PDF, use pypdf / PyPDF2 or a PDF-to-DOCX conversion flow.",
+          "If the user asks for CSV but the real file is XLSX, use pandas.read_excel() or openpyxl.",
+          "If the format is ambiguous, inspect the attachment metadata first and choose the parser by actual MIME type / extension.",
+        ].join("\n")
+      : "";
   
   const fileInstructions = hasInputFiles
     ? [
         "",
         "## Input Files",
         `You have ${inputAttachments.length} input file(s) available:`,
-        inputAttachments.map((att) => `- ${att.name} (${att.kind})`).join("\n"),
+        attachmentNotes.join("\n"),
         "IMPORTANT: Read input files from `/workspace/inputs/` directory.",
         "Check `/workspace/input_manifest.json` for file metadata.",
         "Process these files as needed to fulfill the user's request.",
+        "Treat the actual attachment format as authoritative if it differs from the text of the user request.",
         "For CSV/JSON: use pandas or json to read and process.",
         "For images: use PIL or matplotlib to read and process.",
+        "For DOCX: use `from docx import Document`.",
+        "For PDF: use `pypdf`, `PyPDF2`, or `pymupdf` depending on the task.",
+        "For XLSX: use `pandas.read_excel()` or `openpyxl`.",
         "Save output files to `/workspace/artifacts/` directory.",
       ].join("\n")
     : "";
@@ -572,6 +638,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "Minimize dependencies. Do not import scipy, pandas, sklearn, or any other heavy package unless the task genuinely requires it.",
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib with plt.show().",
+      formatGuidance,
       "When using matplotlib for charts/graphs:",
       "  - Always set figure size: plt.figure(figsize=(10, 6), dpi=100)",
       "  - Use plt.tight_layout() before plt.show() to prevent clipping",
