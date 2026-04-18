@@ -319,6 +319,8 @@ function ConversationNodeComponent({
   const nodeHeight = Math.max(Number(resizePreview?.height ?? height ?? preferredHeight), minHeight);
   const isTargetHandleVisible = isUser || isNote || isCode;
   const isSourceHandleVisible = isAi || isCode || isImage || isFile || isNote;
+  const activeTool = TOOL_OPTIONS.find((tool) => enabledTools.includes(tool.value)) ?? null;
+  const ActiveToolIcon = activeTool?.icon ?? null;
 
   useEffect(() => {
     if (!openPanel) return;
@@ -683,6 +685,7 @@ function ConversationNodeComponent({
                 </div>
               )}
 
+              {!isFile && (
               <div className="mindmap-node-shell__footer node-drag-handle !pt-0" ref={footerControlsRef}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {isUser ? (
@@ -774,20 +777,10 @@ function ConversationNodeComponent({
                             >
                               <SlidersHorizontal className="size-4 text-neutral-400" />
                               <span className="truncate">Tools</span>
-                              {enabledTools.length > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  {enabledTools.slice(0, 2).map((toolName) => {
-                                    const tool = TOOL_OPTIONS.find((t) => t.value === toolName);
-                                    const Icon = tool?.icon;
-                                    return Icon ? <Icon key={toolName} className="size-3 -mx-0.5" /> : null;
-                                  })}
-                                  {enabledTools.length > 2 && <span className="text-[10px]">+{enabledTools.length - 2}</span>}
-                                </div>
-                              )}
                               <ChevronDown className="size-3.5 opacity-40 shrink-0" />
                             </Button>
-                            <div className="size-6 rounded border border-neutral-200 flex items-center justify-center bg-white shadow-sm shrink-0">
-                              <ActivePromptModeIcon className="size-3.5 text-neutral-600" />
+                            <div className="size-6 rounded-full border border-neutral-200 flex items-center justify-center bg-white shadow-sm shrink-0">
+                              {ActiveToolIcon ? <ActiveToolIcon className="size-3.5 text-neutral-600" /> : <ActivePromptModeIcon className="size-3.5 text-neutral-600" />}
                             </div>
                             {openPanel === "tools" && (
                               <div className="mindmap-pill-menu__panel nodrag">
@@ -889,6 +882,7 @@ function ConversationNodeComponent({
                   </div>
                 )}
               </div>
+              )}
             </>
           )}
         </div>

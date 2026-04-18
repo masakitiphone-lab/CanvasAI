@@ -44,7 +44,7 @@ import { useBrowserAuthReady } from "@/hooks/use-browser-auth-ready";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Button } from "@/components/ui/button";
 import { MagicImage } from "@/components/ui/magic-image";
-import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
+import { buildLineageContext, buildMetadataOnlyLineage, type LineageEntry } from "@/lib/build-lineage-context";
 import { authFetch } from "@/lib/auth-fetch";
 import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
 import { getDefaultModelForPromptMode, isSupportedImageModelName, isSupportedTextModelName, normalizeModelName } from "@/lib/model-options";
@@ -533,7 +533,7 @@ function extractPythonCode(text: string) {
 }
 
 function buildCodeGenerationLineage(lineage: LineageEntry[]) {
-  const nextLineage = lineage.map((entry) => ({ ...entry, attachments: entry.attachments ? [...entry.attachments] : [] }));
+  const nextLineage = buildMetadataOnlyLineage(lineage);
   const latestUserIndex = [...nextLineage].reverse().findIndex((entry) => entry.kind === "user");
   if (latestUserIndex === -1) {
     return nextLineage;
@@ -541,7 +541,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
 
   const targetIndex = nextLineage.length - 1 - latestUserIndex;
   const originalPrompt = nextLineage[targetIndex].content.trim();
-  const inputAttachments = nextLineage[targetIndex].attachments ?? [];
+  const inputAttachments = lineage.find((entry) => entry.id === nextLineage[targetIndex].id)?.attachments ?? [];
   const hasInputFiles = inputAttachments.length > 0;
   
   const fileInstructions = hasInputFiles
@@ -557,7 +557,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
         "For images: use PIL or matplotlib to read and process.",
         "Save output files to `/workspace/artifacts/` directory.",
       ].join("\n")
-    : "";
+      : "";
 
   nextLineage[targetIndex] = {
     ...nextLineage[targetIndex],
@@ -1925,6 +1925,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       }
 
       const requestContext = buildPromptRequestLineage(latestParentNode.id, latestNodes, latestEdges, "code");
+      const promptLineage = buildCodeGenerationLineage(requestContext.lineage);
+      const executionAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
       const codeNodeId = crypto.randomUUID();
       const resultNodeId = crypto.randomUUID();
       deletedNodeIdsRef.current.delete(codeNodeId);
@@ -1989,7 +1991,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           (
             await requestGeminiText({
               targetNodeId: latestParentNode.id,
-              lineage: buildCodeGenerationLineage(requestContext.lineage),
+              lineage: promptLineage,
               model: { provider: "gemini", name: latestParentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
               projectId: currentProjectId,
               promptMode: "auto",
@@ -1997,10 +1999,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             })
           ).text,
         );
-        const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
         const result = await executePyodideCode({
           code: generatedCode,
-          attachments: inputAttachments,
+          attachments: executionAttachments,
           contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
         });
@@ -2244,9 +2245,15 @@ setNodes((latest) =>
       const position = parentNode
         ? getInsertedChildPosition(parentNode, latestNodes, latestEdges, draftNode, anchoredPosition)
         : findAvailablePosition(anchoredPosition, baseSize, latestNodes);
-      const nextEdges = parentNode ? latestEdges.concat(buildEdge(parentNode.id, nextNodeId)).map(normalizeEdge) : latestEdges;
       setNodes((latest) => [...latest.map((node) => ({ ...node, selected: false })), { ...draftNode, position, selected: true }]);
-      setEdges(nextEdges);
+      if (parentNode) {
+        requestAnimationFrame(() => {
+          if (!nodesRef.current.some((node) => node.id === nextNodeId)) {
+            return;
+          }
+          setEdges((current) => current.concat(buildEdge(parentNode.id, nextNodeId)).map(normalizeEdge));
+        });
+      }
       setEditingNodeId(nextNodeId);
       setMenu(null);
       setFocusedNodeId(null);
@@ -2425,6 +2432,8 @@ setNodes((latest) =>
       let activeEdgeIds: string[] = [];
       try {
         const requestContext = buildPromptRequestLineage(parentNode.id, nodesRef.current, edgesRef.current, "code");
+        const promptLineage = buildCodeGenerationLineage(requestContext.lineage);
+        const executionAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
         activeEdgeIds = [
           ...requestContext.inputNodeIds.map((sourceId) => `${sourceId}->${parentNode.id}`),
           `${parentNode.id}->${codeNode.id}`,
@@ -2435,7 +2444,7 @@ setNodes((latest) =>
           (
             await requestGeminiText({
               targetNodeId: parentNode.id,
-              lineage: buildCodeGenerationLineage(requestContext.lineage),
+              lineage: promptLineage,
               model: { provider: "gemini", name: parentNode.data.modelConfig?.name ?? GEMINI_TEXT_MODEL_NAME },
               projectId: currentProjectId,
               promptMode: "auto",
@@ -2445,7 +2454,7 @@ setNodes((latest) =>
         );
         const result = await executePyodideCode({
           code: generatedCode,
-          attachments: requestContext.lineage.flatMap((entry) => entry.attachments),
+          attachments: executionAttachments,
           contextText: buildPyodideContextText(requestContext.lineage),
           projectId: currentProjectId,
         });

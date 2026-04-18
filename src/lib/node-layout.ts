@@ -23,8 +23,8 @@ export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
     focusedSize: { width: 760, height: 520 },
   },
   ai: {
-    defaultSize: { width: 760, height: 320 },
-    minSize: { width: 720, height: 220 },
+    defaultSize: { width: 840, height: 420 },
+    minSize: { width: 760, height: 280 },
     focusedSize: { width: 920, height: 760 },
   },
   code: {
@@ -48,8 +48,8 @@ export const NODE_LAYOUT: Record<NodeKind, NodeLayoutConfig> = {
     focusedSize: { width: 760, height: 520 },
   },
   note: {
-    defaultSize: { width: 420, height: 260 },
-    minSize: { width: 380, height: 220 },
+    defaultSize: { width: 480, height: 320 },
+    minSize: { width: 480, height: 320 },
     focusedSize: { width: 760, height: 520 },
   },
 };
