@@ -229,7 +229,19 @@ await micropip.install(${JSON.stringify(normalizedName)})
   return { installed, failed };
 }
 
-async function collectArtifacts(pyodide) {
+async function collectArtifacts(pyodide, stagedInputs) {
+  const stagedInputPaths = Array.from(new Set((stagedInputs || []).flatMap((input) => {
+    const paths = [];
+    if (input.path) {
+      paths.push(input.path);
+    }
+    if (input.name) {
+      paths.push(`/workspace/${input.name}`);
+      paths.push(`/workspace/inputs/${input.name}`);
+    }
+    return paths;
+  })));
+  const stagedInputNames = Array.from(new Set((stagedInputs || []).map((input) => input.name).filter(Boolean)));
   const encoded = await pyodide.runPythonAsync(`
 import base64
 import json
@@ -239,6 +251,8 @@ import os
 WORKSPACE_DIR = "/workspace"
 INPUTS_DIR = os.path.join(WORKSPACE_DIR, "inputs")
 ARTIFACTS_DIR = os.path.join(WORKSPACE_DIR, "artifacts")
+STAGED_INPUT_PATHS = set(${JSON.stringify(stagedInputPaths)})
+STAGED_INPUT_NAMES = set(${JSON.stringify(stagedInputNames)})
 
 items = []
 for root, _, files in os.walk(WORKSPACE_DIR):
@@ -247,6 +261,8 @@ for root, _, files in os.walk(WORKSPACE_DIR):
     for filename in files:
         full_path = os.path.join(root, filename)
         if os.path.basename(full_path) in {"input_manifest.json", "lineage_context.md"}:
+            continue
+        if full_path in STAGED_INPUT_PATHS or filename in STAGED_INPUT_NAMES:
             continue
         with open(full_path, "rb") as handle:
             payload = base64.b64encode(handle.read()).decode("ascii")
@@ -344,7 +360,7 @@ except Exception:
     }
   }
 
-  const files = await collectArtifacts(pyodide);
+  const files = await collectArtifacts(pyodide, stagedInputs);
   return {
     success,
     errorMessage,
