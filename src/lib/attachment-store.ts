@@ -38,6 +38,11 @@ function extensionFromMimeType(mimeType: string) {
   return "";
 }
 
+function buildDataUrl(mimeType: string | undefined, buffer: Buffer) {
+  const resolvedMimeType = mimeType || "application/octet-stream";
+  return `data:${resolvedMimeType};base64,${buffer.toString("base64")}`;
+}
+
 function detectAttachmentKind(file: File): AttachmentKind | null {
   if (file.type.startsWith("image/")) {
     return "image";
@@ -226,6 +231,24 @@ async function storeAttachmentBuffer(params: {
 
     if (uploadResult.error) {
       console.warn("Supabase upload failed; falling back to local attachment storage.", uploadResult.error);
+      if (isProduction()) {
+        const attachment: StoredAttachmentRecord = {
+          id: attachmentId,
+          kind: params.kind,
+          name: params.fileName,
+          mimeType: params.mimeType || undefined,
+          sizeBytes: params.buffer.byteLength,
+          url: buildDataUrl(params.mimeType, params.buffer),
+          storagePath: undefined,
+          createdAt: new Date().toISOString(),
+          ownerUserId: params.ownerUserId,
+          projectId: params.projectId ?? null,
+        };
+
+        await appendMetadataRecord(attachment);
+        return attachment;
+      }
+
       const storedFileName = `${attachmentId}-${safeBaseName}${extension}`;
       await ensureAttachmentStorage();
       const storagePath = path.join(STORAGE_DIR, storedFileName);
@@ -272,7 +295,21 @@ async function storeAttachmentBuffer(params: {
   }
 
   if (isProduction()) {
-    throw new Error("Local attachment storage fallback is disabled in production.");
+    const attachment: StoredAttachmentRecord = {
+      id: attachmentId,
+      kind: params.kind,
+      name: params.fileName,
+      mimeType: params.mimeType || undefined,
+      sizeBytes: params.buffer.byteLength,
+      url: buildDataUrl(params.mimeType, params.buffer),
+      storagePath: undefined,
+      createdAt: new Date().toISOString(),
+      ownerUserId: params.ownerUserId,
+      projectId: params.projectId ?? null,
+    };
+
+    await appendMetadataRecord(attachment);
+    return attachment;
   }
 
   await ensureAttachmentStorage();
@@ -373,9 +410,20 @@ export async function storeGeneratedImageAttachment(params: {
   });
 }
 
-export async function readAttachmentBinary(attachment: Pick<ConversationAttachment, "kind" | "mimeType" | "storagePath">) {
+export async function readAttachmentBinary(attachment: Pick<ConversationAttachment, "kind" | "mimeType" | "storagePath" | "url">) {
   if (attachment.kind === "url") {
     throw new Error("URL attachments cannot be read as binary.");
+  }
+
+  if ("url" in attachment && typeof attachment.url === "string" && attachment.url.startsWith("data:")) {
+    const match = attachment.url.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      throw new Error("Invalid data URL attachment.");
+    }
+    return {
+      mimeType: attachment.mimeType || match[1] || "application/octet-stream",
+      data: Buffer.from(match[2], "base64"),
+    };
   }
 
   const supabase = getSupabaseAdminClient();
