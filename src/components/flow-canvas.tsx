@@ -616,11 +616,14 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
         "Check `/workspace/input_manifest.json` for file metadata.",
         "Process these files as needed to fulfill the user's request.",
         "Treat the actual attachment format as authoritative if it differs from the text of the user request.",
+        "Do not download fonts, binaries, or other resources from the internet.",
+        "Do not use pyodide.http.pyfetch for fonts or external assets unless the task explicitly requires external network access.",
         "For CSV/JSON: use pandas or json to read and process.",
         "For images: use PIL or matplotlib to read and process.",
         "For DOCX: use `from docx import Document`.",
         "For PDF: use `pypdf`, `PyPDF2`, or `pymupdf` depending on the task.",
         "For XLSX: use `pandas.read_excel()` or `openpyxl`.",
+        "If the task is DOCX to PDF conversion, prefer a local-library approach and avoid any code that fetches fonts from the network.",
         "Save output files to `/workspace/artifacts/` directory.",
       ].join("\n")
     : "";
@@ -639,6 +642,8 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib with plt.show().",
       formatGuidance,
+      "Never fetch fonts or other static assets from the network during Pyodide execution.",
+      "If a format conversion needs fonts and no local font is available, fall back to a simpler local output instead of trying to download assets.",
       "When using matplotlib for charts/graphs:",
       "  - Always set figure size: plt.figure(figsize=(10, 6), dpi=100)",
       "  - Use plt.tight_layout() before plt.show() to prevent clipping",
