@@ -8,6 +8,7 @@ import {
   BarChart,
   Bot,
   Camera,
+  Download,
   ChevronDown,
   ChevronRight,
   Clock,
@@ -24,6 +25,7 @@ import {
   Search,
   SlidersHorizontal,
   StickyNote,
+  ExternalLink,
   UserRound,
   X,
 } from "lucide-react";
@@ -118,6 +120,13 @@ const hiddenHandleStyle = {
   opacity: 0,
   pointerEvents: "none" as const,
 };
+
+function getAttachmentKindLabel(kind: ConversationAttachment["kind"]) {
+  if (kind === "image") return "Image";
+  if (kind === "pdf") return "PDF";
+  if (kind === "url") return "URL";
+  return "File";
+}
 
 const getAttachmentSrc = (attachment?: ConversationAttachment) => {
   if (!attachment) {
@@ -290,7 +299,8 @@ function ConversationNodeComponent({
   const imageAttachments = data.attachments.filter((attachment) => attachment.kind === "image");
   const otherAttachments = data.attachments.filter((attachment) => attachment.kind !== "image");
   const inlineImageAttachments = isResult ? imageAttachments : [];
-  const footerAttachments = isUser ? data.attachments : isResult ? otherAttachments : otherAttachments;
+  const resultAttachments = isResult ? data.attachments : [];
+  const footerAttachments = isUser ? data.attachments : isResult ? [] : otherAttachments;
   const activePromptMode = data.promptMode ?? "auto";
   const isCodePromptMode = activePromptMode === "code";
   const modelOptions = activePromptMode === "image-create" ? IMAGE_MODEL_OPTIONS : TEXT_MODEL_OPTIONS;
@@ -638,6 +648,93 @@ function ConversationNodeComponent({
                         </div>
                       ) : (
                         <MarkdownRenderer content="" />
+                      )}
+                      {isResult && resultAttachments.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                              <TerminalSquare className="size-3.5" />
+                              <span>Generated Files</span>
+                            </div>
+                            <span className="text-[11px] text-neutral-400">{resultAttachments.length} items</span>
+                          </div>
+                          <div className="grid gap-3">
+                            {resultAttachments.map((attachment) => {
+                              const src = getAttachmentSrc(attachment);
+                              const isImageAttachment = attachment.kind === "image";
+                              const canDownload = Boolean(src);
+                              const Icon = attachmentIcon(attachment.kind);
+
+                              if (isImageAttachment) {
+                                return (
+                                  <button
+                                    key={attachment.id}
+                                    type="button"
+                                    className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-sm transition hover:border-neutral-300 hover:shadow-md"
+                                    onClick={() => data.onOpenDetail?.(src)}
+                                  >
+                                    <div className="relative">
+                                      <LazyAttachmentImage
+                                        attachment={attachment}
+                                        alt={attachment.name}
+                                        className="aspect-[4/3] w-full"
+                                      />
+                                      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-linear-to-t from-black/65 via-black/20 to-transparent px-4 py-3 text-white">
+                                        <div className="min-w-0">
+                                          <div className="truncate text-[13px] font-semibold">{attachment.name}</div>
+                                          <div className="text-[11px] opacity-80">{getAttachmentKindLabel(attachment.kind)}</div>
+                                        </div>
+                                        <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
+                                          Preview
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <div key={attachment.id} className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-50 text-neutral-500">
+                                    <Icon className="size-5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-[13px] font-semibold text-neutral-800">{attachment.name}</div>
+                                    <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                                      <span>{getAttachmentKindLabel(attachment.kind)}</span>
+                                      {attachment.sizeBytes ? <span>• {Math.ceil(attachment.sizeBytes / 1024)} KB</span> : null}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {canDownload && (
+                                      <a
+                                        href={src}
+                                        download={attachment.name}
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-[12px] font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <Download className="size-3.5" />
+                                        Download
+                                      </a>
+                                    )}
+                                    {src && (
+                                      <a
+                                        href={src}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-[12px] font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                                      >
+                                        <ExternalLink className="size-3.5" />
+                                        Open
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : (

@@ -55,6 +55,7 @@ import type {
   ConversationNodeData,
   ConversationPromptMode,
   ConversationNodeRecord,
+  NodeStatus,
   ConversationToolName,
 } from "@/lib/canvas-types";
 import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
@@ -135,6 +136,7 @@ const OVERLAP_GAP = 24;
 const GEMINI_TEXT_MODEL_NAME: ConversationModelName = "gemini-3-flash-preview";
 const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3.1-flash-image-preview";
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
+const VIEWPORT_CACHE_PREFIX = "canvas-viewport-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
 const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
@@ -532,6 +534,20 @@ function extractPythonCode(text: string) {
   return text.trim();
 }
 
+function buildArtifactNodeRecord(attachment: ConversationAttachment): ConversationNodeRecord {
+  const isImage = attachment.kind === "image";
+  return {
+    parentId: null,
+    kind: isImage ? "image" : "file",
+    content: attachment.name,
+    attachments: [attachment],
+    status: "idle",
+    createdAt: timestampLabel(),
+    isRoot: false,
+    isPositionPinned: false,
+  };
+}
+
 function inferRequestedDocumentFormats(prompt: string) {
   const lowered = prompt.toLowerCase();
   const formats = new Set<string>();
@@ -912,6 +928,22 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const getProjectCacheKey = useCallback(
     (projectId: string) => `${PERSIST_CACHE_PREFIX}${userId ? `${userId}.` : ""}${projectId}`,
     [userId],
+  );
+
+  const getViewportCacheKey = useCallback(
+    (projectId: string) => `${VIEWPORT_CACHE_PREFIX}${userId ? `${userId}.` : ""}${projectId}`,
+    [userId],
+  );
+
+  const storeViewportInCache = useCallback(
+    (projectId: string, nextViewport: { x: number; y: number; zoom: number }) => {
+      try {
+        localStorage.setItem(getViewportCacheKey(projectId), JSON.stringify(nextViewport));
+      } catch (error) {
+        console.warn("Failed to persist canvas viewport", error);
+      }
+    },
+    [getViewportCacheKey],
   );
 
   const applySnapshotToCanvas = useCallback((snapshot: CanvasSnapshotCacheEntry) => {
@@ -2143,7 +2175,40 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           `${latestParentNode.id}->${codeNodeId}`,
           `${codeNodeId}->${resultNodeId}`,
         ]);
-setNodes((latest) =>
+        const artifactNodes: Array<Node<ConversationNodeRecord>> = [];
+        const artifactEdges: Edge[] = [];
+        const resultNode = nodesRef.current.find((node) => node.id === resultNodeId);
+        const resultWidth = Number(resultNode?.style?.width ?? getNodeDefaultSize("result").width);
+        const resultHeight = Number(resultNode?.style?.height ?? getNodeDefaultSize("result").height);
+        let cursorX = resultWidth + 56;
+        let cursorY = 0;
+
+        for (const artifact of result.attachments) {
+          const artifactNodeId = crypto.randomUUID();
+          const artifactRecord = buildArtifactNodeRecord(artifact);
+          const draftArtifactNode = buildNode(artifactNodeId, { x: 0, y: 0 }, {
+            ...artifactRecord,
+            parentId: resultNodeId,
+          });
+          const preferredPosition = {
+            x: (resultNode?.position.x ?? latestParentNode.position.x) + cursorX,
+            y: (resultNode?.position.y ?? latestParentNode.position.y) + cursorY,
+          };
+          const positionedArtifactNode = {
+            ...draftArtifactNode,
+            position: preferredPosition,
+            selected: false,
+          };
+          artifactNodes.push(positionedArtifactNode);
+          artifactEdges.push(buildEdge(resultNodeId, artifactNodeId));
+          cursorY += Number(positionedArtifactNode.style?.height ?? getNodeDefaultSize(artifactRecord.kind).height) + 24;
+          if (cursorY > Math.max(480, resultHeight)) {
+            cursorY = 0;
+            cursorX += Number(positionedArtifactNode.style?.width ?? getNodeDefaultSize(artifactRecord.kind).width) + 32;
+          }
+        }
+
+        setNodes((latest) =>
           latest.map((node) =>
             node.id === codeNodeId
               ? {
@@ -2179,13 +2244,16 @@ setNodes((latest) =>
                   data: {
                     ...node.data,
                     content: buildResultNodeContent(result),
-                    attachments: result.attachments,
-                    status: "idle",
+                    attachments: result.attachments as ConversationAttachment[],
+                    status: "idle" as NodeStatus,
                     },
                   }
               : node,
-          ),
+          ).concat(artifactNodes) as Array<Node<ConversationNodeRecord>>,
         );
+        if (artifactEdges.length > 0) {
+          setEdges((current) => current.concat(artifactEdges).map(normalizeEdge));
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed;
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
@@ -2915,33 +2983,71 @@ print("================================")
             uploadedArtifacts.push(...artifacts);
           }
 
+          const artifactNodes: Array<Node<ConversationNodeRecord>> = [];
+          const artifactEdges: Edge[] = [];
+          const resultWidth = Number(resultNode.style?.width ?? getNodeDefaultSize("result").width);
+          const resultHeight = Number(resultNode.style?.height ?? getNodeDefaultSize("result").height);
+          let cursorX = resultWidth + 56;
+          let cursorY = 0;
+
+          for (const artifact of uploadedArtifacts) {
+            const artifactNodeId = crypto.randomUUID();
+            const artifactRecord = buildArtifactNodeRecord(artifact);
+            const draftArtifactNode = buildNode(artifactNodeId, { x: 0, y: 0 }, {
+              ...artifactRecord,
+              parentId: resultNode.id,
+            });
+            const preferredPosition = {
+              x: resultNode.position.x + cursorX,
+              y: resultNode.position.y + cursorY,
+            };
+            const positionedArtifactNode = {
+              ...draftArtifactNode,
+              position: preferredPosition,
+              selected: false,
+            };
+            artifactNodes.push(positionedArtifactNode);
+            artifactEdges.push(buildEdge(resultNode.id, artifactNodeId));
+            cursorY += Number(positionedArtifactNode.style?.height ?? getNodeDefaultSize(artifactRecord.kind).height) + 24;
+            if (cursorY > Math.max(480, resultHeight)) {
+              cursorY = 0;
+              cursorX += Number(positionedArtifactNode.style?.width ?? getNodeDefaultSize(artifactRecord.kind).width) + 32;
+            }
+          }
+
           setNodes((current) =>
-            current.map((node) =>
-              node.id === codeNode.id
-                ? {
-                    ...node,
-                    data: {
-                      ...node.data,
-                      content: buildCodeNodeContent({
-                        code: generatedCode,
-                        packages: result.detectedPackages,
-                        stagedInputs: result.stagedInputs,
-                      }),
-                    },
-                  }
-                : node.id === resultNode.id
+            [
+              ...current.map((node) =>
+                node.id === codeNode.id
                   ? {
                       ...node,
                       data: {
                         ...node.data,
-                        content: resultContent,
-                        attachments: uploadedArtifacts,
-                        status: result.success ? "idle" : "error",
+                        content: buildCodeNodeContent({
+                          code: generatedCode,
+                          packages: result.detectedPackages,
+                          stagedInputs: result.stagedInputs,
+                        }),
                       },
                     }
-                  : node,
-            ),
+                  : node.id === resultNode.id
+                    ? {
+                        ...node,
+                        data: {
+                          ...node.data,
+                          content: resultContent,
+                          attachments: [] as ConversationAttachment[],
+                          status: (result.success ? "idle" : "error") as NodeStatus,
+                        },
+                      }
+                    : node,
+              ),
+              ...artifactNodes,
+            ],
           );
+          if (artifactEdges.length > 0) {
+            setEdges((current) => current.concat(artifactEdges).map(normalizeEdge));
+          }
         } catch (error) {
           setActiveGenerationEdges([]);
           console.error("Code execution failed:", error);
@@ -3258,12 +3364,23 @@ print("================================")
       setFocusedNodeId(null);
       setEditingNodeId(null);
       const cacheKey = getProjectCacheKey(currentProjectId);
+      const viewportCacheKey = getViewportCacheKey(currentProjectId);
       const freshCanvas = consumeFreshCanvasFlag(currentProjectId, userId);
       setIsFreshCanvas(freshCanvas);
       setIsHydratingCanvas(true);
 
       const memoryCached = projectSnapshotCacheRef.current.get(currentProjectId);
       const localCached = localStorage.getItem(cacheKey);
+      const viewportCachedRaw = localStorage.getItem(viewportCacheKey);
+      const viewportCached = viewportCachedRaw
+        ? (() => {
+          try {
+            return JSON.parse(viewportCachedRaw) as { x: number; y: number; zoom: number };
+          } catch {
+            return null;
+          }
+        })()
+        : null;
       const cachedSnapshot = memoryCached
         ? memoryCached
         : localCached
@@ -3339,6 +3456,12 @@ print("================================")
           setIsFreshCanvas(false);
         }
       }
+
+      if (!cancelled && viewportCached) {
+        requestAnimationFrame(() => {
+          void reactFlow.setViewport(viewportCached, { duration: 0 });
+        });
+      }
     }
     void hydrate();
 
@@ -3351,7 +3474,7 @@ print("================================")
       cancelled = true; 
       clearTimeout(safetyTimer);
     };
-  }, [applySnapshotToCanvas, currentProjectId, getProjectCacheKey, isBrowserAuthReady, setEdges, storeSnapshotInCaches, userId]);
+  }, [applySnapshotToCanvas, currentProjectId, getProjectCacheKey, getViewportCacheKey, isBrowserAuthReady, reactFlow, setEdges, storeSnapshotInCaches, userId]);
 
   useEffect(() => {
     const handlePasteGlobal = (event: ClipboardEvent) => {
@@ -3538,6 +3661,13 @@ print("================================")
     [closeMenu, createFileNodesFromFiles],
   );
 
+  const handleMoveEnd = useCallback(() => {
+    if (!isBrowserAuthReady || isHydratingCanvas || !currentProjectId) {
+      return;
+    }
+    storeViewportInCache(currentProjectId, { x: viewport.x, y: viewport.y, zoom: viewport.zoom });
+  }, [currentProjectId, isBrowserAuthReady, isHydratingCanvas, storeViewportInCache, viewport.x, viewport.y, viewport.zoom]);
+
   return (
     <section className="canvas-shell" aria-label="Conversation canvas">
 
@@ -3600,6 +3730,7 @@ print("================================")
           }}
           onPaneContextMenu={handlePaneContextMenu}
           onMoveStart={closeMenu}
+          onMoveEnd={handleMoveEnd}
           onConnect={handleConnect}
           onReconnect={handleReconnect}
           onConnectStart={handleConnectStart}
