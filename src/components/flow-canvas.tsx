@@ -104,6 +104,11 @@ type CanvasHistorySnapshot = {
   nodes: Array<Node<ConversationNodeRecord>>;
   edges: Edge[];
 };
+type SavedViewport = {
+  x: number;
+  y: number;
+  zoom: number;
+};
 type PromptRequestContext = {
   lineage: LineageEntry[];
   inputNodeIds: string[];
@@ -137,6 +142,7 @@ const GEMINI_IMAGE_MODEL_NAME: ConversationModelName = "gemini-3.1-flash-image-p
 const PERSIST_CACHE_PREFIX = "canvas-cache-v1:";
 const ACTIVE_CANVAS_KEY_PREFIX = "canvasai.active-canvas";
 const NEW_CANVAS_KEY_PREFIX = "canvasai.new-canvas";
+const VIEWPORT_CACHE_PREFIX = "canvasai.viewport";
 const DEFAULT_PROJECT_ID = process.env.NEXT_PUBLIC_DEFAULT_PROJECT_ID ?? "canvasai-mvp";
 const FILE_NODE_UPLOAD_ERROR = CANVAS_COPY.fileUploadFailed;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
@@ -157,6 +163,10 @@ const TEXT_SELECTION_BLOCKER_SELECTOR = [
 
 function getNewCanvasKey(userId?: string) {
   return `${NEW_CANVAS_KEY_PREFIX}.${userId ?? "anonymous"}`;
+}
+
+function getViewportCacheKey(projectId: string, userId?: string) {
+  return `${VIEWPORT_CACHE_PREFIX}.${userId ?? "anonymous"}.${projectId}`;
 }
 
 function consumeFreshCanvasFlag(projectId: string, userId?: string) {
@@ -819,6 +829,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const deletedNodeIdsRef = useRef<Set<string>>(new Set());
   const focusedNodeIdRef = useRef<string | null>(null);
   const focusRestoreViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const restoredViewportRef = useRef<string | null>(null);
   const streamedTextRef = useRef<Record<string, { text: string; runId: string }>>({});
   const streamedTextFrameRef = useRef<number | null>(null);
   const nodeHandlerCacheRef = useRef<Map<string, NodeHandlerSet>>(new Map());
@@ -935,6 +946,37 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
     },
     [getProjectCacheKey],
   );
+
+  const storeViewportInCache = useCallback((projectId: string, viewport: SavedViewport) => {
+    try {
+      localStorage.setItem(getViewportCacheKey(projectId, userId), JSON.stringify(viewport));
+    } catch (error) {
+      console.warn("Failed to store canvas viewport", error);
+    }
+  }, [userId]);
+
+  const readViewportFromCache = useCallback((projectId: string): SavedViewport | null => {
+    try {
+      const raw = localStorage.getItem(getViewportCacheKey(projectId, userId));
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as Partial<SavedViewport>;
+      if (
+        typeof parsed.x !== "number" ||
+        typeof parsed.y !== "number" ||
+        typeof parsed.zoom !== "number"
+      ) {
+        return null;
+      }
+
+      return { x: parsed.x, y: parsed.y, zoom: parsed.zoom };
+    } catch (error) {
+      console.warn("Failed to read canvas viewport", error);
+      return null;
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (!isBrowserAuthReady) {
@@ -2653,44 +2695,25 @@ setNodes((latest) =>
         if (!targetNode || targetNode.data.kind !== "code" || !targetNode.data.parentId) return;
 
         const codeNode = targetNode;
-        const parentNode = nodesRef.current.find((n) => n.id === codeNode.data.parentId);
-        
-        console.log("=== Code Node Parent Check ===");
-        console.log("targetNode ID:", targetNode?.id);
-        console.log("codeNode ID:", codeNode?.id);
-        console.log("codeNode.parentId:", codeNode?.data?.parentId);
-        console.log("parentNode:", parentNode);
-        console.log("parentNode exists:", !!parentNode);
-        if (parentNode) {
-          console.log("parentNode kind:", parentNode.data.kind);
-          console.log("parentNode attachments:", parentNode.data.attachments);
-        }
-        console.log("================================");
-        
-        if (!parentNode || parentNode.data.kind !== "user") {
-          console.log("Early return: parentNode check failed");
+        const promptNode = nodesRef.current.find((n) => n.id === codeNode.data.parentId);
+        if (!promptNode || promptNode.data.kind !== "user") {
           return;
         }
+
+        const lineage = buildLineageContext(nodesRef.current, promptNode.id);
+        const stagedAttachments = lineage.flatMap((entry) =>
+          (entry.attachments ?? []).filter((attachment) => {
+            if (attachment.id.startsWith("temp-")) {
+              return false;
+            }
+            return Boolean(attachment.url);
+          }),
+        );
 
         const generatedCodeMatch = codeNode.data.content.match(/```python\n([\s\S]*?)```/);
         const originalCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
         if (!originalCode) return;
-
-        // Inject file detection code at the beginning
-        const fileDetectionCode = `
-import os
-
-# Available input files in /workspace/inputs/
-_input_files = os.listdir('/workspace/inputs/')
-print("=== Available Input Files ===")
-for f in _input_files:
-    print(f"  - {f}")
-print("================================")
-
-# Your code starts below:
-`;
-
-        const generatedCode = fileDetectionCode + originalCode;
+        const generatedCode = originalCode;
 
         const resultNode = nodesRef.current.find((n) => n.data.kind === "result" && n.data.parentId === codeNode.id);
         if (!resultNode) return;
@@ -2719,49 +2742,18 @@ print("================================")
         );
 
         const activeEdgeIds = [
-          `${parentNode.id}->${codeNode.id}`,
+          ...lineage
+            .filter((entry) => entry.parentId)
+            .map((entry) => `${entry.parentId}->${entry.id}`),
           `${codeNode.id}->${resultNode.id}`,
         ];
         setActiveGenerationEdges(activeEdgeIds);
 
         try {
-          console.log("=== Entered try block ===");
-          const contextText = parentNode.data.content;
-          const codeNodeAttachments = codeNode.data.attachments;
-          const parentAttachments = parentNode.data.attachments;
-
-          console.log("parentNode.data.attachments direct:", parentAttachments);
-
-          // Filter out failed uploads (temp- attachments without valid URLs)
-          const validCodeNodeAttachments = codeNodeAttachments.filter(
-            (att) => att.id.startsWith("temp-") ? false : (att.url && att.storagePath)
-          );
-          const validParentAttachments = parentAttachments.filter(
-            (att) => att.id.startsWith("temp-") ? false : (att.url && att.storagePath)
-          );
-          const allAttachments = [...validCodeNodeAttachments, ...validParentAttachments];
-
-          console.log("=== Code Node Execution Debug ===");
-          console.log("Parent node found:", !!parentNode);
-          console.log("Parent node ID:", parentNode?.id);
-          console.log("Parent node kind:", parentNode?.data.kind);
-          console.log("Parent node content:", parentNode?.data.content?.substring(0, 50));
-          console.log("Code node attachments (raw):", codeNodeAttachments);
-          console.log("Code node attachments (valid):", validCodeNodeAttachments);
-          console.log("Parent attachments (raw):", parentAttachments);
-          console.log("Parent attachments (valid):", validParentAttachments);
-          console.log("All attachments (valid):", allAttachments);
-          console.log("===================================");
-
-          if (allAttachments.length === 0 && (codeNodeAttachments.length > 0 || parentAttachments.length > 0)) {
-            // Some attachments failed to upload
-            console.warn("Some attachments failed to upload, proceeding with available ones");
-          }
-
           const result = await executePyodideCode({
             code: generatedCode,
-            attachments: allAttachments,
-            contextText,
+            attachments: stagedAttachments,
+            contextText: buildPyodideContextText(lineage),
           });
 
           setActiveGenerationEdges([]);
@@ -2791,15 +2783,15 @@ print("================================")
               node.id === codeNode.id
                 ? {
                     ...node,
-                    data: {
-                      ...node.data,
-                      content: buildCodeNodeContent({
-                        code: generatedCode,
-                        packages: result.detectedPackages,
-                        stagedInputs: result.stagedInputs,
-                      }),
-                    },
-                  }
+                      data: {
+                        ...node.data,
+                        content: buildCodeNodeContent({
+                          code: generatedCode,
+                          packages: result.detectedPackages,
+                          stagedInputs: result.stagedInputs,
+                        }),
+                      },
+                    }
                 : node.id === resultNode.id
                   ? {
                       ...node,
@@ -3116,6 +3108,14 @@ print("================================")
     });
   }, [createEditableUserNode, nodes, reactFlow]);
 
+  const handleMoveEnd = useCallback(() => {
+    storeViewportInCache(currentProjectId, {
+      x: viewport.x,
+      y: viewport.y,
+      zoom: viewport.zoom,
+    });
+  }, [currentProjectId, storeViewportInCache, viewport.x, viewport.y, viewport.zoom]);
+
   useEffect(() => {
     if (!isBrowserAuthReady) {
       return;
@@ -3223,6 +3223,32 @@ print("================================")
       clearTimeout(safetyTimer);
     };
   }, [applySnapshotToCanvas, currentProjectId, getProjectCacheKey, isBrowserAuthReady, setEdges, storeSnapshotInCaches, userId]);
+
+  useEffect(() => {
+    if (!isBrowserAuthReady || isHydratingCanvas) {
+      return;
+    }
+
+    if (nodes.length === 0 && edges.length === 0) {
+      return;
+    }
+
+    if (restoredViewportRef.current === currentProjectId) {
+      return;
+    }
+
+    restoredViewportRef.current = currentProjectId;
+    const savedViewport = readViewportFromCache(currentProjectId);
+
+    requestAnimationFrame(() => {
+      if (savedViewport) {
+        void reactFlow.setViewport(savedViewport, { duration: 0 });
+        return;
+      }
+
+      void reactFlow.fitView({ padding: 0.18, duration: 0 });
+    });
+  }, [currentProjectId, edges.length, isBrowserAuthReady, isHydratingCanvas, nodes.length, readViewportFromCache, reactFlow]);
 
   useEffect(() => {
     const handlePasteGlobal = (event: ClipboardEvent) => {
@@ -3471,6 +3497,7 @@ print("================================")
           }}
           onPaneContextMenu={handlePaneContextMenu}
           onMoveStart={closeMenu}
+          onMoveEnd={handleMoveEnd}
           onConnect={handleConnect}
           onReconnect={handleReconnect}
           onConnectStart={handleConnectStart}

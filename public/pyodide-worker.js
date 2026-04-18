@@ -21,6 +21,7 @@ const PACKAGE_NAME_MAP = {
   cv2: "opencv-python",
   Crypto: "pycryptodome",
   dateutil: "python-dateutil",
+  docx: "python-docx",
   fitz: "pymupdf",
   sklearn: "scikit-learn",
   skimage: "scikit-image",
