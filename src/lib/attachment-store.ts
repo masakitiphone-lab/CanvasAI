@@ -225,7 +225,31 @@ async function storeAttachmentBuffer(params: {
     });
 
     if (uploadResult.error) {
-      throw new Error("Failed to upload attachment to Supabase Storage.");
+      if (isProduction()) {
+        throw new Error("Failed to upload attachment to Supabase Storage.");
+      }
+
+      console.warn("Supabase upload failed; falling back to local attachment storage.", uploadResult.error);
+      const storedFileName = `${attachmentId}-${safeBaseName}${extension}`;
+      await ensureAttachmentStorage();
+      const storagePath = path.join(STORAGE_DIR, storedFileName);
+      await writeFile(storagePath, params.buffer);
+
+      const attachment: StoredAttachmentRecord = {
+        id: attachmentId,
+        kind: params.kind,
+        name: params.fileName,
+        mimeType: params.mimeType || undefined,
+        sizeBytes: params.buffer.byteLength,
+        url: `/storage/attachments/${storedFileName}`,
+        storagePath: storagePath.replaceAll("\\", "/"),
+        createdAt: new Date().toISOString(),
+        ownerUserId: params.ownerUserId,
+        projectId: params.projectId ?? null,
+      };
+
+      await appendMetadataRecord(attachment);
+      return attachment;
     }
 
     const attachment: StoredAttachmentRecord = {

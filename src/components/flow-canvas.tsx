@@ -1052,6 +1052,56 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       nodes: JSON.parse(JSON.stringify(selectedNodes)),
       edges: JSON.parse(JSON.stringify(selectedEdges)),
     };
+
+    const payload = {
+      version: 1,
+      app: "CanvasAI",
+      exportedAt: new Date().toISOString(),
+      nodes: selectedNodes.map((node) => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        size: {
+          width: node.measured?.width ?? node.width ?? null,
+          height: node.measured?.height ?? node.height ?? null,
+        },
+        data: {
+          parentId: node.data.parentId,
+          kind: node.data.kind,
+          content: node.data.content,
+          status: node.data.status,
+          createdAt: node.data.createdAt,
+          isRoot: node.data.isRoot,
+          isPositionPinned: node.data.isPositionPinned,
+          promptMode: node.data.promptMode ?? null,
+          enabledTools: node.data.enabledTools ?? [],
+          modelConfig: node.data.modelConfig ?? null,
+          taskGoal: node.data.taskGoal ?? null,
+          attachments: node.data.attachments.map((attachment) => ({
+            id: attachment.id,
+            kind: attachment.kind,
+            name: attachment.name,
+            mimeType: attachment.mimeType ?? null,
+            sizeBytes: attachment.sizeBytes ?? null,
+            url: attachment.url,
+            storagePath: attachment.storagePath ?? null,
+            createdAt: attachment.createdAt,
+          })),
+        },
+      })),
+      edges: selectedEdges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle ?? null,
+        targetHandle: edge.targetHandle ?? null,
+        type: edge.type ?? null,
+      })),
+    };
+
+    void navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).catch(() => {
+      // System clipboard can fail in some browser contexts. Internal paste still works.
+    });
   }, [nodes, edges]);
 
   const cutSelected = useCallback(() => {
@@ -1259,7 +1309,11 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
   const buildOptimisticAttachment = useCallback((file: File): ConversationAttachment => ({
     id: `temp-${crypto.randomUUID()}`,
-    kind: file.type.startsWith("image/") ? "image" : "pdf",
+    kind: file.type.startsWith("image/")
+      ? "image"
+      : file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+        ? "pdf"
+        : "file",
     name: file.name,
     url: "",
     previewUrl: URL.createObjectURL(file),

@@ -59,7 +59,7 @@ os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 function sanitizeFilename(name, fallback) {
   const trimmed = (name || "").trim();
   const candidate = trimmed || fallback;
-  return candidate.replace(/[^\w.\-]+/g, "_");
+  return candidate.replace(/[\/\\:\0]/g, "_");
 }
 
 function splitPackageList(raw) {
@@ -140,6 +140,7 @@ for entry in os.listdir(WORKSPACE_DIR):
 
 async function stageAttachments(pyodide, attachments, contextText) {
   const staged = [];
+  const usedNames = new Set();
 
   for (const attachment of attachments) {
     if (attachment.kind === "url") {
@@ -159,7 +160,19 @@ async function stageAttachments(pyodide, attachments, contextText) {
 
     const buffer = await response.arrayBuffer();
     const ext = attachment.name.split('.').pop() || 'bin';
-    const filePath = `/workspace/inputs/${sanitizeFilename(attachment.name, attachment.kind === "image" ? `image.${ext}` : `input.${ext}`)}`;
+    const baseName = sanitizeFilename(attachment.name, attachment.kind === "image" ? `image.${ext}` : `input.${ext}`);
+    let fileName = baseName;
+    let suffix = 1;
+    while (usedNames.has(fileName)) {
+      const dotIndex = baseName.lastIndexOf(".");
+      const stem = dotIndex > 0 ? baseName.slice(0, dotIndex) : baseName;
+      const extension = dotIndex > 0 ? baseName.slice(dotIndex) : "";
+      fileName = `${stem} (${suffix})${extension}`;
+      suffix += 1;
+    }
+    usedNames.add(fileName);
+
+    const filePath = `/workspace/inputs/${fileName}`;
     pyodide.FS.writeFile(filePath, new Uint8Array(buffer), { canOwn: true });
     staged.push({
       name: attachment.name,
