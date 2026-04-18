@@ -174,6 +174,7 @@ async function stageAttachments(pyodide, attachments, contextText) {
 
     const filePath = `/workspace/inputs/${fileName}`;
     pyodide.FS.writeFile(filePath, new Uint8Array(buffer), { canOwn: true });
+    pyodide.FS.writeFile(`/workspace/${fileName}`, new Uint8Array(buffer), { canOwn: true });
     staged.push({
       name: attachment.name,
       path: filePath,
