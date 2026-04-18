@@ -225,10 +225,6 @@ async function storeAttachmentBuffer(params: {
     });
 
     if (uploadResult.error) {
-      if (isProduction()) {
-        throw new Error("Failed to upload attachment to Supabase Storage.");
-      }
-
       console.warn("Supabase upload failed; falling back to local attachment storage.", uploadResult.error);
       const storedFileName = `${attachmentId}-${safeBaseName}${extension}`;
       await ensureAttachmentStorage();

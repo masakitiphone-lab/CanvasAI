@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { requireSessionUser } from "@/lib/api-auth";
 import { findStoredAttachmentById, findStoredAttachmentByPath } from "@/lib/attachment-store";
@@ -101,6 +102,16 @@ export async function GET(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient();
+
+  if (attachment.storage_path.startsWith(process.cwd())) {
+    const data = await readFile(attachment.storage_path);
+    return new NextResponse(data, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Cache-Control": "private, max-age=60",
+      },
+    });
+  }
 
   if (!supabase) {
     return NextResponse.json(
