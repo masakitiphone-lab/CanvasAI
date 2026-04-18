@@ -22,6 +22,7 @@ const PACKAGE_NAME_MAP = {
   Crypto: "pycryptodome",
   dateutil: "python-dateutil",
   fitz: "pymupdf",
+  docx: "python-docx",
   sklearn: "scikit-learn",
   skimage: "scikit-image",
   yaml: "PyYAML",
