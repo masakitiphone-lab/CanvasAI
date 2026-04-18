@@ -46,7 +46,7 @@ import { Button } from "@/components/ui/button";
 import { MagicImage } from "@/components/ui/magic-image";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
 import { authFetch } from "@/lib/auth-fetch";
-import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
+import { layoutNodesForMindMap } from "@/lib/graph-layout";
 import { getDefaultModelForPromptMode, isSupportedImageModelName, isSupportedTextModelName, normalizeModelName } from "@/lib/model-options";
 import type {
   ConversationAttachment,
@@ -1564,19 +1564,22 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
   const getInsertedChildPosition = useCallback(
     (parentNode: Node<ConversationNodeRecord>, currentNodes: Array<Node<ConversationNodeRecord>>, currentEdges: Edge[], nextNode: Node<ConversationNodeRecord>, preferredPosition?: XYPosition) => {
-      const siblingCount = currentNodes.filter((node) => node.data.parentId === parentNode.id).length;
       const nextWidth = Number(nextNode.style?.width ?? getNodeSize(nextNode.data.kind).width);
       const nextHeight = Number(nextNode.style?.height ?? getNodeSize(nextNode.data.kind).height);
-      const suggested = getSuggestedChildPosition({
-        nodes: currentNodes,
-        edges: currentEdges,
-        newNode: nextNode,
-        newEdge: buildEdge(parentNode.id, nextNode.id),
-        options: { nodeWidth: nextWidth, nodeHeight: nextHeight, rankSep: 48, nodeSep: 32 },
-      });
       const parentWidth = Number(parentNode.style?.width ?? getNodeSize(parentNode.data.kind).width);
       const minimumX = parentNode.position.x + parentWidth + MIN_HORIZONTAL_GAP;
       const alignedTopY = parentNode.position.y;
+      const rightCandidate = { x: minimumX, y: alignedTopY };
+      const rightCandidateFree = !currentNodes.some((node) =>
+        overlaps(
+          getNodeRect(rightCandidate, { width: nextWidth, height: nextHeight }),
+          getNodeRect(node.position, {
+            width: Number(node.style?.width ?? getNodeSize(node.data.kind).width),
+            height: Number(node.style?.height ?? getNodeSize(node.data.kind).height),
+          }),
+        ),
+      );
+
       if (preferredPosition) {
         return findAvailablePosition(
           { x: Math.max(preferredPosition.x, minimumX), y: preferredPosition.y },
@@ -1584,10 +1587,15 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           currentNodes,
         );
       }
+
+      if (rightCandidateFree) {
+        return rightCandidate;
+      }
+
       return findAvailablePosition(
         {
-          x: Math.max(minimumX, suggested.x),
-          y: siblingCount === 0 ? alignedTopY : alignedTopY + siblingCount * (nextHeight + 16),
+          x: minimumX,
+          y: alignedTopY,
         },
         { width: nextWidth, height: nextHeight },
         currentNodes,

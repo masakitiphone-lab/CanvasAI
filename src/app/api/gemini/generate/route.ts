@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { readAttachmentBinary } from "@/lib/attachment-store";
 import { requireSessionUser } from "@/lib/api-auth";
 import { serializeError, writeAuditLog } from "@/lib/audit-log";
 import { consumeCredits, estimateCreditCost, refundCredits } from "@/lib/credit-ledger";
@@ -34,6 +33,7 @@ type LineageEntry = {
     url: string;
     mimeType?: string;
     storagePath?: string;
+    sizeBytes?: number;
   }>;
 };
 
@@ -59,6 +59,16 @@ type UploadedGeminiFile = {
   name: string;
   uri: string;
   mimeType: string;
+};
+
+type AttachmentMetadata = {
+  id: string;
+  kind: "image" | "pdf" | "url" | "file";
+  name: string;
+  url: string;
+  mimeType?: string;
+  storagePath?: string;
+  sizeBytes?: number;
 };
 
 type GeminiGenerateResponse = {
@@ -225,6 +235,16 @@ async function deleteGeminiFile(apiKey: string, fileName: string) {
   });
 }
 
+function buildAttachmentMetadataLine(attachment: AttachmentMetadata) {
+  return [
+    `- ${attachment.name}`,
+    `kind=${attachment.kind}`,
+    attachment.mimeType ? `mime=${attachment.mimeType}` : null,
+    attachment.sizeBytes != null ? `size=${attachment.sizeBytes}B` : null,
+    attachment.storagePath ? `path=${attachment.storagePath}` : null,
+  ].filter(Boolean).join(" ");
+}
+
 async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
   const uploadedFiles: UploadedGeminiFile[] = [];
   const parts: Array<
@@ -235,7 +255,8 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
     {
       text: [
         "Conversation history follows.",
-        "Use any relevant text and attachments when helpful.",
+        "Use the latest user request and attachment metadata when helpful.",
+        "Treat non-image attachments as metadata only unless their contents are explicitly available.",
         "Reply to the latest user intent naturally.",
       ].join("\n"),
     },
@@ -261,46 +282,12 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
       text: `${index + 1}. ${roleLabel}\n${entry.content}`,
     });
 
-    for (const attachment of entry.attachments ?? []) {
-      if (attachment.kind === "url") {
-        parts.push({
-          text: `Attachment: ${attachment.name} (${attachment.url})`,
-        });
-        continue;
-      }
-
-      const binary = await readAttachmentBinary(attachment);
-
-      if (attachment.kind === "pdf") {
-        const uploadedFile = await uploadGeminiFile({
-          apiKey,
-          mimeType: binary.mimeType,
-          displayName: attachment.name,
-          data: binary.data,
-        });
-
-        uploadedFiles.push(uploadedFile);
-        parts.push({
-          file_data: {
-            mime_type: uploadedFile.mimeType,
-            file_uri: uploadedFile.uri,
-          },
-        });
-        continue;
-      }
-
-      if (attachment.kind === "file") {
-        parts.push({
-          text: `Attachment: ${attachment.name}`,
-        });
-        continue;
-      }
-
+    if (entry.attachments?.length) {
       parts.push({
-        inlineData: {
-          mimeType: binary.mimeType,
-          data: binary.data.toString("base64"),
-        },
+        text: [
+          "Attachments:",
+          ...entry.attachments.map((attachment) => buildAttachmentMetadataLine(attachment)),
+        ].join("\n"),
       });
     }
   }
