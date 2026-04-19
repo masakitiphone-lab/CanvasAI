@@ -59,11 +59,14 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "E2B execution failed.";
+    const details = error instanceof Error ? error.stack ?? "" : "";
     return NextResponse.json(
       {
         ok: false,
         error: {
-          message: error instanceof Error ? error.message : "E2B execution failed.",
+          message,
+          details,
         },
       },
       { status: 500 },

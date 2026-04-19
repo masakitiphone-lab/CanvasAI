@@ -807,9 +807,13 @@ async function executeCodeSandbox(params: {
       requiredPythonPackages: params.requiredPythonPackages ?? [],
     }),
   });
-  const payload = (await response.json()) as { ok: true; result: E2BRunResult } | { ok: false; error?: { message?: string } };
+  const payload = (await response.json()) as
+    | { ok: true; result: E2BRunResult }
+    | { ok: false; error?: { message?: string; details?: string } };
   if (!response.ok || !payload.ok) {
-    throw new Error(payload.ok ? "E2B execution failed." : payload.error?.message ?? "E2B execution failed.");
+    const message = payload.ok ? "E2B execution failed." : payload.error?.message ?? "E2B execution failed.";
+    const details = payload.ok ? "" : payload.error?.details ?? "";
+    throw new Error(details ? `${message}\n\n${details}` : message);
   }
 
   return payload.result;
