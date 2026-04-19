@@ -101,6 +101,30 @@ function normalizeStringList(values: unknown) {
     .filter(Boolean);
 }
 
+function needsLibreOfficeRetry(errorText: string) {
+  const lowered = errorText.toLowerCase();
+  return (
+    lowered.includes("libreoffice") &&
+    (lowered.includes("no such file or directory") ||
+      lowered.includes("command not found") ||
+      lowered.includes("not found"))
+  );
+}
+
+async function ensureLibreOffice(sandbox: Sandbox) {
+  const libreOfficeCheck = await sandbox.commands.run(
+    "bash -lc 'command -v libreoffice >/dev/null 2>&1 || (apt-get update && apt-get install -y libreoffice)'",
+    {
+      cwd: "/workspace",
+      timeoutMs: 900_000,
+    },
+  );
+
+  if (libreOfficeCheck.exitCode !== 0) {
+    throw new Error(libreOfficeCheck.stderr || libreOfficeCheck.error || "Failed to install libreoffice");
+  }
+}
+
 function buildPrelude(prompt: string, attachments: ConversationAttachment[]) {
   const requestedFormats = inferRequestedFormats(prompt);
   const attachmentNotes = attachments.map((attachment) => {
@@ -277,19 +301,29 @@ PY`,
 
     const sandboxTools = new Set<string>(declaredTools.map((tool) => tool.toLowerCase()));
     if (sandboxTools.has("libreoffice")) {
-      const libreOfficeCheck = await sandbox.commands.run("bash -lc 'command -v libreoffice >/dev/null 2>&1 || (apt-get update && apt-get install -y libreoffice)'", {
-        cwd: "/workspace",
-        timeoutMs: 900_000,
-      });
-      if (libreOfficeCheck.exitCode !== 0) {
-        failedPackages.push({ name: "libreoffice", error: libreOfficeCheck.stderr || libreOfficeCheck.error || "Failed to install libreoffice" });
+      try {
+        await ensureLibreOffice(sandbox);
+      } catch (error) {
+        failedPackages.push({ name: "libreoffice", error: error instanceof Error ? error.message : "Failed to install libreoffice" });
       }
     }
 
-    const execution = await sandbox.commands.run("python3 /workspace/script.py", {
+    let execution = await sandbox.commands.run("python3 /workspace/script.py", {
       cwd: "/workspace",
       timeoutMs: Number(process.env.E2B_CODE_TIMEOUT_MS ?? 240000),
     });
+
+    if (execution.exitCode !== 0 && !sandboxTools.has("libreoffice") && needsLibreOfficeRetry(execution.stderr || execution.error || "")) {
+      try {
+        await ensureLibreOffice(sandbox);
+        execution = await sandbox.commands.run("python3 /workspace/script.py", {
+          cwd: "/workspace",
+          timeoutMs: Number(process.env.E2B_CODE_TIMEOUT_MS ?? 240000),
+        });
+      } catch (error) {
+        failedPackages.push({ name: "libreoffice", error: error instanceof Error ? error.message : "Failed to install libreoffice" });
+      }
+    }
 
     const files = await collectArtifacts({
       sandbox,
