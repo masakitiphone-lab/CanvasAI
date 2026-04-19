@@ -32,6 +32,10 @@ export type ConversationAttachment = {
   createdAt: string;
 };
 
+export type ConversationAttachmentBinary = ConversationAttachment & {
+  bytesBase64?: string;
+};
+
 export type ConversationNodeRecord = {
   parentId: string | null;
   kind: NodeKind;

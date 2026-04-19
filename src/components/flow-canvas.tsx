@@ -60,7 +60,6 @@ import type {
 } from "@/lib/canvas-types";
 import { getContentAwareNodeSize, getNodeDefaultSize } from "@/lib/node-layout";
 import { CANVAS_COPY } from "@/lib/workspace-copy";
-import { pyodideClient, type PyodideRunResult } from "@/lib/pyodide-client";
 import { cn } from "@/lib/utils";
 
 type PaneMenu = { kind: "pane"; flowPosition: XYPosition; top: number; left: number };
@@ -108,6 +107,25 @@ type CanvasHistorySnapshot = {
 type PromptRequestContext = {
   lineage: LineageEntry[];
   inputNodeIds: string[];
+};
+type E2BStagedInput = {
+  name: string;
+  path: string;
+  kind: ConversationAttachment["kind"];
+  mimeType: string;
+  url: string;
+  storagePath?: string;
+};
+type E2BRunResult = {
+  success: boolean;
+  errorMessage: string | null;
+  stdout: string;
+  stderr: string;
+  detectedPackages: string[];
+  installedPackages: string[];
+  failedPackages: Array<{ name: string; error: string }>;
+  files: ConversationAttachment[];
+  stagedInputs: E2BStagedInput[];
 };
 type NodeActionRefs = {
   addNodeAttachments: (nodeId: string, files: File[]) => Promise<void>;
@@ -422,7 +440,7 @@ function base64ToFile(params: { bytesBase64: string; fileName: string; mimeType:
   return new File([bytes], params.fileName, { type: params.mimeType });
 }
 
-function buildPyodideContextText(lineage: LineageEntry[]) {
+function buildSandboxContextText(lineage: LineageEntry[]) {
   if (lineage.length === 0) {
     return "";
   }
@@ -484,32 +502,21 @@ function buildCodeNodeContent(params: {
   ].join("\n\n");
 }
 
-function buildResultNodeContent(params: PyodideRunResult) {
-  const statusEmoji = params.success ? "✅" : "❌";
+function buildResultNodeContent(params: E2BRunResult) {
   const statusLabel = params.success ? "Success" : "Failed";
-  
-  const fileSection = params.files.length > 0
-    ? `## Generated Files\n\n${params.files.map((file) => `- **${file.name}**`).join("\n")}`
-    : "";
-
-  const stdoutSection = params.stdout
-    ? `### Standard Output\n\n\`\`\`text\n${params.stdout}\n\`\`\``
-    : "";
-
-  const errorSection = params.errorMessage
-    ? `### Error\n\n\`\`\`text\n${params.errorMessage}\n\`\`\``
-    : "";
-
-  const packageSection = params.detectedPackages.length > 0
-    ? `### Packages Used\n\n${params.detectedPackages.map((pkg) => `\`${pkg}\``).join(", ")}`
-    : "";
-
-  const stderrSection = params.stderr
-    ? `### Standard Error\n\n\`\`\`text\n${params.stderr}\n\`\`\``
-    : "";
+  const statusIcon = params.success ? "OK" : "ERR";
+  const fileSection =
+    params.files.length > 0
+      ? `## Generated Files\n\n${params.files.map((file) => `- **${file.name}**`).join("\n")}`
+      : "";
+  const stdoutSection = params.stdout ? `### Standard Output\n\n\`\`\`text\n${params.stdout}\n\`\`\`` : "";
+  const errorSection = params.errorMessage ? `### Error\n\n\`\`\`text\n${params.errorMessage}\n\`\`\`` : "";
+  const packageSection =
+    params.detectedPackages.length > 0 ? `### Packages Used\n\n${params.detectedPackages.map((pkg) => `\`${pkg}\``).join(", ")}` : "";
+  const stderrSection = params.stderr ? `### Standard Error\n\n\`\`\`text\n${params.stderr}\n\`\`\`` : "";
 
   return [
-    `## Execution ${statusEmoji} ${statusLabel}`,
+    `## Execution ${statusIcon} ${statusLabel}`,
     fileSection,
     "",
     "<details>",
@@ -633,7 +640,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
         "Process these files as needed to fulfill the user's request.",
         "Treat the actual attachment format as authoritative if it differs from the text of the user request.",
         "Do not download fonts, binaries, or other resources from the internet.",
-        "Do not use pyodide.http.pyfetch for fonts or external assets unless the task explicitly requires external network access.",
+    "Do not fetch fonts or other external assets unless the task explicitly requires network access.",
         "For CSV/JSON: use pandas or json to read and process.",
         "For images: use PIL or matplotlib to read and process.",
         "For DOCX: use `from docx import Document`.",
@@ -656,18 +663,18 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
     ...nextLineage[targetIndex],
     content: [
       "Write Python code that solves the user's request.",
-      "This code will run in Pyodide in the browser, not in a full local CPython environment.",
+    "This code will run in an E2B sandbox in Python, not in a browser runtime.",
       "Return only executable Python code.",
       "Do not include markdown fences, explanations, comments outside the code, or prose.",
       "Put every required import at the top of the file before using the module.",
       "Prefer Python standard library first.",
-      "Only use packages that are commonly available in Pyodide when they are truly necessary.",
+    "Prefer standard Python packages and common sandbox dependencies.",
       "Minimize dependencies. Do not import scipy, pandas, sklearn, or any other heavy package unless the task genuinely requires it.",
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib with plt.show().",
       intentFirstGuidance,
       formatGuidance,
-      "Never fetch fonts or other static assets from the network during Pyodide execution.",
+    "Never fetch fonts or other static assets from the network during sandbox execution unless explicitly required.",
       "If a format conversion needs fonts and no local font is available, fall back to a simpler local output instead of trying to download assets.",
       "When using matplotlib for charts/graphs:",
       "  - Always set figure size: plt.figure(figsize=(10, 6), dpi=100)",
@@ -708,38 +715,30 @@ async function uploadSingleFile(file: File, projectId?: string) {
   return uploaded[0];
 }
 
-async function executePyodideCode(params: {
+async function executeCodeSandbox(params: {
   code: string;
   attachments: ConversationAttachment[];
   contextText: string;
   projectId?: string;
 }) {
-  await pyodideClient.ensureReady().catch((error) => {
-    throw new Error(error instanceof Error ? error.message : CANVAS_COPY.pyodideInitFailed);
+  const response = await authFetch("/api/e2b/run", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      code: params.code,
+      attachments: params.attachments,
+      contextText: params.contextText,
+      projectId: params.projectId,
+    }),
   });
+  const payload = (await response.json()) as { ok: true; result: E2BRunResult } | { ok: false; error?: { message?: string } };
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.ok ? "E2B execution failed." : payload.error?.message ?? "E2B execution failed.");
+  }
 
-  const result = await pyodideClient.runCode({
-    code: params.code,
-    attachments: params.attachments,
-    contextText: params.contextText,
-  }).catch((error) => {
-    throw new Error(error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed);
-  });
-
-  const uploadedArtifacts =
-    result.files.length > 0
-      ? await uploadFiles(
-        result.files.map((file) =>
-          base64ToFile({
-            bytesBase64: file.bytesBase64,
-            fileName: file.name,
-            mimeType: file.mimeType,
-          })),
-        params.projectId,
-      )
-      : [];
-
-  return { ...result, attachments: uploadedArtifacts };
+  return payload.result;
 }
 
 const getNodeSize = (kind: ConversationNodeRecord["kind"]): PlacementOptions => {
@@ -2168,10 +2167,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ).text,
         );
         const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
-        const result = await executePyodideCode({
+        const result = await executeCodeSandbox({
           code: generatedCode,
           attachments: inputAttachments,
-          contextText: buildPyodideContextText(requestContext.lineage),
+          contextText: buildSandboxContextText(requestContext.lineage),
           projectId: currentProjectId,
         });
 
@@ -2192,7 +2191,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         let cursorX = resultWidth + 56;
         let cursorY = 0;
 
-        for (const artifact of result.attachments) {
+        for (const artifact of result.files) {
           const artifactNodeId = crypto.randomUUID();
           const artifactRecord = buildArtifactNodeRecord(artifact);
           const draftArtifactNode = buildNode(artifactNodeId, { x: 0, y: 0 }, {
@@ -2248,12 +2247,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     ...node,
                     style: {
                       ...node.style,
-                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.attachments),
+                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.files),
                     },
                   data: {
                     ...node.data,
                     content: buildResultNodeContent(result),
-                    attachments: result.attachments as ConversationAttachment[],
+                    attachments: result.files as ConversationAttachment[],
                     status: "idle" as NodeStatus,
                     },
                   }
@@ -2264,7 +2263,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           setEdges((current) => current.concat(artifactEdges).map(normalizeEdge));
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed;
+        const message = error instanceof Error ? error.message : "Sandbox execution failed.";
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
           return;
         }
@@ -2649,10 +2648,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
             })
           ).text,
         );
-        const result = await executePyodideCode({
+        const result = await executeCodeSandbox({
           code: generatedCode,
           attachments: requestContext.lineage.flatMap((entry) => entry.attachments),
-          contextText: buildPyodideContextText(requestContext.lineage),
+          contextText: buildSandboxContextText(requestContext.lineage),
           projectId: currentProjectId,
         });
 
@@ -2692,12 +2691,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                     ...node,
                     style: {
                       ...node.style,
-                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.attachments),
+                      ...getContentAwareNodeSize("result", buildResultNodeContent(result), result.files),
                     },
                     data: {
                       ...node.data,
                       content: buildResultNodeContent(result),
-                      attachments: result.attachments,
+                      attachments: result.files,
                       status: "idle",
                     },
                   }
@@ -2705,7 +2704,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : CANVAS_COPY.pyodideRunFailed;
+        const message = error instanceof Error ? error.message : "Sandbox execution failed.";
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
           return;
         }
@@ -2964,7 +2963,7 @@ print("================================")
             console.warn("Some attachments failed to upload, proceeding with available ones");
           }
 
-          const result = await executePyodideCode({
+          const result = await executeCodeSandbox({
             code: generatedCode,
             attachments: allAttachments,
             contextText,
@@ -2977,21 +2976,6 @@ print("================================")
           }
 
           const resultContent = buildResultNodeContent(result);
-          const uploadedArtifacts: ConversationAttachment[] = [];
-          if (result.files.length > 0) {
-            const artifacts = await uploadFiles(
-              result.files.map((file) =>
-                base64ToFile({
-                  bytesBase64: file.bytesBase64,
-                  fileName: file.name,
-                  mimeType: file.mimeType,
-                }),
-              ),
-              currentProjectId,
-            );
-            uploadedArtifacts.push(...artifacts);
-          }
-
           const artifactNodes: Array<Node<ConversationNodeRecord>> = [];
           const artifactEdges: Edge[] = [];
           const resultWidth = Number(resultNode.style?.width ?? getNodeDefaultSize("result").width);
@@ -2999,7 +2983,7 @@ print("================================")
           let cursorX = resultWidth + 56;
           let cursorY = 0;
 
-          for (const artifact of uploadedArtifacts) {
+          for (const artifact of result.files) {
             const artifactNodeId = crypto.randomUUID();
             const artifactRecord = buildArtifactNodeRecord(artifact);
             const draftArtifactNode = buildNode(artifactNodeId, { x: 0, y: 0 }, {
@@ -4012,3 +3996,8 @@ export const FlowCanvas = memo(
   (prevProps, nextProps) =>
     prevProps.userId === nextProps.userId && prevProps.initialProjectId === nextProps.initialProjectId,
 );
+
+
+
+
+

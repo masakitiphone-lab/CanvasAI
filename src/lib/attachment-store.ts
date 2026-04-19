@@ -334,6 +334,17 @@ async function storeAttachmentBuffer(params: {
   return attachment;
 }
 
+export async function storeGeneratedAttachmentBuffer(params: {
+  buffer: Buffer;
+  fileName: string;
+  kind: AttachmentKind;
+  mimeType?: string;
+  ownerUserId: string;
+  projectId?: string | null;
+}) {
+  return storeAttachmentBuffer(params);
+}
+
 export async function storeUploadedAttachment(params: {
   file: File;
   ownerUserId: string;
