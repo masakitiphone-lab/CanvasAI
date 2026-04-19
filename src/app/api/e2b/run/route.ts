@@ -11,6 +11,8 @@ type E2BRunRequest = {
   attachments?: ConversationAttachment[];
   contextText?: string;
   projectId?: string;
+  requiredTools?: string[];
+  requiredPythonPackages?: string[];
 };
 
 export async function POST(request: Request) {
@@ -37,6 +39,8 @@ export async function POST(request: Request) {
       contextText: payload.contextText ?? "",
       projectId: payload.projectId,
       ownerUserId: auth.user.id,
+      requiredTools: payload.requiredTools ?? [],
+      requiredPythonPackages: payload.requiredPythonPackages ?? [],
     });
 
     const uploadedAttachments = result.files.length > 0

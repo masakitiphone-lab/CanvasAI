@@ -127,6 +127,10 @@ type E2BRunResult = {
   files: ConversationAttachment[];
   stagedInputs: E2BStagedInput[];
 };
+type GeneratedExecutionRequirements = {
+  requiredTools: string[];
+  requiredPythonPackages: string[];
+};
 type NodeActionRefs = {
   addNodeAttachments: (nodeId: string, files: File[]) => Promise<void>;
   addNodeUrlAttachment: (nodeId: string, url: string) => Promise<void>;
@@ -533,12 +537,59 @@ function buildResultNodeContent(params: E2BRunResult) {
 }
 
 function extractPythonCode(text: string) {
-  const fenced = text.match(/```(?:python|py)?\s*([\s\S]*?)```/i);
-  if (fenced?.[1]) {
-    return fenced[1].trim();
+  const pythonFenced = text.match(/```(?:python|py)\s*([\s\S]*?)```/i);
+  if (pythonFenced?.[1]) {
+    return pythonFenced[1].trim();
+  }
+
+  const genericFenced = text.match(/```\s*([\s\S]*?)```/i);
+  if (genericFenced?.[1]) {
+    return genericFenced[1].trim();
   }
 
   return text.trim();
+}
+
+function extractExecutionRequirements(text: string): GeneratedExecutionRequirements {
+  const requirements = {
+    requiredTools: [] as string[],
+    requiredPythonPackages: [] as string[],
+  };
+
+  const blockMatch = text.match(/## Execution Requirements\s*```json\s*([\s\S]*?)```/i);
+  if (!blockMatch?.[1]) {
+    return requirements;
+  }
+
+  try {
+    const parsed = JSON.parse(blockMatch[1]) as {
+      required_tools?: unknown;
+      required_python_packages?: unknown;
+    };
+
+    if (Array.isArray(parsed.required_tools)) {
+      requirements.requiredTools = parsed.required_tools
+        .map((tool) => (typeof tool === "string" ? tool.trim() : ""))
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(parsed.required_python_packages)) {
+      requirements.requiredPythonPackages = parsed.required_python_packages
+        .map((pkg) => (typeof pkg === "string" ? pkg.trim() : ""))
+        .filter(Boolean);
+    }
+  } catch {
+    return requirements;
+  }
+
+  return requirements;
+}
+
+function extractGeneratedCodePayload(text: string) {
+  const requirements = extractExecutionRequirements(text);
+  const withoutRequirements = text.replace(/## Execution Requirements\s*```json\s*[\s\S]*?```/i, "").trim();
+  const code = extractPythonCode(withoutRequirements);
+  return { code, requirements };
 }
 
 function buildArtifactNodeRecord(attachment: ConversationAttachment): ConversationNodeRecord {
@@ -658,6 +709,24 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
     "Identify the actual input files and the expected output files explicitly.",
     "Then write the simplest correct implementation that satisfies that goal.",
   ].join("\n");
+  const executionRequirementsGuidance = [
+    "",
+    "## Execution Requirements",
+    "First output a JSON block with the exact tools and Python packages the code needs.",
+    "Use this schema:",
+    "```json",
+    JSON.stringify(
+      {
+        required_tools: ["libreoffice"],
+        required_python_packages: ["python-docx", "reportlab"],
+      },
+      null,
+      2,
+    ),
+    "```",
+    "Only include tools or packages that the code genuinely needs.",
+    "If no external tools are required, use empty arrays.",
+  ].join("\n");
 
   nextLineage[targetIndex] = {
     ...nextLineage[targetIndex],
@@ -673,6 +742,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib with plt.show().",
       intentFirstGuidance,
+      executionRequirementsGuidance,
       formatGuidance,
     "Never fetch fonts or other static assets from the network during sandbox execution unless explicitly required.",
       "If a format conversion needs fonts and no local font is available, fall back to a simpler local output instead of trying to download assets.",
@@ -720,6 +790,8 @@ async function executeCodeSandbox(params: {
   attachments: ConversationAttachment[];
   contextText: string;
   projectId?: string;
+  requiredTools?: string[];
+  requiredPythonPackages?: string[];
 }) {
   const response = await authFetch("/api/e2b/run", {
     method: "POST",
@@ -731,6 +803,8 @@ async function executeCodeSandbox(params: {
       attachments: params.attachments,
       contextText: params.contextText,
       projectId: params.projectId,
+      requiredTools: params.requiredTools ?? [],
+      requiredPythonPackages: params.requiredPythonPackages ?? [],
     }),
   });
   const payload = (await response.json()) as { ok: true; result: E2BRunResult } | { ok: false; error?: { message?: string } };
@@ -2154,7 +2228,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
       ]);
 
       try {
-        const generatedCode = extractPythonCode(
+        const generatedPayload = extractGeneratedCodePayload(
           (
             await requestGeminiText({
               targetNodeId: latestParentNode.id,
@@ -2168,10 +2242,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
         const inputAttachments = requestContext.lineage.flatMap((entry) => entry.attachments);
         const result = await executeCodeSandbox({
-          code: generatedCode,
+          code: generatedPayload.code,
           attachments: inputAttachments,
           contextText: buildSandboxContextText(requestContext.lineage),
           projectId: currentProjectId,
+          requiredTools: generatedPayload.requirements.requiredTools,
+          requiredPythonPackages: generatedPayload.requirements.requiredPythonPackages,
         });
 
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
@@ -2222,9 +2298,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
               ? {
                   ...node,
                   style: {
-                    ...node.style,
-                    ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                      code: generatedCode,
+                      ...node.style,
+                      ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                      code: generatedPayload.code,
                       taskGoal: prompt,
                       packages: result.detectedPackages,
                       stagedInputs: result.stagedInputs,
@@ -2233,7 +2309,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   data: {
                     ...node.data,
                     content: buildCodeNodeContent({
-                      code: generatedCode,
+                      code: generatedPayload.code,
                       taskGoal: prompt,
                       packages: result.detectedPackages,
                       stagedInputs: result.stagedInputs,
@@ -2636,7 +2712,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ...(resultNode ? [`${codeNode.id}->${resultNode.id}`] : []),
         ];
         setActiveGenerationEdges(activeEdgeIds);
-        const generatedCode = extractPythonCode(
+        const generatedPayload = extractGeneratedCodePayload(
           (
             await requestGeminiText({
               targetNodeId: parentNode.id,
@@ -2649,10 +2725,12 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           ).text,
         );
         const result = await executeCodeSandbox({
-          code: generatedCode,
+          code: generatedPayload.code,
           attachments: requestContext.lineage.flatMap((entry) => entry.attachments),
           contextText: buildSandboxContextText(requestContext.lineage),
           projectId: currentProjectId,
+          requiredTools: generatedPayload.requirements.requiredTools,
+          requiredPythonPackages: generatedPayload.requirements.requiredPythonPackages,
         });
 
         if (deletedNodeIdsRef.current.has(codeNode.id) || (resultNode && deletedNodeIdsRef.current.has(resultNode.id))) {
@@ -2666,9 +2744,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
               ? {
                   ...node,
                   style: {
-                    ...node.style,
-                    ...getContentAwareNodeSize("code", buildCodeNodeContent({
-                      code: generatedCode,
+                      ...node.style,
+                      ...getContentAwareNodeSize("code", buildCodeNodeContent({
+                      code: generatedPayload.code,
                       taskGoal: parentPrompt,
                       packages: result.detectedPackages,
                       stagedInputs: result.stagedInputs,
@@ -2677,7 +2755,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                   data: {
                     ...node.data,
                     content: buildCodeNodeContent({
-                      code: generatedCode,
+                      code: generatedPayload.code,
                       taskGoal: parentPrompt,
                       packages: result.detectedPackages,
                       stagedInputs: result.stagedInputs,
@@ -2963,10 +3041,13 @@ print("================================")
             console.warn("Some attachments failed to upload, proceeding with available ones");
           }
 
+          const generatedPayload = extractGeneratedCodePayload(generatedCode);
           const result = await executeCodeSandbox({
-            code: generatedCode,
+            code: generatedPayload.code,
             attachments: allAttachments,
             contextText,
+            requiredTools: generatedPayload.requirements.requiredTools,
+            requiredPythonPackages: generatedPayload.requirements.requiredPythonPackages,
           });
 
           setActiveGenerationEdges([]);

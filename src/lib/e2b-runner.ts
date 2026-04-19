@@ -30,7 +30,7 @@ export type E2BRunResult = {
   stagedInputs: E2BStagedInput[];
 };
 
-const DEFAULT_INSTALL_PACKAGES = ["python-docx", "reportlab", "openpyxl", "pypdf", "pillow"];
+const DEFAULT_INSTALL_PACKAGES: string[] = [];
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[\\/:\0]/g, "_").replace(/\s+/g, " ").trim() || "attachment";
@@ -89,6 +89,16 @@ function getInstallPackages(code: string) {
   }
 
   return Array.from(installPackages);
+}
+
+function normalizeStringList(values: unknown) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
 }
 
 function buildPrelude(prompt: string, attachments: ConversationAttachment[]) {
@@ -198,6 +208,8 @@ export async function runE2ECodeSandbox(params: {
   contextText: string;
   projectId?: string;
   ownerUserId: string;
+  requiredTools?: string[];
+  requiredPythonPackages?: string[];
 }) {
   const sandbox = await Sandbox.create({
     apiKey: process.env.E2B_API_KEY?.trim(),
@@ -246,7 +258,9 @@ PY`,
     );
     const beforeFiles = new Set<string>(JSON.parse(beforeFilesResult.stdout.trim() || "[]") as string[]);
 
-    const installPackages = getInstallPackages(params.code);
+    const declaredTools = normalizeStringList(params.requiredTools);
+    const declaredPythonPackages = normalizeStringList(params.requiredPythonPackages);
+    const installPackages = Array.from(new Set([...declaredPythonPackages, ...getInstallPackages(params.code)]));
     const installedPackages: string[] = [];
     const failedPackages: Array<{ name: string; error: string }> = [];
     for (const pkg of installPackages) {
@@ -258,6 +272,17 @@ PY`,
         installedPackages.push(pkg);
       } else {
         failedPackages.push({ name: pkg, error: installResult.stderr || installResult.error || `Failed to install ${pkg}` });
+      }
+    }
+
+    const sandboxTools = new Set<string>(declaredTools.map((tool) => tool.toLowerCase()));
+    if (sandboxTools.has("libreoffice")) {
+      const libreOfficeCheck = await sandbox.commands.run("bash -lc 'command -v libreoffice >/dev/null 2>&1 || (apt-get update && apt-get install -y libreoffice)'", {
+        cwd: "/workspace",
+        timeoutMs: 900_000,
+      });
+      if (libreOfficeCheck.exitCode !== 0) {
+        failedPackages.push({ name: "libreoffice", error: libreOfficeCheck.stderr || libreOfficeCheck.error || "Failed to install libreoffice" });
       }
     }
 
