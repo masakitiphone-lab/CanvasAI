@@ -1,6 +1,7 @@
 import type { Edge, Node } from "@xyflow/react";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { touchProjectForUser } from "@/lib/project-store";
+import { findStoredAttachmentById, findStoredAttachmentByPath } from "@/lib/attachment-store";
 import type {
   ConversationAttachment,
   ConversationModelName,
@@ -128,6 +129,13 @@ function buildEdge(source: string, target: string, id: string): Edge {
   };
 }
 
+async function resolvePersistedAttachment(attachment: ConversationAttachment) {
+  const fresh = attachment.storagePath
+    ? await findStoredAttachmentByPath(attachment.storagePath)
+    : await findStoredAttachmentById(attachment.id);
+  return { attachment: fresh ?? attachment, missing: !fresh };
+}
+
 export async function loadCanvasStateForUser(projectId: string, userId: string): Promise<PersistedCanvasState | null> {
   const supabase = requireSupabaseClient(await getSupabaseServerClient());
   const { data: project, error: projectError } = await supabase
@@ -179,8 +187,29 @@ export async function loadCanvasStateForUser(projectId: string, userId: string):
     attachmentMap.set(attachment.node_id, current);
   }
 
+  const resolvedNodes = await Promise.all(
+    nodeRows.map(async (row) => {
+      const resolvedAttachments = await Promise.all((attachmentMap.get(row.id) ?? []).map(resolvePersistedAttachment));
+      const attachments = resolvedAttachments.map((entry) => entry.attachment);
+      const hasUnresolvedAttachment = resolvedAttachments.some((entry) => entry.missing);
+      const node = buildNodeFromRow(row, attachments);
+      if (!hasUnresolvedAttachment) {
+        return node;
+      }
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          status: "error" as const,
+          content: node.data.content || "Attachment load failed.",
+        },
+      };
+    }),
+  );
+
   const state: PersistedCanvasState = {
-    nodes: nodeRows.map((row) => buildNodeFromRow(row, attachmentMap.get(row.id) ?? [])),
+    nodes: resolvedNodes,
     edges: edgeRows.map((row) => buildEdge(row.source_id, row.target_id, row.id)),
     source: "supabase",
   };

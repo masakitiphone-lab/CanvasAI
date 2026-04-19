@@ -448,6 +448,7 @@ function ConversationNodeComponent({
           isImage && "mindmap-node-shell--image",
           isFile && "mindmap-node-shell--file",
           isNote && "mindmap-node-shell--note",
+          data.status === "error" && "mindmap-node-shell--error",
           data.status === "generating" && "mindmap-node-shell--generating",
           data.isRoot && "mindmap-node-shell--root",
           data.isFocusMode && "mindmap-node-shell--focus-mode",

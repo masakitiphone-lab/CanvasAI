@@ -644,6 +644,14 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       ].join("\n")
     : "";
 
+  const intentFirstGuidance = [
+    "",
+    "## Work Order",
+    "Before writing code, restate the user's goal in one short paragraph.",
+    "Identify the actual input files and the expected output files explicitly.",
+    "Then write the simplest correct implementation that satisfies that goal.",
+  ].join("\n");
+
   nextLineage[targetIndex] = {
     ...nextLineage[targetIndex],
     content: [
@@ -657,6 +665,7 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
       "Minimize dependencies. Do not import scipy, pandas, sklearn, or any other heavy package unless the task genuinely requires it.",
       "If the task can be solved with plain Python, math, statistics, json, csv, or re, use those instead.",
       "If plotting is useful, use matplotlib with plt.show().",
+      intentFirstGuidance,
       formatGuidance,
       "Never fetch fonts or other static assets from the network during Pyodide execution.",
       "If a format conversion needs fonts and no local font is available, fall back to a simpler local output instead of trying to download assets.",

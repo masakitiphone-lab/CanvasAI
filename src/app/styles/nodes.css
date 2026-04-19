@@ -48,6 +48,13 @@
 .mindmap-node-shell[data-kind="image"] { box-shadow: 0 4px 20px -8px rgba(255, 255, 255, 0.35), 0 0 12px -2px rgba(255, 255, 255, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.08); }
 .mindmap-node-shell[data-kind="note"] { box-shadow: 0 4px 20px -8px rgba(255, 255, 255, 0.35), 0 0 12px -2px rgba(255, 255, 255, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.08); }
 .mindmap-node-shell[data-kind="file"] { box-shadow: 0 4px 20px -8px rgba(255, 255, 255, 0.2), 0 0 12px -2px rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05); }
+.mindmap-node-shell--error {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow:
+    0 4px 24px -10px rgba(239, 68, 68, 0.32),
+    0 0 0 1px rgba(239, 68, 68, 0.22),
+    inset 0 0 0 1px rgba(248, 113, 113, 0.18);
+}
 
 .mindmap-node-shell--selected {
   border-color: rgba(115, 115, 115, 0.55) !important;
