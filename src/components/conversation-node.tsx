@@ -527,16 +527,46 @@ function ConversationNodeComponent({
                         </div>
                       </div>
                     ) : (
-                      <a href={data.attachments[0].url} target="_blank" rel="noreferrer" className="mindmap-file-node__card">
-                        {(() => {
-                          const Icon = attachmentIcon(data.attachments[0].kind);
-                          return <Icon className="size-5 shrink-0" />;
-                        })()}
-                        <div className="mindmap-file-node__meta">
-                          <strong>{data.attachments[0].name}</strong>
-                          <span>{data.attachments[0].kind === "pdf" ? "PDF" : "File"}</span>
+                      <div className="mindmap-file-node__card">
+                        <div className="flex items-start gap-3">
+                          {(() => {
+                            const Icon = attachmentIcon(data.attachments[0].kind);
+                            return <Icon className="mt-0.5 size-5 shrink-0" />;
+                          })()}
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[14px] font-semibold text-neutral-800">{data.attachments[0].name}</div>
+                            <div className="mt-1 flex items-center gap-2 text-[11px] text-neutral-500">
+                              <span>{data.attachments[0].kind === "pdf" ? "PDF" : "File"}</span>
+                              {data.attachments[0].sizeBytes ? <span>· {Math.ceil(data.attachments[0].sizeBytes / 1024)} KB</span> : null}
+                            </div>
+                          </div>
                         </div>
-                      </a>
+                        <div className="mt-4 flex items-center gap-2">
+                          {data.attachments[0].url && (
+                            <a
+                              href={data.attachments[0].url}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={data.attachments[0].name}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-[12px] font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                            >
+                              <Download className="size-3.5" />
+                              Download
+                            </a>
+                          )}
+                          {data.attachments[0].url && (
+                            <a
+                              href={data.attachments[0].url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-[12px] font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                            >
+                              <ExternalLink className="size-3.5" />
+                              Open
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     )
                   ) : (
                     <div className="mindmap-file-node__placeholder" aria-busy={data.status === "generating"}>
@@ -781,7 +811,8 @@ function ConversationNodeComponent({
                 </div>
               )}
 
-              <div className="mindmap-node-shell__footer node-drag-handle !pt-0" ref={footerControlsRef}>
+              {!isFile && (
+                <div className="mindmap-node-shell__footer node-drag-handle !pt-0" ref={footerControlsRef}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {isUser ? (
                     <div className="mindmap-prompt-actions mindmap-prompt-actions--composer !gap-2.5">
@@ -986,7 +1017,8 @@ function ConversationNodeComponent({
                     )}
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </>
           )}
         </div>

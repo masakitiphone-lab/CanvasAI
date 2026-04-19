@@ -24,6 +24,7 @@ import {
   type XYPosition,
   useEdgesState,
   useReactFlow,
+  useUpdateNodeInternals,
   useViewport,
 } from "@xyflow/react";
 import {
@@ -46,7 +47,7 @@ import { Button } from "@/components/ui/button";
 import { MagicImage } from "@/components/ui/magic-image";
 import { buildLineageContext, type LineageEntry } from "@/lib/build-lineage-context";
 import { authFetch } from "@/lib/auth-fetch";
-import { getSuggestedChildPosition, layoutNodesForMindMap } from "@/lib/graph-layout";
+import { layoutNodesForMindMap } from "@/lib/graph-layout";
 import { getDefaultModelForPromptMode, isSupportedImageModelName, isSupportedTextModelName, normalizeModelName } from "@/lib/model-options";
 import type {
   ConversationAttachment,
@@ -438,12 +439,6 @@ function shouldPreserveNativeContextMenu(event: MouseEvent | ReactMouseEvent<Ele
   return false;
 }
 
-function base64ToFile(params: { bytesBase64: string; fileName: string; mimeType: string }) {
-  const binary = atob(params.bytesBase64);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new File([bytes], params.fileName, { type: params.mimeType });
-}
-
 function buildSandboxContextText(lineage: LineageEntry[]) {
   if (lineage.length === 0) {
     return "";
@@ -717,8 +712,8 @@ function buildCodeGenerationLineage(lineage: LineageEntry[]) {
     "```json",
     JSON.stringify(
       {
-        required_tools: ["libreoffice"],
-        required_python_packages: ["python-docx", "reportlab"],
+        required_tools: [],
+        required_python_packages: [],
       },
       null,
       2,
@@ -983,6 +978,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const { settings } = useUserSettings(userId ?? null);
   const isBrowserAuthReady = useBrowserAuthReady();
   const reactFlow = useReactFlow<Node<ConversationNodeData>, Edge>();
+  const updateNodeInternals = useUpdateNodeInternals();
   const viewport = useViewport();
   const hasHydratedCanvasRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1003,6 +999,13 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
   const historyFutureRef = useRef<CanvasHistorySnapshot[]>([]);
   const lastHistorySnapshotRef = useRef<CanvasHistorySnapshot | null>(null);
   const suppressHistoryRef = useRef(false);
+  const refreshNodeInternals = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length === 0) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => updateNodeInternals(nodeIds));
+  }, [updateNodeInternals]);
   const activeGenerationRunsRef = useRef<Map<string, string>>(new Map());
   const activeGenerationEdgeIdsRef = useRef<Set<string>>(new Set());
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -2342,6 +2345,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         if (artifactEdges.length > 0) {
           setEdges((current) => current.concat(artifactEdges).map(normalizeEdge));
         }
+        refreshNodeInternals([codeNodeId, resultNodeId, ...artifactNodes.map((node) => node.id)]);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Sandbox execution failed.";
         if (deletedNodeIdsRef.current.has(codeNodeId) || deletedNodeIdsRef.current.has(resultNodeId)) {
@@ -2378,7 +2382,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         );
       }
     },
-    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, getInsertedChildPosition, setActiveGenerationEdges, setEdges],
+    [buildPromptRequestLineage, clearActiveGenerationEdges, currentProjectId, getInsertedChildPosition, refreshNodeInternals, setActiveGenerationEdges, setEdges],
   );
 
   const runImageGenerationForUserNode = useCallback(
@@ -2959,25 +2963,8 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           return;
         }
 
-        const generatedCodeMatch = codeNode.data.content.match(/```python\n([\s\S]*?)```/);
-        const originalCode = generatedCodeMatch ? generatedCodeMatch[1].trim() : codeNode.data.content;
-        if (!originalCode) return;
-
-        // Inject file detection code at the beginning
-        const fileDetectionCode = `
-import os
-
-# Available input files in /workspace/inputs/
-_input_files = os.listdir('/workspace/inputs/')
-print("=== Available Input Files ===")
-for f in _input_files:
-    print(f"  - {f}")
-print("================================")
-
-# Your code starts below:
-`;
-
-        const generatedCode = fileDetectionCode + originalCode;
+        const generatedPayload = extractGeneratedCodePayload(codeNode.data.content);
+        const generatedCode = generatedPayload.code;
 
         const resultNode = nodesRef.current.find((n) => n.data.kind === "result" && n.data.parentId === codeNode.id);
         if (!resultNode) return;
@@ -3126,6 +3113,7 @@ print("================================")
           if (artifactEdges.length > 0) {
             setEdges((current) => current.concat(artifactEdges).map(normalizeEdge));
           }
+          refreshNodeInternals([codeNode.id, resultNode.id, ...artifactNodes.map((node) => node.id)]);
         } catch (error) {
           setActiveGenerationEdges([]);
           console.error("Code execution failed:", error);
@@ -3159,6 +3147,8 @@ print("================================")
     runAiGenerationForUserNode,
     runCodeGenerationForUserNode,
     runImageGenerationForUserNode,
+    refreshNodeInternals,
+    setEdges,
     toggleNodeTool,
     updateNodeModel,
     updatePromptMode,

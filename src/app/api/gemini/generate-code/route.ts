@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { readAttachmentBinary } from "@/lib/attachment-store";
 import { storeGeneratedImageAttachment } from "@/lib/attachment-store";
 import { requireSessionUser } from "@/lib/api-auth";
 import { serializeError, writeAuditLog } from "@/lib/audit-log";
@@ -93,12 +92,6 @@ type GenerateCodeSuccessResponse = {
   balance: number;
 };
 
-type UploadedGeminiFile = {
-  name: string;
-  uri: string;
-  mimeType: string;
-};
-
 type GeminiCodePart = {
   text?: string;
   executableCode?: {
@@ -145,74 +138,7 @@ function jsonError(message: string, code: string, status: number) {
   );
 }
 
-async function uploadGeminiFile(params: {
-  apiKey: string;
-  mimeType: string;
-  displayName: string;
-  data: Buffer;
-}): Promise<UploadedGeminiFile> {
-  const startResponse = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${params.apiKey}`, {
-    method: "POST",
-    headers: {
-      "X-Goog-Upload-Protocol": "resumable",
-      "X-Goog-Upload-Command": "start",
-      "X-Goog-Upload-Header-Content-Length": String(params.data.byteLength),
-      "X-Goog-Upload-Header-Content-Type": params.mimeType,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      file: {
-        display_name: params.displayName,
-      },
-    }),
-  });
-
-  if (!startResponse.ok) {
-    throw new Error("Failed to start Gemini Files upload.");
-  }
-
-  const uploadUrl = startResponse.headers.get("x-goog-upload-url");
-  if (!uploadUrl) {
-    throw new Error("Gemini Files upload URL was missing.");
-  }
-
-  const uploadResponse = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      "Content-Length": String(params.data.byteLength),
-      "X-Goog-Upload-Offset": "0",
-      "X-Goog-Upload-Command": "upload, finalize",
-    },
-    body: new Uint8Array(params.data),
-  });
-
-  const payload = (await uploadResponse.json()) as {
-    file?: {
-      name?: string;
-      uri?: string;
-      mimeType?: string;
-    };
-  };
-
-  if (!uploadResponse.ok || !payload.file?.name || !payload.file.uri) {
-    throw new Error("Failed to finalize Gemini Files upload.");
-  }
-
-  return {
-    name: payload.file.name,
-    uri: payload.file.uri,
-    mimeType: payload.file.mimeType ?? params.mimeType,
-  };
-}
-
-async function deleteGeminiFile(apiKey: string, fileName: string) {
-  await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`, {
-    method: "DELETE",
-  });
-}
-
-async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
-  const uploadedFiles: UploadedGeminiFile[] = [];
+async function buildGeminiParts(lineage: LineageEntry[]) {
   const parts: Array<
     | { text: string }
     | { inlineData: { mimeType: string; data: string } }
@@ -272,7 +198,6 @@ async function buildGeminiParts(lineage: LineageEntry[], apiKey: string) {
 
   return {
     parts,
-    uploadedFiles,
   };
 }
 
@@ -370,7 +295,6 @@ export async function POST(request: Request) {
   let requestId: string | null = null;
   let cost = 0;
   let apiKey = "";
-  let uploadedFiles: UploadedGeminiFile[] = [];
 
   try {
     const auth = await requireSessionUser(request);
@@ -456,8 +380,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const built = await buildGeminiParts(lineage, apiKey);
-    uploadedFiles = built.uploadedFiles;
+    const built = await buildGeminiParts(lineage);
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CODE_EXECUTION_MODEL}:generateContent`, {
       method: "POST",
@@ -578,9 +501,5 @@ export async function POST(request: Request) {
     }
 
     return jsonError(message, "generation_code_route_failed", 500);
-  } finally {
-    if (apiKey && uploadedFiles.length > 0) {
-      await Promise.allSettled(uploadedFiles.map((file) => deleteGeminiFile(apiKey, file.name)));
-    }
   }
 }
