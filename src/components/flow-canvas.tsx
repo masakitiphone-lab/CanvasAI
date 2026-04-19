@@ -2945,26 +2945,11 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
 
         const codeNode = targetNode;
         const parentNode = nodesRef.current.find((n) => n.id === codeNode.data.parentId);
-        
-        console.log("=== Code Node Parent Check ===");
-        console.log("targetNode ID:", targetNode?.id);
-        console.log("codeNode ID:", codeNode?.id);
-        console.log("codeNode.parentId:", codeNode?.data?.parentId);
-        console.log("parentNode:", parentNode);
-        console.log("parentNode exists:", !!parentNode);
-        if (parentNode) {
-          console.log("parentNode kind:", parentNode.data.kind);
-          console.log("parentNode attachments:", parentNode.data.attachments);
-        }
-        console.log("================================");
-        
         if (!parentNode || parentNode.data.kind !== "user") {
-          console.log("Early return: parentNode check failed");
           return;
         }
 
         const generatedPayload = extractGeneratedCodePayload(codeNode.data.content);
-        const generatedCode = generatedPayload.code;
 
         const resultNode = nodesRef.current.find((n) => n.data.kind === "result" && n.data.parentId === codeNode.id);
         if (!resultNode) return;
@@ -2999,12 +2984,9 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
         setActiveGenerationEdges(activeEdgeIds);
 
         try {
-          console.log("=== Entered try block ===");
           const contextText = parentNode.data.content;
           const codeNodeAttachments = codeNode.data.attachments;
           const parentAttachments = parentNode.data.attachments;
-
-          console.log("parentNode.data.attachments direct:", parentAttachments);
 
           // Filter out failed uploads (temp- attachments without valid URLs)
           const validCodeNodeAttachments = codeNodeAttachments.filter(
@@ -3015,24 +2997,10 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
           );
           const allAttachments = [...validCodeNodeAttachments, ...validParentAttachments];
 
-          console.log("=== Code Node Execution Debug ===");
-          console.log("Parent node found:", !!parentNode);
-          console.log("Parent node ID:", parentNode?.id);
-          console.log("Parent node kind:", parentNode?.data.kind);
-          console.log("Parent node content:", parentNode?.data.content?.substring(0, 50));
-          console.log("Code node attachments (raw):", codeNodeAttachments);
-          console.log("Code node attachments (valid):", validCodeNodeAttachments);
-          console.log("Parent attachments (raw):", parentAttachments);
-          console.log("Parent attachments (valid):", validParentAttachments);
-          console.log("All attachments (valid):", allAttachments);
-          console.log("===================================");
-
           if (allAttachments.length === 0 && (codeNodeAttachments.length > 0 || parentAttachments.length > 0)) {
-            // Some attachments failed to upload
             console.warn("Some attachments failed to upload, proceeding with available ones");
           }
 
-          const generatedPayload = extractGeneratedCodePayload(generatedCode);
           const result = await executeCodeSandbox({
             code: generatedPayload.code,
             attachments: allAttachments,
@@ -3089,7 +3057,7 @@ function FlowCanvasInner({ userId, initialProjectId }: { userId?: string; initia
                       data: {
                         ...node.data,
                         content: buildCodeNodeContent({
-                          code: generatedCode,
+                          code: generatedPayload.code,
                           packages: result.detectedPackages,
                           stagedInputs: result.stagedInputs,
                         }),
